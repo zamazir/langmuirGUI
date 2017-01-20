@@ -1,4 +1,3 @@
-test
 ###############################################################
 #
 # guilangmuir.py - A graphical user unterface for langmuir data evaluation of ASDEX Upgrade shotfiles
