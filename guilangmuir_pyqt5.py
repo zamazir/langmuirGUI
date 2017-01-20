@@ -18,8 +18,6 @@ test
 # 
 ###############################################################
 
-testmaster
-
 import matplotlib
 matplotlib.use('Qt5Agg')
 from matplotlib import cm
