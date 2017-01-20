@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QWidget" name="plotContainer" native="true">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QWidget" name="xPlotContainer" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QComboBox" name="switchxPlot">
+            <item>
+             <property name="text">
+              <string>Global maximum temperatures</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Tmax(t)</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="xPlot" native="true">
+            <layout class="QVBoxLayout" name="xPlotLayout"/>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="xPlotControls" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>30</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <widget class="QLineEdit" name="xTimeEdit">
+               <property name="maximumSize">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+         <zorder>xPlot</zorder>
+         <zorder>xPlotControls</zorder>
+         <zorder>switchxPlot</zorder>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="tPlotContainer" native="true">
+         <layout class="QVBoxLayout" name="tPlotContainerLayout">
+          <item>
+           <widget class="QLabel" name="caseOptionText">
+            <property name="text">
+             <string>TextLabel</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="tPlotControls" native="true">
+            <layout class="QVBoxLayout" name="verticalLayout_9">
+             <item>
+              <widget class="QListWidget" name="compSelection">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>1000000</width>
+                 <height>50</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <widget class="QMenu" name="menuSave_as">
+     <property name="title">
+      <string>Save as</string>
+     </property>
+     <addaction name="action_png"/>
+    </widget>
+    <addaction name="menuSave_as"/>
+    <addaction name="actionExport"/>
+    <addaction name="actionImport"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionToggle_plot"/>
+    <addaction name="actionMaximize_plot"/>
+   </widget>
+   <widget class="QMenu" name="menuShot">
+    <property name="title">
+     <string>Shot</string>
+    </property>
+    <widget class="QMenu" name="menuDiagnostic">
+     <property name="title">
+      <string>Diagnostic</string>
+     </property>
+     <addaction name="actionLSD"/>
+     <addaction name="actionLSF"/>
+    </widget>
+    <widget class="QMenu" name="menuProbe_array">
+     <property name="title">
+      <string>Probe array</string>
+     </property>
+     <addaction name="actionLower_outer_array"/>
+    </widget>
+    <addaction name="actionLoad_new_shot"/>
+    <addaction name="menuDiagnostic"/>
+    <addaction name="menuProbe_array"/>
+   </widget>
+   <widget class="QMenu" name="menuStatistis">
+    <property name="title">
+     <string>Statistics</string>
+    </property>
+    <widget class="QMenu" name="menuFiltering">
+     <property name="title">
+      <string>Filtering</string>
+     </property>
+     <widget class="QMenu" name="menuELMs">
+      <property name="title">
+       <string>ELMs</string>
+      </property>
+      <addaction name="actionSet_threshold_value"/>
+     </widget>
+     <addaction name="menuELMs"/>
+     <addaction name="actionZeroes"/>
+     <addaction name="actionCusto_m_filter"/>
+    </widget>
+    <addaction name="actionRedo_Statistics"/>
+    <addaction name="separator"/>
+    <addaction name="actionAveraging"/>
+    <addaction name="menuFiltering"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <widget class="QMenu" name="menuGraphs">
+     <property name="title">
+      <string>Graphs</string>
+     </property>
+     <addaction name="actionColoring_2"/>
+     <addaction name="actionStyle"/>
+    </widget>
+    <addaction name="menuGraphs"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuView"/>
+   <addaction name="menuShot"/>
+   <addaction name="menuStatistis"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionExport">
+   <property name="text">
+    <string>Export</string>
+   </property>
+  </action>
+  <action name="actionImport">
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="action_png">
+   <property name="text">
+    <string>*.png</string>
+   </property>
+  </action>
+  <action name="actionToggle_plot">
+   <property name="text">
+    <string>Toggle plot</string>
+   </property>
+  </action>
+  <action name="actionMaximize_plot">
+   <property name="text">
+    <string>Maximize plot</string>
+   </property>
+  </action>
+  <action name="actionLoad_new_shot">
+   <property name="text">
+    <string>Load new shot</string>
+   </property>
+  </action>
+  <action name="actionLSD">
+   <property name="text">
+    <string>LSD</string>
+   </property>
+  </action>
+  <action name="actionLSF">
+   <property name="text">
+    <string>LSF</string>
+   </property>
+  </action>
+  <action name="actionLower_outer_array">
+   <property name="text">
+    <string>Lower outer array</string>
+   </property>
+  </action>
+  <action name="actionAveraging">
+   <property name="text">
+    <string>Averaging</string>
+   </property>
+  </action>
+  <action name="actionSet_threshold_value">
+   <property name="text">
+    <string>Set threshold value</string>
+   </property>
+  </action>
+  <action name="actionZeroes">
+   <property name="text">
+    <string>Filter Zeroes</string>
+   </property>
+  </action>
+  <action name="actionCusto_m_filter">
+   <property name="text">
+    <string>Custom filter</string>
+   </property>
+  </action>
+  <action name="actionRedo_Statistics">
+   <property name="text">
+    <string>Redo Statistics</string>
+   </property>
+  </action>
+  <action name="actionColoring_2">
+   <property name="text">
+    <string>Coloring</string>
+   </property>
+  </action>
+  <action name="actionStyle">
+   <property name="text">
+    <string>Style</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
