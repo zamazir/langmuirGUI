@@ -583,7 +583,7 @@ class TemporalPlot(Plot):
         self.region = 'ua'
 
         fig = Figure()
-        PanAndZoom(fig)
+        print("Passing figure {} to paz".format(fig))
         self.axes = fig.add_subplot(111)
         self.canvas = FigureCanvas(fig)
 

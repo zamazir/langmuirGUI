@@ -59,6 +59,7 @@ import weakref
 import numpy
 
 import matplotlib.pyplot as _plt
+import matplotlib.pyplot as plt
 
 
 class MplInteraction(object):
@@ -68,6 +69,7 @@ class MplInteraction(object):
         """Initializer
         :param Figure figure: The matplotlib figure to attach the behavior to.
         """
+        print("Creating weak reference for figure {}".format(figure))
         self._fig_ref = weakref.ref(figure)
         self._cids = []
 
@@ -79,6 +81,8 @@ class MplInteraction(object):
         :param str event_name: The matplotlib event name to connect to.
         :param callback: The callback to register to this event.
         """
+        print("Adding connection {} to figure {}".format(event_name,self.figure))
+        print("Figure has canvas {}".format(self.figure.canvas))
         cid = self.figure.canvas.mpl_connect(event_name, callback)
         self._cids.append(cid)
 
@@ -136,7 +140,9 @@ class ZoomOnWheel(MplInteraction):
         :param Figure figure: The matplotlib figure to attach the behavior to.
         :param float scale_factor: The scale factor to apply on wheel event.
         """
+        print("Initializing ZoomOnWheel for figure {}".format(figure))
         super(ZoomOnWheel, self).__init__(figure)
+        print("Trying to add connection to figure {}".format(figure))
         self._add_connection('scroll_event', self._on_mouse_wheel)
 
         self.scale_factor = scale_factor
