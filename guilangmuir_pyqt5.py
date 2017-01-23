@@ -20,6 +20,7 @@
 import matplotlib
 matplotlib.use('Qt5Agg')
 from matplotlib import cm
+from matplotlib import pyplot as plt
 
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
@@ -28,6 +29,7 @@ from PyQt5.uic import loadUiType
 from qrangeslider import QRangeSlider
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from panandzoom import PanAndZoom
 
 # Either use network libraries or local ones depending on internet access
 # Local ones might be outdated but don't require internet access
@@ -581,6 +583,7 @@ class TemporalPlot(Plot):
         self.region = 'ua'
 
         fig = Figure()
+        PanAndZoom(fig)
         self.axes = fig.add_subplot(111)
         self.canvas = FigureCanvas(fig)
 
@@ -643,7 +646,7 @@ class TemporalPlot(Plot):
         self.xlim_orig = self.axes.get_xlim()
         self.ylim_orig = self.axes.get_ylim()
         print("Original axes limits - x: {}, y: {}".format(self.xlim_orig, self.ylim_orig))
-        self.enableMouseZoom()
+        #self.enableMouseZoom()
         self.axes.callbacks.connect('xlim_changed', self.onXlimChange)
 
     def onXlimChange(self, axes):
@@ -694,11 +697,11 @@ class TemporalPlot(Plot):
 
             # New axes limits. Don't allow zooming out beyond original boundaries
             xlim = [max(xlim_orig[0], xdata - cur_xrange*scale_factor), min(xlim_orig[1], xdata + cur_xrange*scale_factor)]
-            ylim = [max(ylim_orig[0], ydata - cur_yrange*scale_factor), min(ylim_orig[1], ydata + cur_yrange*scale_factor)]
+            #ylim = [max(ylim_orig[0], ydata - cur_yrange*scale_factor), min(ylim_orig[1], ydata + cur_yrange*scale_factor)]
 
             # set new limits
             self.axes.set_xlim(xlim)
-            self.axes.set_ylim(ylim)
+            #self.axes.set_ylim(ylim)
             
             # Re-draw canvas
             self.canvas.draw()
