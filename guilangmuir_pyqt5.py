@@ -26,7 +26,7 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.uic import loadUiType
-from qrangeslider import QRangeSlider
+from qrangeslider_pyqt5 import QRangeSlider
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from panandzoom import PanAndZoom
@@ -646,7 +646,7 @@ class TemporalPlot(Plot):
         self.xlim_orig = self.axes.get_xlim()
         self.ylim_orig = self.axes.get_ylim()
         print("Original axes limits - x: {}, y: {}".format(self.xlim_orig, self.ylim_orig))
-        #self.enableMouseZoom()
+        self.enableMouseZoom()
         self.axes.callbacks.connect('xlim_changed', self.onXlimChange)
 
     def onXlimChange(self, axes):
@@ -706,9 +706,34 @@ class TemporalPlot(Plot):
             # Re-draw canvas
             self.canvas.draw()
 
+        def rect_zoom(event):
+            print("Event: {}\nButton: {}".format(event.name, event.button))
+            if event.name == "button_press_event" and event.button == 3:
+                self.rectstart = (event.xdata, event.ydata)
+                print("Saved rectangle starting position: {}, {}".format(self.rectstart[0], self.rectstart[1]))
+
+            if event.name == "button_release_event" and event.button == 3:
+                self.rectend = (event.xdata, event.ydata)
+                print("Receiving rectangle starting position: {}, {}".format(self.rectstart[0], self.rectstart[1]))
+                print("Receiving rectangle ending position: {}, {}".format(self.rectend[0], self.rectend[1]))
+
+                # New axes limits
+                xlim = [min(self.rectstart[0], self.rectend[0]), max(self.rectstart[0], self.rectend[0])]
+                ylim = [min(self.rectstart[1], self.rectend[1]), max(self.rectstart[1], self.rectend[1])]
+
+                # Set new limits
+                self.axes.set_xlim(xlim)
+                self.axes.set_ylim(ylim)
+
+                # Re-draw canvas
+                self.canvas.draw()
+
+
         fig = self.axes.get_figure() # get the figure of interest
         # attach the call back
         fig.canvas.mpl_connect('scroll_event',zoom_fun)
+        fig.canvas.mpl_connect('button_press_event',rect_zoom)
+        fig.canvas.mpl_connect('button_release_event',rect_zoom)
 
         #return the function
         return zoom_fun
