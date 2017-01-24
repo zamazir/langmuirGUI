@@ -29,6 +29,7 @@ from PyQt5.uic import loadUiType
 from qrangeslider_pyqt5 import QRangeSlider
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from panandzoom import PanAndZoom
 
 # Either use network libraries or local ones depending on internet access
@@ -70,11 +71,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         # getShot sets the attribute succeeded at the very end of the function if all went well
         if hasattr(self, "succeeded"):
             # Update plots
-            self.updatexPlot()
+            self.createxPlot()
             self.createnPlot()
             #self.updateTPlot()
             
             self.dtime = self.xPlotObject.dtime
+
+            # Add matplotlib toolbar functionality
+            self.toolbar = NavigationToolbar(self.nPlotObject.canvas, self)
+            self.toolbar.hide()
 
             # Update GUI appearance with current values
             self.xPlotObject.setTimeText()
@@ -84,7 +89,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             # Implement GUI logic
             # This has to be done after updating the plots because the plot objects are referenced
             self.switchxPlot.activated.connect(self.updatexPlot)
-            self.xTimeSlider.sliderReleased.connect(self.updatexPlot)
+            self.xTimeSlider.valueChanged.connect(self.updatexPlot)
 
             self.xTimeEdit.returnPressed.connect(self.updateSlider)
             self.xTimeEdit.returnPressed.connect(self.updatexPlot)
@@ -92,6 +97,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
             self.rangeSlider.startValueChanged.connect(self.updatetPlots)
             self.rangeSlider.endValueChanged.connect(self.updatetPlots)
+
+            self.btnPan.clicked.connect(self.toolbar.pan)
+            self.btnZoom.clicked.connect(self.toolbar.zoom)
+            self.btnReset.clicked.connect(self.toolbar.home)
 
         # If shot data was not loaded successfully, unbind actions
         else:
@@ -112,6 +121,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.nPlotCanvas.draw()
         #self.TPlotCanvas.draw_idle()
 
+    def updatexPlot(self):
+        self.xPlotObject.update()
+        self.xPlotCanvas.draw()
+
 
     def updateSlider(self):
         self.xPlotObject.setxTimeSlider()
@@ -121,7 +134,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.xPlotObject.setTimeText()
 
 
-    def updatexPlot(self):
+    def createxPlot(self):
         """ Updates spatial plot by trying to remove the previous plot and creating a new canvas. Creates a SpatialPlot object. """
         # If canvas already exists, delete it
         try:
@@ -328,6 +341,42 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
 class Plot(QMainWindow, Ui_MainWindow, FigureCanvas):
+    def convRealToIndex(self, realtime, timearray):
+        """ Converts a real time value to an index in a given array with time values. This is achieved by comparing the real time value to the array elements and returning the index of the closest one. """
+        return np.abs((timearray - realtime)).argmin()
+
+
+
+
+class SpatialPlot(Plot):
+    """ Class for spatial temperature and density plots. Subclass of Plot. Needs the application object as an argument to be able to manipulate GUI elements. """
+    def __init__(self, parent):
+        self.parent = parent
+
+        fig = Figure()
+        self.axes = fig.add_subplot(111)
+        self.canvas = FigureCanvas(fig)
+
+        self.Rsl = self.parent.Rsl
+        self.ssl = self.parent.ssl
+        self.zsl = self.parent.zsl
+        
+        self.region = 'ua' 
+        self.option = self.parent.switchxPlot.currentText()
+        if self.option == 'Temperature':
+            self.quantity = 'te'
+        if self.option == 'Density':
+            self.quantity = 'ne'
+
+
+        self.parent.xTimeSlider.setValue(10000)
+        self.getShotData()
+        self.averageData()
+        self.getProbePositions()
+        self.convProbePosToX()
+        self.initPlot()
+
+
     def getShotData(self):
         """ Gets data specified by class variables "quantity" and "region" from shotfile for times in range dt. Saves this data and associated timestamps in class arrays "data" and "realtime_arr", respectively """
         ##############
@@ -341,6 +390,9 @@ class Plot(QMainWindow, Ui_MainWindow, FigureCanvas):
         #              Dt
         # The time offset corresponding to n and m is then dt = k(n*m-1)/2, where k is a natural number.
         # Since Dt will always be an odd number and n and m are natural numbers, n and m both have to be odd too.
+
+        # Get current time index from GUI slider
+        self.time = self.parent.xTimeSlider.value()
 
         # Number of data points over which to average
         self.avgNum = 3
@@ -356,6 +408,7 @@ class Plot(QMainWindow, Ui_MainWindow, FigureCanvas):
         # Min and max time expressed by indices in shotfile
         tmin = self.time - self.dt
         tmax = self.time + self.dt
+        print("Time range: {} <-- {} --> {}".format(tmin,self.time,tmax))
 
         probeNamePrefix = self.quantity + '-' + self.region
 
@@ -389,53 +442,13 @@ class Plot(QMainWindow, Ui_MainWindow, FigureCanvas):
                 
                 # Filter for time range. The prefixes determining the quantity have to be removed from the data array keys for successful comparison to probe location data in SpatialPlot().updatePlot()
                 ##### SAVE DATA TO ARRAY #####
+                print("Time range: {} <-- {} --> {}".format(self.realtmin,self.realtime,self.realtmax))
                 ind = np.ma.where((dtime >= self.realtmin) & (dtime <= self.realtmax))
                 self.data[probe[3:]] = data[ind]
                 self.realtime_arr[probe[3:]] = dtime[ind]
 
                 # Save the time data of the last probe as the global time data. This assumes that all time arrays of the probes are identical
                 self.dtime = dtime
-        
-
-
-
-    def convRealToIndex(self, realtime, timearray):
-        """ Converts a real time value to an index in a given array with time values. This is achieved by comparing the real time value to the array elements and returning the index of the closest one. """
-        return np.abs((timearray - realtime)).argmin()
-
-
-
-
-class SpatialPlot(Plot):
-    """ Class for spatial temperature and density plots. Subclass of Plot. Needs the application object as an argument to be able to manipulate GUI elements. """
-    def __init__(self, parent):
-        self.parent = parent
-
-        fig = Figure()
-        self.axes = fig.add_subplot(111)
-        self.canvas = FigureCanvas(fig)
-
-        self.Rsl = self.parent.Rsl
-        self.ssl = self.parent.ssl
-        self.zsl = self.parent.zsl
-        
-        self.region = 'ua' 
-
-        self.time = self.parent.xTimeSlider.value()
-        self.option = self.parent.switchxPlot.currentText()
-
-        if self.option == 'Temperature':
-            self.quantity = 'te'
-        if self.option == 'Density':
-            self.quantity = 'ne'
-
-
-        self.getShotData()
-        self.averageData()
-        self.getProbePositions()
-        self.convProbePosToX()
-        self.updatePlot()
-
 
     def averageData(self):
         """ Averages data points over specified number of points. """
@@ -533,20 +546,44 @@ class SpatialPlot(Plot):
                 self.plotPositions[probe].append(ds)
 
 
-    def updatePlot(self, ):
+    def initPlot(self, ):
         """ Populates canvas with plot. """
         colors = iter(cm.rainbow(np.linspace(0,1,len(self.data.keys()))))
 
         for probe in self.avgdata.keys():
             color = next(colors)
             for value,position in zip(self.avgdata[probe], self.plotPositions[probe]):
-                self.axes.scatter(position, value, color=color)
+                self.scatter, = self.axes.plot(position, value, color=color)
+                print "self.scatter:", self.scatter
 
         self.axes.set_title("{} distribution on the outer lower target plate in AUG @{:.4f}s".format(self.option,self.realtime))
         self.axes.set_ylabel(self.option)
         self.axes.set_xlabel("$\Delta$s")
         #self.axes.legend()
     
+    def update(self, ):
+        self.getShotData()
+        self.averageData()
+        self.getProbePositions()
+        self.convProbePosToX()
+
+        x = []
+        y = []
+        for probe in self.avgdata.keys():
+            for value,position in zip(self.avgdata[probe], self.plotPositions[probe]):
+                x.append(position)
+                y.append(value)
+            
+            if "scatter" in [str(el) for el in dir(self)]:
+                print(x)
+                print(self.scatter)
+                self.scatter.set_xdata(x)
+                self.scatter.set_ydata(y)
+
+        # Rescale axes
+        self.axes.relim()
+        self.axes.autoscale_view()
+        
 
     def setTimeText(self):
         """ Updates GUI time edit field based on scrollbar value """
@@ -583,7 +620,6 @@ class TemporalPlot(Plot):
         self.region = 'ua'
 
         fig = Figure()
-        print("Passing figure {} to paz".format(fig))
         self.axes = fig.add_subplot(111)
         self.canvas = FigureCanvas(fig)
 
@@ -592,6 +628,7 @@ class TemporalPlot(Plot):
 
 
     def getShotData(self):
+        ####################### WARNING: REMOVE RESTRICTION ON IF CONDITIONAL BELOW FOR FULL FUNCTIONALITY ####################
         print("Getting temporal shot data")
         probeNamePrefix = self.quantity + '-' + self.region
         self.data = {}
@@ -646,7 +683,7 @@ class TemporalPlot(Plot):
         self.xlim_orig = self.axes.get_xlim()
         self.ylim_orig = self.axes.get_ylim()
         print("Original axes limits - x: {}, y: {}".format(self.xlim_orig, self.ylim_orig))
-        self.enableMouseZoom()
+        #self.enableMouseZoom()
         self.axes.callbacks.connect('xlim_changed', self.onXlimChange)
 
     def onXlimChange(self, axes):
