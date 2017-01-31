@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>785</width>
+    <height>642</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -224,6 +224,12 @@
             </item>
             <item>
              <widget class="QWidget" name="TPlot" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
               <layout class="QVBoxLayout" name="TPlotLayout"/>
              </widget>
             </item>
@@ -242,6 +248,12 @@
             </item>
             <item>
              <widget class="QWidget" name="nPlot" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
               <layout class="QVBoxLayout" name="nPlotLayout"/>
              </widget>
             </item>
@@ -260,14 +272,29 @@
             </item>
             <item>
              <widget class="QWidget" name="jPlot" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
               <layout class="QVBoxLayout" name="jPlotLayout"/>
              </widget>
             </item>
             <item>
              <widget class="QWidget" name="tPlotControls" native="true">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>200</height>
+               </size>
+              </property>
               <layout class="QVBoxLayout" name="tPlotCtrlLayout">
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout">
+                 <property name="sizeConstraint">
+                  <enum>QLayout::SetMaximumSize</enum>
+                 </property>
                  <item>
                   <widget class="QPushButton" name="btnPan">
                    <property name="text">
@@ -292,19 +319,27 @@
                 </layout>
                </item>
                <item>
-                <widget class="QListWidget" name="probeSelection">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
+                <widget class="QScrollArea" name="scrollPlotList">
                  <property name="maximumSize">
                   <size>
-                   <width>1000000</width>
-                   <height>50</height>
+                   <width>16777215</width>
+                   <height>150</height>
                   </size>
                  </property>
+                 <property name="widgetResizable">
+                  <bool>true</bool>
+                 </property>
+                 <widget class="QWidget" name="scrollAreaWidgetContents">
+                  <property name="geometry">
+                   <rect>
+                    <x>0</x>
+                    <y>0</y>
+                    <width>341</width>
+                    <height>143</height>
+                   </rect>
+                  </property>
+                  <zorder>verticalLayoutWidget_2</zorder>
+                 </widget>
                 </widget>
                </item>
               </layout>
@@ -325,7 +360,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>785</width>
      <height>23</height>
     </rect>
    </property>

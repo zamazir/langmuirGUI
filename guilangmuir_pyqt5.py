@@ -14,19 +14,22 @@
 # - Crashes if xTimeSlider is set to the maximum value
 #
 # To do:
+# - Set constant color for each probe
+# - Synchronize x-axes of temporal plots
 # 
 ###############################################################
 
-import matplotlib
-matplotlib.use('Qt5Agg')
+import matplotlib as mpl
+mpl.use('Qt5Agg')
 from matplotlib import cm
 from matplotlib import pyplot as plt
+from matplotlib import patches
 
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtGui import (QPainter, QColor)
 from PyQt5.uic import loadUiType
-from qrangeslider_pyqt5 import QRangeSlider
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -44,17 +47,64 @@ Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
 # Uncomment the following line if using ddlocal
 dd = ddlocal
 
+
+class Sync():
+    @staticmethod
+    def unsync(*args):
+        """ Lifts the sharing of axes. If only one axis is given, unsync unbinds all shared axes. If given multiple axes, each axes will be unbound from the respective other axes. """
+        if len(args) == 0:
+            pass
+
+        # If only on argument, unbind all shared axes
+        elif len(args) == 1:
+            del args.axes._shared_x_axes[:] 
+
+        # If multiple arguments, try to remove the respective other axes from each given axes 
+        else:
+            for triggerPlot in args:
+                for receiverPlot in args:
+                    if triggerPlot != receiverPlot:
+                        try:
+                            triggerPlot.axes._shared_x_axes.remove(receiverPlot.axes)
+                        except:
+                            pass
+
+
+    @staticmethod
+    def sync(*args):
+        """ Expects n>1 plots as arguments and joins their axes so they are always at the same zoom level. """
+        if len(args) < 2:
+            pass
+        else:
+            for triggerPlot in args:
+                for receiverPlot in args:
+                    if triggerPlot != receiverPlot:
+                        triggerPlot.axes._shared_x_axes.join(triggerPlot.axes, receiverPlot.axes)
+
+
+
+        
 class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
         super(ApplicationWindow, self).__init__()
 
         # Set up UI
         self.setupUi(self)
-
-        # Add range slider
-        self.rangeSlider = QRangeSlider()
-        #self.plotLayout.addWidget(self.rangeSlider)
         self.xTimeSlider.setTickPosition(QtWidgets.QSlider.NoTicks)
+
+        # Create plot list area
+        # Container widget
+        self.plotListContainer = QtWidgets.QWidget() 
+        self.plotListLayout = QtWidgets.QHBoxLayout()
+        self.plotListContainer.setLayout(self.plotListLayout)
+        # Create layouts for T and n plot lists
+        self.TProbeLayout = QtWidgets.QVBoxLayout()
+        self.nProbeLayout = QtWidgets.QVBoxLayout()
+        # Add layouts for T and n plot lists to container
+        self.plotListLayout.addLayout(self.TProbeLayout)
+        self.plotListLayout.addLayout(self.nProbeLayout)
+        # Make the plot list container a child of the scrollbox
+        self.scrollPlotList.setWidget(self.plotListContainer)
 
         # Set general behavior of GUI
         self.shotNumberEdit.returnPressed.connect(self.load)
@@ -70,38 +120,55 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         # getShot sets the attribute succeeded at the very end of the function if all went well
         if hasattr(self, "succeeded"):
+            print("Data retrieval was successful")
+            
+            self.getPlotOption()
+            self.populateProbeList()
+            self.checkBoxes['ne-ua1'].setCheckState(True)
+            self.selectedProbes = ['ne-ua1']
+
             # Update plots
             self.createxPlot()
+            self.dtime = self.xPlot.dtime
+            self.indicator_range = self.xPlot.realdtrange
             self.createnPlot()
-            #self.updateTPlot()
-            
-            self.dtime = self.xPlotObject.dtime
+            self.createTPlot()
 
             # Add matplotlib toolbar functionality
-            self.toolbar = NavigationToolbar(self.nPlotObject.canvas, self)
-            self.toolbar.hide()
+            self.nToolbar = NavigationToolbar(self.nPlot.canvas, self)
+            self.TToolbar = NavigationToolbar(self.TPlot.canvas, self)
+            self.nToolbar.hide()
+            self.TToolbar.hide()
+
+            # Synchronize temporal plots
+            Sync.sync(self.nPlot,self.TPlot)
 
             # Update GUI appearance with current values
-            self.xPlotObject.setTimeText()
-            self.xPlotObject.setDurationText()
-            self.setRangeSliderLimits()
+            self.xPlot.setTimeText()
+            self.xPlot.setDurationText()
 
             # Implement GUI logic
             # This has to be done after updating the plots because the plot objects are referenced
-            self.switchxPlot.activated.connect(self.updatexPlot)
-            self.xTimeSlider.valueChanged.connect(self.updatexPlot)
+            self.switchxPlot.activated.connect(self.createxPlot)
 
             self.xTimeEdit.returnPressed.connect(self.updateSlider)
             self.xTimeEdit.returnPressed.connect(self.updatexPlot)
+
+            self.xTimeSlider.sliderReleased.connect(self.updatexPlot)
             self.xTimeSlider.valueChanged.connect(self.updateTimeText)
+            self.xTimeSlider.valueChanged.connect(self.updateIndicators)
 
-            self.rangeSlider.startValueChanged.connect(self.updatetPlots)
-            self.rangeSlider.endValueChanged.connect(self.updatetPlots)
+            self.btnPan.clicked.connect(self.nToolbar.pan)
+            self.btnZoom.clicked.connect(self.nToolbar.zoom)
+            self.btnPan.clicked.connect(self.TToolbar.pan)
+            self.btnZoom.clicked.connect(self.TToolbar.zoom)
+            self.btnReset.clicked.connect(self.resettPlots)
 
-            self.btnPan.clicked.connect(self.toolbar.pan)
-            self.btnZoom.clicked.connect(self.toolbar.zoom)
-            self.btnReset.clicked.connect(self.toolbar.home)
-
+            # Bind click event to checkbox
+            for key in self.checkBoxes:
+                checkbox = self.checkBoxes[key]
+                checkbox.stateChanged.connect(self.togglePlots)
+            
         # If shot data was not loaded successfully, unbind actions
         else:
             try: 
@@ -113,25 +180,113 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             print("No valid shot number has been entered yet.")
 
 
-    def updatetPlots(self):
-        """ Calls update methods of temporal plot objects. """
-        self.nPlotObject.update()
-        #self.TPlotObject.update()
+    def updateIndicators(self):
+        """ Updates all indicators. """
+        self.nPlot.indicator.slide()
+        self.TPlot.indicator.slide()
+    
+    
+    def togglePlots(self):
+        """ Toggles temporal plots based on checkbox selection. """
+        # If probe is checked, add it to selectedProbes
+        # If not, make sure it's not in selectedProbes
+        for probe in self.probes:
+            cb = self.checkBoxes[probe]
+            if cb.checkState() and probe not in self.selectedProbes:
+                print("Adding {} to selectedProbes".format(probe))
+                self.selectedProbes.append(probe)
+            elif not cb.checkState() and probe in self.selectedProbes:
+                while probe in self.selectedProbes:
+                    self.selectedProbes.remove(probe)
+                    print("Removing {} from selectedProbes".format(probe))
 
+        print "Selected probes after the update:", self.selectedProbes
+        self.nPlot.averageData()
+        self.nPlot.update()
+        self.nPlot.canvas.draw()
+        self.TPlot.averageData()
+        self.TPlot.update()
+        self.TPlot.canvas.draw()
+        
+
+    def resettPlots(self):
+        self.nPlot.reset()
         self.nPlotCanvas.draw()
-        #self.TPlotCanvas.draw_idle()
+
+
+    def getPlotOption(self):
+        """ Creates class attribute and returns option chosen for the spatial plot as a string. """
+        self.option = self.switchxPlot.currentText()
+        return self.option 
+    
+
+    def optionProbes(self):
+        """ Creates class list containing probes associated with the chosen plot option. """
+        self.optProbes = []
+        if not hasattr(self, 'probes'):
+            print("CRITICAL: {} has no attribute {}.\n \
+                  optionProbes() needs to be called after shot file has been loaded. ".format(self, "probes"))
+        else:
+            for probe in self.probes:
+                if probe.startswith(self.option):
+                    self.optProbes.append(probe)
+
+  
+    def populateProbeList(self):
+        """ Populates list of available probes with probe names and checkboxes. """
+
+        # Set color scheme for currently available probes
+        cm = plt.get_cmap('gist_rainbow')
+        print self.uniqueProbes
+        colors = cm(np.linspace(0, 1, len(self.uniqueProbes)))
+
+        self.probeColors = {}
+        for probe, color in zip(self.uniqueProbes, colors):
+            color = tuple(color)[:-1]
+            for prefix in ('te-', 'ne-'):
+                self.probeColors[prefix+probe] = color
+
+        # Add currently available probes
+        self.probeLines = []
+        self.checkBoxes = {}
+        for probe in self.probes:
+            color = self.probeColors[probe]
+            # Create new widgets
+            # Container
+            line = QtWidgets.QHBoxLayout()
+            self.probeLines.append(line)
+            # Label
+            label = QtWidgets.QLabel()
+            label.setText(probe)
+            # Checkbox
+            checkbox = QtWidgets.QCheckBox()
+            self.checkBoxes[probe] = checkbox
+            # Color patch
+            patch = ColorPatch(color) 
+            # Add everything to GUI
+            line.addWidget(label)
+            line.addWidget(patch)
+            line.addWidget(checkbox)
+
+            if probe.startswith('ne'):
+                self.nProbeLayout.addLayout(line)
+            elif probe.startswith('te'):
+                self.TProbeLayout.addLayout(line)
+            else:
+                print("WARNING: Probe {} could not be added to GUI probe list")
+
 
     def updatexPlot(self):
-        self.xPlotObject.update()
+        self.xPlot.update()
         self.xPlotCanvas.draw()
 
 
     def updateSlider(self):
-        self.xPlotObject.setxTimeSlider()
+        self.xPlot.setxTimeSlider()
 
 
     def updateTimeText(self):
-        self.xPlotObject.setTimeText()
+        self.xPlot.setTimeText()
 
 
     def createxPlot(self):
@@ -146,21 +301,23 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             pass
 
         # create new canvas
-        self.xPlotObject = SpatialPlot(self)
-        self.xPlotCanvas = self.xPlotObject.canvas
+        self.xPlot = SpatialPlot(self)
+        self.xPlotCanvas = self.xPlot.canvas
         self.xPlotLayout.addWidget(self.xPlotCanvas)
 
 
-    def updateTPlot(self):
+    def createTPlot(self):
         try:
             self.TPlotLayout.removeWidget(self.TPlotCanvas)
             self.TPlotCanvas.close()
         except:
             pass
 
-        self.TPlotObject = TemporalPlot(self,'te')
-        self.TPlotCanvas = self.TPlotObject.canvas
+        self.TPlot = TemporalPlot(self,'te')
+        self.TPlotCanvas = self.TPlot.canvas
         self.TPlotLayout.addWidget(self.TPlotCanvas)
+
+        #self.TPlotCanvas.mpl_connect('button_release_event',self.onPanZoom)
 
 
     def createnPlot(self):
@@ -170,21 +327,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         except:
             pass
 
-        self.nPlotObject = TemporalPlot(self,'ne')
-        self.nPlotCanvas = self.nPlotObject.canvas
+        self.nPlot = TemporalPlot(self,'ne')
+        self.nPlotCanvas = self.nPlot.canvas
         self.nPlotLayout.addWidget(self.nPlotCanvas)
         
-        self.nPlotObject.initPlot()
+        #self.nPlotCanvas.mpl_connect('button_release_event',self.onPanZoom)
 
 
-    def setRangeSliderLimits(self):
-        """ Updates range slider maximum and minimum values with minimum and maximum data array indices. """
-        maxDataPoints = len(self.nPlotObject.maxDataPoints)
-        self.rangeSlider.setMin(0)
-        self.rangeSlider.setMax(maxDataPoints-1)
-        self.rangeSlider.setStart(0)
-        self.rangeSlider.setEnd(maxDataPoints-1)
-
+    def onPanZoom(self,event):
+        self.updatexPlot()
 
 
     def getShot(self):
@@ -208,8 +359,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             msg.exec_()
             return
 
-        self.shotnr = 32273
-        self.shotNumberEdit.setText("32273")
+        if(len(str(self.shotnr)) != 5): self.shotnr = 32273
+        self.shotNumberEdit.setText(str(self.shotnr))
 
         # Add progress bar to the status bar
         try:
@@ -252,6 +403,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         # Load signals into array
         progress = self.progBar.value()
         self.langData = {}
+        self.probes = []
+        self.uniqueProbes = []
         for probe in self.signalNames:
             if probe.startswith('ne-ua') or probe.startswith('te-ua'):
                 try:
@@ -260,6 +413,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 except Exception:
                     print "Signal {} cannot be read and is skipped. Probably its status does not permit access".format(probe)
                 else:
+                    if probe[3:] not in self.uniqueProbes:
+                        self.uniqueProbes.append(probe[3:])
+                    self.probes.append(probe)
                     if probe not in self.langData.keys():
                         self.langData[probe] = {}
                     self.langData[probe]['data'] = self.langShot(probe).data
@@ -328,6 +484,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         """ Closes application """
         self.close()
 
+
     def about(self):
         """ Shows information about the application in a message box. """
         QtWidgets.QMessageBox.about(self, "About",
@@ -339,41 +496,109 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
 
+class ColorPatch(QtWidgets.QWidget):
+    def __init__(self, color):
+        super(ColorPatch, self).__init__()
+        self.color = mpl.colors.rgb2hex(color)
 
-class Plot(QMainWindow, Ui_MainWindow, FigureCanvas):
-    def convRealToIndex(self, realtime, timearray):
+
+    def paintEvent(self,event):
+            qp = QPainter()
+            qp.begin(self)
+            self.drawPatch(qp)
+            qp.end()
+
+
+    def drawPatch(self, qp):
+        print "Drawing color", self.color
+        qp.setBrush(QColor(self.color))
+        qp.drawRect(10, 10, 10, 10)
+
+
+
+class Indicator():
+    """ Class for creating an indicator on a temporal plot to show the time that is displayed in the spatial plot. """
+    def __init__(self, plot):
+        self.plot = plot
+        self.gui = plot.gui
+        self.color = 'b'
+        self.gui.xTimeSlider = self.gui.xTimeSlider
+
+        self.slide()
+
+    def slide(self):
+        """ Repositions indicator according to time slider value. """
+        # Get current time from time slider and convert it
+        pos = self.gui.xTimeSlider.value()
+        time= self.gui.dtime[pos]
+        tminus = time - self.gui.indicator_range[0]
+        tplus = time + self.gui.indicator_range[1]
+        print('tminus: {}, tplus: {}'.format(tminus, tplus))
+
+        # Remove previous indicator if there already is one
+        if hasattr(self, "indic"):
+            self.indic.set_xdata(time)
+            self.indic_fill.remove()
+            self.indic_fill = self.plot.axes.axvspan(tminus, tplus, alpha=0.5, color=self.color)
+
+        else:
+            #Plot new indicator
+            self.indic = self.plot.axes.axvline(x=time, color=self.color)
+            self.indic_fill = self.plot.axes.axvspan(tminus, tplus, alpha=0.5, color=self.color)
+
+        # Re-draw canvas
+        self.plot.canvas.draw()
+
+
+
+class Conversion():
+    @staticmethod
+    def valtoind(realtime, timearray):
         """ Converts a real time value to an index in a given array with time values. This is achieved by comparing the real time value to the array elements and returning the index of the closest one. """
         return np.abs((timearray - realtime)).argmin()
 
+    @staticmethod
+    def removeNans(array, refarray=None):
+        """ Removes values from array based on the indices of NaN values in refarray. If refarray is not specified, NaN values are removed from array. Expects numpy arrays """ 
+        if refarray == None:
+            refarray = array
+
+        return array[~np.isnan(refarray)]
 
 
-
-class SpatialPlot(Plot):
+class SpatialPlot():
     """ Class for spatial temperature and density plots. Subclass of Plot. Needs the application object as an argument to be able to manipulate GUI elements. """
-    def __init__(self, parent):
-        self.parent = parent
+    ### TO DO
+    #
+    # - rztods depends on realtime_arr
+    # - rztods should save relative positions with timestamps to rule out mismatches when plotting
+    # - In update(), proper scaling of the scatter is achieved by adding a plot, rescaling, and removing that plot. A more elegant solution is desirable
+    #
+    def __init__(self, gui):
+        print("Initiating spatial plot")
+        self.gui = gui
 
         fig = Figure()
         self.axes = fig.add_subplot(111)
         self.canvas = FigureCanvas(fig)
 
-        self.Rsl = self.parent.Rsl
-        self.ssl = self.parent.ssl
-        self.zsl = self.parent.zsl
+        self.Rsl = self.gui.Rsl
+        self.ssl = self.gui.ssl
+        self.zsl = self.gui.zsl
         
         self.region = 'ua' 
-        self.option = self.parent.switchxPlot.currentText()
+        self.option = self.gui.getPlotOption()
         if self.option == 'Temperature':
             self.quantity = 'te'
         if self.option == 'Density':
             self.quantity = 'ne'
 
 
-        self.parent.xTimeSlider.setValue(10000)
+        self.gui.xTimeSlider.setValue(10000)
         self.getShotData()
         self.averageData()
         self.getProbePositions()
-        self.convProbePosToX()
+        self.rztods()
         self.initPlot()
 
 
@@ -392,7 +617,7 @@ class SpatialPlot(Plot):
         # Since Dt will always be an odd number and n and m are natural numbers, n and m both have to be odd too.
 
         # Get current time index from GUI slider
-        self.time = self.parent.xTimeSlider.value()
+        self.time = self.gui.xTimeSlider.value()
 
         # Number of data points over which to average
         self.avgNum = 3
@@ -408,18 +633,17 @@ class SpatialPlot(Plot):
         # Min and max time expressed by indices in shotfile
         tmin = self.time - self.dt
         tmax = self.time + self.dt
-        print("Time range: {} <-- {} --> {}".format(tmin,self.time,tmax))
 
         probeNamePrefix = self.quantity + '-' + self.region
 
         print "Filtering array for specified probes and time range"
         self.data = {}
         self.realtime_arr = {}
-        for probe in self.parent.langData.keys():
+        for probe in self.gui.langData.keys():
             # filter for specified probes
             if probe.startswith(probeNamePrefix):
-                dtime = self.parent.langData[probe]['time']
-                data = self.parent.langData[probe]['data']
+                dtime = self.gui.langData[probe]['time']
+                data = self.gui.langData[probe]['data']
 
                 # Time converted to actual time values
                 # If there is an index error, take the global minimum or maximum
@@ -442,27 +666,30 @@ class SpatialPlot(Plot):
                 
                 # Filter for time range. The prefixes determining the quantity have to be removed from the data array keys for successful comparison to probe location data in SpatialPlot().updatePlot()
                 ##### SAVE DATA TO ARRAY #####
-                print("Time range: {} <-- {} --> {}".format(self.realtmin,self.realtime,self.realtmax))
                 ind = np.ma.where((dtime >= self.realtmin) & (dtime <= self.realtmax))
-                self.data[probe[3:]] = data[ind]
-                self.realtime_arr[probe[3:]] = dtime[ind]
+                self.data[probe] = data[ind]
+                self.realtime_arr[probe] = dtime[ind]
 
                 # Save the time data of the last probe as the global time data. This assumes that all time arrays of the probes are identical
                 self.dtime = dtime
+                realdtminus = self.realtime - self.realtmin
+                realdtplus = -(self.realtime - self.realtmax)
+                self.realdtrange = (realdtminus, realdtplus)
+
 
     def averageData(self):
         """ Averages data points over specified number of points. """
-        self.avgdata = {}
+        self.avgData = {}
 
         # If no averaging wished, use the data as received from shotfile
         if self.avgNum == 0:
-            self.avgdata = self.data 
+            self.avgData = self.data 
             return
 
         # Averaging
         for probe in self.data.keys():
             data = self.data[probe]
-            self.avgdata[probe] = []
+            self.avgData[probe] = []
 
             # If this probe didn't record any values at this point in time, continue with the next one
             if len(data) == 0: continue
@@ -490,10 +717,12 @@ class SpatialPlot(Plot):
                     avg = xsum/float(valcount)
 
                 # Save averages to new array
-                self.avgdata[probe].append(avg)
+                self.avgData[probe].append(avg)
 
                 # End loop if end of data array is reached
                 if i == data.size: break
+            
+            self.avgData[probe] = np.array(self.avgData[probe])
 
 
     def getProbePositions(self):
@@ -512,16 +741,16 @@ class SpatialPlot(Plot):
         posFile.close()
 
 
-    def convProbePosToX(self):
+    def rztods(self):
         """ Converts probe positions from (R,z) coordinates to delta-s coordinate based on current strikeline position. This enables plots in units of delta-s along the x-axis. It is implicitly assumed that the divertor tile is flat."""
         self.plotPositions = {}
-	
-	for probe in self.data.keys():
+        
+        for probe in self.data.keys():
             self.plotPositions[probe] = []
 
             # Get R and z coordinates of probe
-            R_p = self.probePositions[probe][0]
-            z_p = self.probePositions[probe][1]
+            R_p = self.probePositions[probe[3:]][0]
+            z_p = self.probePositions[probe[3:]][1]
 
             for time in self.realtime_arr[probe]:
                 # Get R and z coordinates of strikeline at this point in time
@@ -547,165 +776,245 @@ class SpatialPlot(Plot):
 
 
     def initPlot(self, ):
-        """ Populates canvas with plot. """
-        colors = iter(cm.rainbow(np.linspace(0,1,len(self.data.keys()))))
-
-        for probe in self.avgdata.keys():
-            color = next(colors)
-            for value,position in zip(self.avgdata[probe], self.plotPositions[probe]):
-                self.scatter, = self.axes.plot(position, value, color=color)
-                print "self.scatter:", self.scatter
+        """ Populates canvas with initial plot. Creates Line2D object that will be updated when plot has to change based on GUI interaction."""
+        print("Populating canvas with spatial plot")
+        x = []
+        y = []
+        for probe in self.avgData.keys():
+            for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
+                x.append(position)
+                y.append(value)
+        self.scatter = self.axes.scatter(x, y)
 
         self.axes.set_title("{} distribution on the outer lower target plate in AUG @{:.4f}s".format(self.option,self.realtime))
         self.axes.set_ylabel(self.option)
         self.axes.set_xlabel("$\Delta$s")
-        #self.axes.legend()
+
     
     def update(self, ):
         self.getShotData()
         self.averageData()
-        self.getProbePositions()
-        self.convProbePosToX()
 
         x = []
         y = []
-        for probe in self.avgdata.keys():
-            for value,position in zip(self.avgdata[probe], self.plotPositions[probe]):
+        for probe in self.avgData.keys():
+            for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
                 x.append(position)
                 y.append(value)
-            
-            if "scatter" in [str(el) for el in dir(self)]:
-                print(x)
-                print(self.scatter)
-                self.scatter.set_xdata(x)
-                self.scatter.set_ydata(y)
 
-        # Rescale axes
+        # Insert dummy plot for proper scaling
+        plot, = self.axes.plot(x,y)
+
+        # If scatter exists, update data
+        if "scatter" in [str(el) for el in dir(self)]:
+            newdata = [list(t) for t in zip(x,y)]
+            self.scatter.set_offsets(newdata)
+        else:
+            print("Critical: Scatter plot has not been initialized!")
+
+        # Scale the canvas and remove the dummy plot
         self.axes.relim()
-        self.axes.autoscale_view()
-        
+        self.axes.autoscale()
+        plot.remove()
+
+        # Update title based on new time
+        self.axes.set_title("{} distribution on the outer lower target plate in AUG @{:.4f}s".format(self.option,self.realtime))
+
 
     def setTimeText(self):
         """ Updates GUI time edit field based on scrollbar value """
         # GUI scrollbar provides timestep (index of time array)
-        time = self.parent.xTimeSlider.value()
+        time = self.gui.xTimeSlider.value()
         # Convert to realtime
         realtime = self.dtime[time]
         # Update line edit text
-        self.parent.xTimeEdit.setText("{:.4f}".format(realtime))
+        self.gui.xTimeEdit.setText("{:.4f}".format(realtime))
 
 
     def setxTimeSlider(self):
         """ Updates time scrollbar based on text in GUI time edit field"""
         # GUI line edit expects a real time value
-        realtime = float(self.parent.xTimeEdit.text())
+        realtime = float(self.gui.xTimeEdit.text())
         # Convert to corresponding timestep
-        time = self.convRealToIndex(realtime, self.dtime)
+        time = Conversion.valtoind(realtime, self.dtime)
         # Update slider position
-        self.parent.xTimeSlider.setValue(float(time))
+        self.gui.xTimeSlider.setValue(float(time))
         # Update line edit text with the time corresponding to the found timestep
-        self.parent.xTimeEdit.setText("{:.10f}".format(self.dtime[time]))
+        self.gui.xTimeEdit.setText("{:.10f}".format(self.dtime[time]))
+
 
     def setDurationText(self):
         """ Updates the shot duration in the info bar. """
-        self.parent.dynDurationLabel.setText("{:.3f}".format(self.dtime[-1]))
+        self.gui.dynDurationLabel.setText("{:.3f}".format(self.dtime[-1]))
 
 
 
-class TemporalPlot(Plot):
-    def __init__(self, parent, quantity):
+class TemporalPlot():
+    #######
+    # To do:
+    #
+    # - confine panning to x-axis
+    # - Original axes limits are overwritten when zoomed in and updating plot by (un)checking a probe. When zoomed in, zoom level should be retained but the new maximum/minimum values should be saved for "resetting"
+    # - Rename reset to View all
+    #
+    def __init__(self, gui, quantity):
 
-        self.parent = parent
+        self.gui = gui
         self.quantity = quantity
         self.region = 'ua'
+        self.selectedProbes = [probe for probe in self.gui.selectedProbes if probe.startswith(self.quantity)]
+
+        self.data = {}
+        self.time = {}
+        self.avgData = {}
+        self.avgTime = {}
+        self.plots = {}
+        self.xlim_orig = [9999999999999, -999999999999]
+        self.ylim_orig = [9999999999999, -999999999999]
+
+        self.showGaps = 0
 
         fig = Figure()
         self.axes = fig.add_subplot(111)
         self.canvas = FigureCanvas(fig)
 
+        self.axes.autoscale()
+
         self.getShotData()
         self.averageData()
+        self.update()
+
+        self.indicator = Indicator(self)
+
+        # Implement interactive behavior: Event handling when zoomed or dragged
+        # Zoom with mouse wheel
+        #self.enableMouseZoom()
+        self.axes.callbacks.connect('xlim_changed', self.setSliderRange)
 
 
     def getShotData(self):
         ####################### WARNING: REMOVE RESTRICTION ON IF CONDITIONAL BELOW FOR FULL FUNCTIONALITY ####################
         print("Getting temporal shot data")
-        probeNamePrefix = self.quantity + '-' + self.region
-        self.data = {}
-        self.time = {}
-        for probe in self.parent.langData.keys():
-            if probe == 'ne-ua1':#probe.startswith(probeNamePrefix):
-                self.time[probe] = self.parent.langData[probe]['time']
-                self.data[probe] = self.parent.langData[probe]['data']
+        self.probeNamePrefix = self.quantity + '-' + self.region
+        for probe in self.gui.langData.keys():
+            if probe.startswith(self.probeNamePrefix):
+                self.time[probe] = self.gui.langData[probe]['time']
+                self.data[probe] = self.gui.langData[probe]['data']
+
 
     def averageData(self):
-        """ Averages data for temporal plots. """
-        print("Averaging temporal data")
-        self.avgData = {}
-        self.avgTime = {}
-        for probe in self.data.keys():
-            self.avgData[probe] = []
-            self.avgTime[probe] = []
-            self.maxDataPoints = 0
+        """ Averages data for selected probes if average data does not exist for them yet. """
+        for probe in self.gui.selectedProbes:
+            if probe.startswith(self.probeNamePrefix) and probe not in self.avgData.keys():
+                print("Averaging temporal data")
+                self.avgData[probe] = []
+                self.avgTime[probe] = []
+                self.maxDataPoints = 0
 
-            i=0
-            while True:
-                avgData = (self.data[probe][i] + self.data[probe][i+1])/2
-                avgTime = (self.time[probe][i] + self.time[probe][i+1])/2
-                
-                self.avgData[probe].append(avgData)
-                self.avgTime[probe].append(avgTime)
-                
-                i += 2
-                
-                # Exit loop when end of data array is reached
-                if i+1 == self.data[probe].size:
-                    self.avgData[probe].append(self.data[probe][i])
-                    self.avgTime[probe].append(self.time[probe][i])
-                    break
-                if i == self.data[probe].size: break
-             
-            # Save maximum data array length
-            if len(self.avgData[probe]) > self.maxDataPoints:
-                self.maxDataPoints = self.avgData[probe]
+                i=0
+                while True:
+                    avgData = (self.data[probe][i] + self.data[probe][i+1])/2
+                    avgTime = (self.time[probe][i] + self.time[probe][i+1])/2
+                    
+                    self.avgData[probe].append(avgData)
+                    self.avgTime[probe].append(avgTime)
+                    
+                    i += 2
+                    
+                    # Exit loop when end of data array is reached
+                    if i+1 == self.data[probe].size:
+                        self.avgData[probe].append(self.data[probe][i])
+                        self.avgTime[probe].append(self.time[probe][i])
+                        break
+                    if i == self.data[probe].size: break
+                 
+                # Save maximum data array length
+                if len(self.avgData[probe]) > self.maxDataPoints:
+                    self.maxDataPoints = self.avgData[probe]
 
-    def initPlot(self):
-        """ Creates temporal plot at application start. """
-        print("Initiating temporal plot")
-        for probe in self.data.keys(): 
-            y = self.avgData[probe]
-            x = self.avgTime[probe]
+                self.avgData[probe] = np.array(self.avgData[probe])
+                self.avgTime[probe] = np.array(self.avgTime[probe])
 
-            self.scatter, = self.axes.plot(x,y)
 
-        # Implement interactive behavior: Event handling when zoomed or dragged
-        # Zoom with mouse wheel
-        self.xlim_orig = self.axes.get_xlim()
-        self.ylim_orig = self.axes.get_ylim()
-        print("Original axes limits - x: {}, y: {}".format(self.xlim_orig, self.ylim_orig))
-        #self.enableMouseZoom()
-        self.axes.callbacks.connect('xlim_changed', self.onXlimChange)
+    def reset(self):
+        """ Resets the plot to its original state. """
+        # Reset axes limits
+        self.axes.set_xlim(self.xlim_orig)
+        self.axes.set_ylim(self.ylim_orig)
 
-    def onXlimChange(self, axes):
-        print "updated xlims: ", axes.get_xlim()
+        self.axes.relim()
+        self.axes.autoscale_view()
 
+
+    def update(self):
+        """ Plots temporal data if it hasn't been plotted yet. If it has been plotted, it is set to visible. """
+        # Get currently selected probes from GUI
+        self.selectedProbes = self.gui.selectedProbes
+
+        print "Selected probes:", self.selectedProbes
+        # Update plots
+        for probe in self.avgData.keys(): 
+            # If probe hasn't been plotted yet, is selected, and belongs to this canvas, plot it
+            if probe not in self.plots.keys() \
+                    and probe in self.selectedProbes \
+                    and probe.startswith(self.probeNamePrefix):
+                print("{} hasn't been plotted yet".format(probe))
+                y = self.avgData[probe]
+                x = self.avgTime[probe]
+
+                # Filter NaNs if wished
+                if self.showGaps == 0:
+                   x = Conversion.removeNans(x,y) 
+                   y = Conversion.removeNans(y) 
+
+                # Plot data
+                color = self.gui.probeColors[probe]
+                self.plot, = self.axes.plot(x,y, color=color)
+
+                # Save artist for future reference
+                self.plots[probe] = self.plot
+
+            # If probe has been plotted, is not selected, and is visible, hide it
+            elif probe in self.plots.keys() \
+                    and probe not in self.selectedProbes \
+                    and self.plots[probe].get_visible():
+                print("Setting probe {} invisible".format(probe))
+                self.plots[probe].set_visible(False)
+                self.canvas.draw()
+
+            # If probe has been plotted, is selected, and is hidden, show it
+            elif probe in self.plots.keys() \
+                    and probe in self.selectedProbes \
+                    and not self.plots[probe].get_visible():
+                print("Setting probe {} visible".format(probe))
+                self.plots[probe].set_visible(True)
+                self.canvas.draw()
+
+        # Get current axes limits
+        xlim = self.axes.get_xlim()
+        ylim = self.axes.get_ylim()
+        
+        # Compare current axes limits with current maximum and minimum values
+        # If the minimum/maximum limits are surpassed, save the new limits 
+        # so they will be adopted when resetting the plot and all plots will show fully
+        self.xlim_orig = [min(self.xlim_orig[0], xlim[0]), max(self.xlim_orig[1], xlim[1])] 
+        self.ylim_orig = [min(self.ylim_orig[0], ylim[0]), max(self.ylim_orig[1], ylim[1])] 
+
+
+    def setSliderRange(self, axes):
+        """ Sets the time slider range corresponding to the time range in the temporal plot. """
         minTime = axes.get_xlim()[0]
         maxTime = axes.get_xlim()[1]
 
         # Set time slider range to range shown in zoomed temporal plot
-        self.parent.xTimeSlider.setMinimum(self.convRealToIndex(minTime, self.parent.dtime))
-        self.parent.xTimeSlider.setMaximum(self.convRealToIndex(maxTime, self.parent.dtime))
+        self.gui.xTimeSlider.setMinimum(Conversion.valtoind(minTime, self.gui.dtime))
+        self.gui.xTimeSlider.setMaximum(Conversion.valtoind(maxTime, self.gui.dtime))
 
-        """
-        # If the slider is out of range now, set it to the beginning or end of the range
-        # depending on where it was before
-        if  self.parent.xTimeSlider.value() < minTime:
-            self.parent.xTimeSlider.setValue(minTime)
-        elif  self.parent.xTimeSlider.value() > maxTime:
-            self.parent.xTimeSlider.setValue(maxTime)"""
 
     def enableMouseZoom(self, base_scale = .5):
+        """ Enables zooming with the scroll wheel if called on a matplotlib canvas. """
         def zoom_fun(event):
+            """ Zooms plot using mouse wheel motion. """
             # Original axes limits
             xlim_orig = self.xlim_orig
             ylim_orig = self.ylim_orig
@@ -744,7 +1053,6 @@ class TemporalPlot(Plot):
             self.canvas.draw()
 
         def rect_zoom(event):
-            print("Event: {}\nButton: {}".format(event.name, event.button))
             if event.name == "button_press_event" and event.button == 3:
                 self.rectstart = (event.xdata, event.ydata)
                 print("Saved rectangle starting position: {}, {}".format(self.rectstart[0], self.rectstart[1]))
@@ -769,30 +1077,12 @@ class TemporalPlot(Plot):
         fig = self.axes.get_figure() # get the figure of interest
         # attach the call back
         fig.canvas.mpl_connect('scroll_event',zoom_fun)
-        fig.canvas.mpl_connect('button_press_event',rect_zoom)
-        fig.canvas.mpl_connect('button_release_event',rect_zoom)
+        #fig.canvas.mpl_connect('button_press_event',rect_zoom)
+        #fig.canvas.mpl_connect('button_release_event',rect_zoom)
 
         #return the function
         return zoom_fun
 
-
-    def update(self):
-        """ Updates temporal plot range based on range slider values. """
-        # Minimum and maximum time to display data for in timesteps
-        tmin = self.parent.rangeSlider.start()
-        tmax = self.parent.rangeSlider.end()
-
-        # Adopt new data
-        for probe in self.data.keys(): 
-            y = self.avgData[probe][tmin:tmax]
-            x = self.avgTime[probe][tmin:tmax]
-
-            self.scatter.set_xdata(x)
-            self.scatter.set_ydata(y)
-
-        # Rescale axes
-        self.axes.relim()
-        self.axes.autoscale_view()
 
 
 # Main
