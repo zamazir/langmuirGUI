@@ -1,39 +1,44 @@
-###############################################################
+##############################################################################
 #
-# guilangmuir.py - A graphical user unterface for langmuir data evaluation of ASDEX Upgrade shotfiles
+# guilangmuir.py -  A graphical user interface for langmuir data evaluation of 
+#                   ASDEX Upgrade shotfiles
 #
-# This program was written as part of the master's thesis of Amazigh Zerzour. It's aim is to provide a visual and interactive way of recognizing and classifying detachment regimes using langmuir data from the outer divertor probes
+# This program was written as part of the master's thesis of Amazigh Zerzour. 
+# Its aim is to provide a visual and interactive way of recognizing and 
+# classifying detachment regimes using langmuir data from the outer divertor 
+# probes.
 #
 # Author: Amazigh Zerzour
 # E-Mail: amazigh.zerzour@gmail.com
 #
-# Version: Jan. 2017
+# Version: Feb. 2017
 #
 # Issues:
 # - Data evaluation will be unreliable if the time data arrays vary from probe to probe
 # - Crashes if xTimeSlider is set to the maximum value
+# - On xPlotSwitch, the indicator jumps to the start of the time window
 #
 # To do:
 # - Set constant color for each probe
-# - Synchronize x-axes of temporal plots
+# - Increase speed when moving the indicator
 # 
-###############################################################
+# 
+##############################################################################
 
 import matplotlib as mpl
 mpl.use('Qt5Agg')
 from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib import patches
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import (QPainter, QColor)
 from PyQt5.uic import loadUiType
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from panandzoom import PanAndZoom
 
 # Either use network libraries or local ones depending on internet access
 # Local ones might be outdated but don't require internet access
@@ -566,6 +571,7 @@ class Conversion():
         return array[~np.isnan(refarray)]
 
 
+
 class SpatialPlot():
     """ Class for spatial temperature and density plots. Subclass of Plot. Needs the application object as an argument to be able to manipulate GUI elements. """
     ### TO DO
@@ -853,7 +859,6 @@ class TemporalPlot():
     #######
     # To do:
     #
-    # - confine panning to x-axis
     # - Original axes limits are overwritten when zoomed in and updating plot by (un)checking a probe. When zoomed in, zoom level should be retained but the new maximum/minimum values should be saved for "resetting"
     # - Rename reset to View all
     #
@@ -893,7 +898,6 @@ class TemporalPlot():
 
 
     def getShotData(self):
-        ####################### WARNING: REMOVE RESTRICTION ON IF CONDITIONAL BELOW FOR FULL FUNCTIONALITY ####################
         print("Getting temporal shot data")
         self.probeNamePrefix = self.quantity + '-' + self.region
         for probe in self.gui.langData.keys():
@@ -1051,34 +1055,6 @@ class TemporalPlot():
             
             # Re-draw canvas
             self.canvas.draw()
-
-        def rect_zoom(event):
-            if event.name == "button_press_event" and event.button == 3:
-                self.rectstart = (event.xdata, event.ydata)
-                print("Saved rectangle starting position: {}, {}".format(self.rectstart[0], self.rectstart[1]))
-
-            if event.name == "button_release_event" and event.button == 3:
-                self.rectend = (event.xdata, event.ydata)
-                print("Receiving rectangle starting position: {}, {}".format(self.rectstart[0], self.rectstart[1]))
-                print("Receiving rectangle ending position: {}, {}".format(self.rectend[0], self.rectend[1]))
-
-                # New axes limits
-                xlim = [min(self.rectstart[0], self.rectend[0]), max(self.rectstart[0], self.rectend[0])]
-                ylim = [min(self.rectstart[1], self.rectend[1]), max(self.rectstart[1], self.rectend[1])]
-
-                # Set new limits
-                self.axes.set_xlim(xlim)
-                self.axes.set_ylim(ylim)
-
-                # Re-draw canvas
-                self.canvas.draw()
-
-
-        fig = self.axes.get_figure() # get the figure of interest
-        # attach the call back
-        fig.canvas.mpl_connect('scroll_event',zoom_fun)
-        #fig.canvas.mpl_connect('button_press_event',rect_zoom)
-        #fig.canvas.mpl_connect('button_release_event',rect_zoom)
 
         #return the function
         return zoom_fun
