@@ -422,9 +422,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         # Update sliders with new time window
         self.indicator_range = self.xPlot.realdtrange
-        self.nPlot.indicator.slide()
-        self.TPlot.indicator.slide()
+        self.updateIndicators()
 
+        # Update label showing time window in realtime
         dt = self.xPlot.realtmax - self.xPlot.realtmin
         self.lblRealTWidth.setText("= {:.2f}us".format(dt*10**6))
 
@@ -617,7 +617,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             msg.setDefaultButton(QMessageBox.Ok)
             msg.setEscapeButton(QMessageBox.Ok)
             self.hideProgress()
-            return
+            #return
 
 
         # Flag denoting successful shotfile load
@@ -686,7 +686,6 @@ class Indicator():
         time= self.gui.dtime[pos]
         tminus = time - self.gui.indicator_range[0]
         tplus = time + self.gui.indicator_range[1]
-        print('tminus: {}, tplus: {}'.format(tminus, tplus))
 
         # Update previous indicator if there already is one
         if hasattr(self, "indic"):
@@ -757,10 +756,10 @@ class SpatialPlot():
         if self.option == 'Density':
             self.quantity = 'ne'
 
-
-        self.gui.xTimeSlider.setValue(10000)
         self.getShotData()
+        print self.data
         self.averageData()
+        print self.avgData
         self.getProbePositions()
         self.rztods()
         self.initPlot()
@@ -782,18 +781,19 @@ class SpatialPlot():
 
         # Get current time index from GUI slider
         self.time = self.gui.xTimeSlider.value()
+        print "Current time:", self.time
 
         # Time range expressed by indices in shotfile
         self.dt = (self.gui.Dt - 1)/2 
 
-        print "Getting shot data for {} time steps".format(self.gui.Dt)
         # Min and max time expressed by indices in shotfile
-        tmin = self.time - self.dt
+        # Prevent tmin to take negative values so getting value by index
+        # won't cause problems
+        tmin = max(self.time - self.dt, 0)
         tmax = self.time + self.dt
 
         probeNamePrefix = self.quantity + '-' + self.region
 
-        print "Filtering array for time range", self.dt
         self.data = {}
         self.realtime_arr = {}
         for probe in self.gui.langData.keys():
@@ -808,20 +808,21 @@ class SpatialPlot():
                     self.realtmin = dtime[tmin]
                 except Exception:
                     self.realtmin = dtime[0]
-                    print("Minimum value of time range to evaluate is smaller than available time range. Using minimum of available time range.")
+                    print("Minimum value of time range to evaluate is out of range. Using minimum of available time range.")
                 try:
                     self.realtmax = dtime[tmax]
                 except Exception:
                     self.realtmax = dtime[-1]
-                    print("Maximum value of time range to evaluate is greater than available time range. Using maximum of available time range.")
+                    print("Maximum value of time range to evaluate is out of range. Using maximum of available time range.")
                 try:
                     self.realtime = dtime[self.time]
                 except Exception:
+                    print "Could not determine realtime from time array"
                     if self.time >= dtime.size: self.realtime = dtime[-1]
-                    elif self.time <= dtime.size: self.realtime = dtime[0]
+                    elif self.time < dtime.size: self.realtime = dtime[0]
                     else: print("FATAL: Realtime could not be determined.")
                 
-                # Filter for time range. The prefixes determining the quantity have to be removed from the data array keys for successful comparison to probe location data in SpatialPlot().updatePlot()
+                # Filter for time range. 
                 ##### SAVE DATA TO ARRAY #####
                 ind = np.ma.where((dtime >= self.realtmin) & (dtime <= self.realtmax))
                 self.data[probe] = data[ind]
@@ -832,6 +833,7 @@ class SpatialPlot():
                 realdtminus = self.realtime - self.realtmin
                 realdtplus = -(self.realtime - self.realtmax)
                 self.realdtrange = (realdtminus, realdtplus)
+        print "REALDTRANGE:", self.realdtrange
 
 
     def averageData(self):
@@ -847,9 +849,9 @@ class SpatialPlot():
         for probe in self.data.keys():
             data = self.data[probe]
             self.avgData[probe] = []
-            
-            print "Probe {} - Data points: {}".format(probe, data.size)
-
+           
+            print "Data points for probe {}: {}".format(probe, data.size)
+            print "Averaging {} data points to values made up of {} data point each".format(self.Dt, self.avgNum)
             # If this probe didn't record any values at this point in time, continue with the next one
             if data.size == 0: continue
 
@@ -860,9 +862,9 @@ class SpatialPlot():
                 xsum=0
                 valcount=0
 
-                print "Averaging {} data points".format(data.size)    
-                print "Taking {} values to average over".format(self.avgNum)
+                print "Starting new averaging process"
                 for x in np.arange(self.avgNum):
+                    print "Processing value", i
                     # Ignore nans if wished
                     if self.ignoreNans == 1 and np.isnan(data[i]):
                         pass
@@ -880,8 +882,8 @@ class SpatialPlot():
                 # Save averages to new array
                 self.avgData[probe].append(avg)
 
-                # End loop if end of data array is reached
-                if i == data.size: break
+                # End loop if end of data array will be reached next time
+                if i + self.avgNum > data.size: break
             
             self.avgData[probe] = np.array(self.avgData[probe])
 
@@ -942,9 +944,13 @@ class SpatialPlot():
         x = []
         y = []
         for probe in self.avgData.keys():
+            print "Plotting", probe
             for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
                 x.append(position)
                 y.append(value)
+            print "Data:"
+            print x
+            print y
         self.scatter = self.axes.scatter(x, y)
 
         self.axes.set_title("{} distribution on the outer lower target plate in AUG @{:.4f}s".format(self.option,self.realtime))
@@ -954,8 +960,6 @@ class SpatialPlot():
     
     def update(self, ):
         self.avgNum = self.gui.avgNum
-        print "updating spatial plot"
-        print "avgNum:", self.avgNum
         self.getShotData()
         self.averageData()
 
