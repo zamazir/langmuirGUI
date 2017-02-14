@@ -87,7 +87,6 @@ class Sync():
                         triggerPlot.axes._shared_x_axes.join(triggerPlot.axes, receiverPlot.axes)
 
 
-
         
 class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
@@ -97,19 +96,23 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.xTimeSlider.setTickPosition(QtWidgets.QSlider.NoTicks)
 
-        # Create plot list area
-        # Container widget
-        self.plotListContainer = QtWidgets.QWidget() 
-        self.plotListLayout = QtWidgets.QHBoxLayout()
-        self.plotListContainer.setLayout(self.plotListLayout)
-        # Create layouts for T and n plot lists
-        self.TProbeLayout = QtWidgets.QVBoxLayout()
-        self.nProbeLayout = QtWidgets.QVBoxLayout()
-        # Add layouts for T and n plot lists to container
-        self.plotListLayout.addLayout(self.TProbeLayout)
-        self.plotListLayout.addLayout(self.nProbeLayout)
-        # Make the plot list container a child of the scrollbox
-        self.scrollPlotList.setWidget(self.plotListContainer)
+        # Prepare probe table
+        columnNames = ['Probe','Color','Style','T(x)','n(x)','T(t)','n(t)','jsat(t)']
+        self.probeTable.setColumnCount(len(columnNames))
+        self.probeTable.setHorizontalHeaderLabels(columnNames)
+        
+        # Resize columns to fit table width
+        header = self.probeTable.horizontalHeader()
+        for i in range(header.count()):
+            header.setSectionResizeMode(i, QtWidgets.QHeaderView.Stretch)
+        self.probeTable.resizeColumnsToContents()
+
+        # Hide vertical header
+        self.probeTable.verticalHeader().setVisible(False)
+
+        # Parameters for averaging spatial plot
+        self.avgNum = 3
+        self.Dt = 15
 
         # Set general behavior of GUI
         self.shotNumberEdit.returnPressed.connect(self.load)
@@ -129,8 +132,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             
             self.getPlotOption()
             self.populateProbeList()
-            self.checkBoxes['ne-ua1'].setCheckState(True)
-            self.selectedProbes = ['ne-ua1']
+            self.selectedProbes = {'x': [], 't': []}
 
             # Update plots
             self.createxPlot()
@@ -138,6 +140,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.indicator_range = self.xPlot.realdtrange
             self.createnPlot()
             self.createTPlot()
+
+            # Select default probe
+            for cb in self.checkBoxes['ua1'].values():
+                cb.setCheckState(True)
 
             # Add matplotlib toolbar functionality
             self.nToolbar = NavigationToolbar(self.nPlot.canvas, self)
@@ -151,6 +157,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             # Update GUI appearance with current values
             self.xPlot.setTimeText()
             self.xPlot.setDurationText()
+            self.updateTWindowControls()
+
+            # Make some menu elements checkable
+            self.menuFixxPlotyLim.setCheckable(True)
 
             # Implement GUI logic
             # This has to be done after updating the plots because the plot objects are referenced
@@ -159,9 +169,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.xTimeEdit.returnPressed.connect(self.updateSlider)
             self.xTimeEdit.returnPressed.connect(self.updatexPlot)
 
-            self.xTimeSlider.sliderReleased.connect(self.updatexPlot)
+            self.xTimeSlider.sliderMoved.connect(self.updatexPlot)
             self.xTimeSlider.valueChanged.connect(self.updateTimeText)
             self.xTimeSlider.valueChanged.connect(self.updateIndicators)
+        
+            self.spinTWidth.editingFinished.connect(self.updateTWindow)
 
             self.btnPan.clicked.connect(self.nToolbar.pan)
             self.btnZoom.clicked.connect(self.nToolbar.zoom)
@@ -169,11 +181,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.btnZoom.clicked.connect(self.TToolbar.zoom)
             self.btnReset.clicked.connect(self.resettPlots)
 
-            # Bind click event to checkbox
-            for key in self.checkBoxes:
-                checkbox = self.checkBoxes[key]
-                checkbox.stateChanged.connect(self.togglePlots)
+            self.menuAvgSpatial.triggered.connect(self.setAvgNum)
             
+            self.menuFixxPlotyLim.toggled.connect(self.updatexPlot)
+
         # If shot data was not loaded successfully, unbind actions
         else:
             try: 
@@ -185,27 +196,56 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             print("No valid shot number has been entered yet.")
 
 
+    def setAvgNum(self):
+        avgNum, ok = QtWidgets.QInputDialog.getInt(self, 'Averaging spatial plot', 'Number of data points to average to one scatter plot point:\n\navgNum = ', value= self.avgNum, min=0)
+
+        if ok and avgNum % 2 != 0:
+            self.avgNum = avgNum
+            self.updateTWindowControls()
+            self.updateTWindow()
+        else:
+            print "ERROR: avgNum must be an odd number"
+
+
+    def updateTWindowControls(self):
+        """ Updates time window controls with current value of avgNum (number of data point to average over). """
+        # SpinBox
+        # Save old value
+        self.spinTWidth.setRange(self.avgNum, self.avgNum + 100)
+        self.spinTWidth.setSingleStep(self.avgNum)
+        self.spinTWidth.setValue(self.Dt)
+
+        # Real time label
+        dt = self.xPlot.realtmax - self.xPlot.realtmin
+        self.lblRealTWidth.setText("= {:.2f}us".format(dt*10**6))
+
+
     def updateIndicators(self):
         """ Updates all indicators. """
         self.nPlot.indicator.slide()
         self.TPlot.indicator.slide()
     
     
-    def togglePlots(self):
+    def togglePlots(self, cbID):
         """ Toggles temporal plots based on checkbox selection. """
+        #print "\n\nCheckbox clicked:", cbID
+        # Mapper returns unicode string. Must be converted to standard string
+        probe, quantity, axType = str(cbID).split('-')
+        pnq = quantity + '-' + probe 
+        cbType = quantity + '-' + axType
+        cb = self.checkBoxes[probe][cbType]
+
         # If probe is checked, add it to selectedProbes
         # If not, make sure it's not in selectedProbes
-        for probe in self.probes:
-            cb = self.checkBoxes[probe]
-            if cb.checkState() and probe not in self.selectedProbes:
-                print("Adding {} to selectedProbes".format(probe))
-                self.selectedProbes.append(probe)
-            elif not cb.checkState() and probe in self.selectedProbes:
-                while probe in self.selectedProbes:
-                    self.selectedProbes.remove(probe)
-                    print("Removing {} from selectedProbes".format(probe))
+        if cb.checkState() and pnq not in self.selectedProbes[axType]:
+            #print("Adding {} to selectedProbes".format(pnq))
+            self.selectedProbes[axType].append(pnq)
+        elif not cb.checkState() and pnq in self.selectedProbes[axType]:
+            while pnq in self.selectedProbes[axType]:
+                self.selectedProbes[axType].remove(pnq)
+                #print("Removing {} from selectedProbes".format(pnq))
 
-        print "Selected probes after the update:", self.selectedProbes
+        #print "Selected probes after the update:", self.selectedProbes
         self.nPlot.averageData()
         self.nPlot.update()
         self.nPlot.canvas.draw()
@@ -239,49 +279,65 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
   
     def populateProbeList(self):
         """ Populates list of available probes with probe names and checkboxes. """
+        table = self.probeTable
+        # Clear table of previous contents
+        table.setRowCount(0)
 
         # Set color scheme for currently available probes
         cm = plt.get_cmap('gist_rainbow')
-        print self.uniqueProbes
         colors = cm(np.linspace(0, 1, len(self.uniqueProbes)))
 
         self.probeColors = {}
         for probe, color in zip(self.uniqueProbes, colors):
             color = tuple(color)[:-1]
-            for prefix in ('te-', 'ne-'):
-                self.probeColors[prefix+probe] = color
+            self.probeColors[probe] = color
 
         # Add currently available probes
-        self.probeLines = []
         self.checkBoxes = {}
-        for probe in self.probes:
+        for probe in self.uniqueProbes:
+            self.checkBoxes[probe] = {}
             color = self.probeColors[probe]
-            # Create new widgets
-            # Container
-            line = QtWidgets.QHBoxLayout()
-            self.probeLines.append(line)
+
+            # Insert new row
+            rowPos = table.rowCount()
+            self.probeTable.insertRow(rowPos)
+
             # Label
             label = QtWidgets.QLabel()
             label.setText(probe)
-            # Checkbox
-            checkbox = QtWidgets.QCheckBox()
-            self.checkBoxes[probe] = checkbox
+
+            # Checkboxes
+            mapper = QtCore.QSignalMapper(self)
+            for i, cbType in enumerate(('te-x','ne-x','te-t','ne-t','j-t')):
+                cb = QtWidgets.QCheckBox()
+                cbID = probe + '-' + cbType
+                mapper.setMapping(cb, cbID) 
+                cb.stateChanged.connect(mapper.map)
+                table.setCellWidget(rowPos, i+3, cb)
+                self.checkBoxes[probe][cbType] = cb
+
+            mapper.mapped['QString'].connect(self.togglePlots)
+
             # Color patch
             patch = ColorPatch(color) 
-            # Add everything to GUI
-            line.addWidget(label)
-            line.addWidget(patch)
-            line.addWidget(checkbox)
+            style = ColorPatch(color) 
 
-            if probe.startswith('ne'):
-                self.nProbeLayout.addLayout(line)
-            elif probe.startswith('te'):
-                self.TProbeLayout.addLayout(line)
-            else:
-                print("WARNING: Probe {} could not be added to GUI probe list")
+            # Add widgets to row
+            table.setCellWidget(rowPos, 0, label)
+            table.setCellWidget(rowPos, 1, patch)
+            table.setCellWidget(rowPos, 2, style)
+
+            # Make cells clickable
+            table.cellClicked.connect(self.changeColor)
+        self.probeTable.resizeColumnsToContents()
+
+
+    def changeColor(self, row, col):
+        print "Cell was clicked! Row {}, Col {}".format(row,col)
 
 
     def updatexPlot(self):
+        #self.xPlot.fixyLim = self.menuFixxPlotyLim.checkState()
         self.xPlot.update()
         self.xPlotCanvas.draw()
 
@@ -292,6 +348,85 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def updateTimeText(self):
         self.xPlot.setTimeText()
+
+
+    def findTWindow(self, Dt, avgNum=None):
+        """ Finds the time window that is closest to the value the user provided based on the number of data points to average over to create a plot point. """
+        if avgNum != None:
+            self.avgNum = avgNum
+        elif not hasattr(self, 'avgNum'):
+            print("WARNING! Number of points to average about is unknown. No averaging will take place")
+            self.avgNum = 0
+        else:
+            avgNum = self.avgNum
+
+        # Don't try anything fancy if no averaging is wanted anyway
+        if avgNum == 0: return Dt
+
+        # avgNum HAS to be odd or 0
+        remAvg = Dt % avgNum 
+        rem2   = Dt % 2
+
+        # If Dt is divisible by 3 but not by 2, accept it
+        if remAvg == 0 and rem2 != 0:
+            print "Dt is divisible by avgNum but not by 2, accepting it"
+            Dt = Dt
+
+        # If Dt is divisible by 3 and by 2, add 3
+        if remAvg == 0 and rem2 == 0:
+            print "Dt is divisible by avgNum and 2, adding avgNum"
+            Dt = Dt + avgNum
+
+        # If Dt is not divisible by 3, subtract remainder and 
+        # add 3 if needed so that result is as close as possible to the
+        # user input. Then check if that value is divisible by two. If so,
+        # choose the other value anyway
+        if remAvg != 0:
+            print "Dt is not divisible by avgNum"
+            if remAvg >= avgNum/2.:
+                print "Dt is closer to the next higher multiple of avgNum"
+                tempDt = Dt - remAvg + avgNum
+                if tempDt % 2 == 0:
+                    print "That value is divisible by 2, though, so choosing the lower multiple of avgNum anyway"
+                    Dt = tempDt - avgNum
+                else:
+                    Dt = tempDt
+            else:
+                print "Dt is closer to the next lower multiple of avgNum"
+                tempDt = Dt - remAvg
+                if tempDt % 2 == 0:
+                    print "That value is divisible by 2, though, so choosing the higher multiple of avgNum anyway"
+                    Dt = tempDt + avgNum
+                else:
+                    Dt = tempDt
+
+        print "Found best Dt:", Dt
+        return Dt
+        
+
+    def updateTWindow(self):
+        """ Updates spatial plot and position indicators based on the choice of the time window from which data is to be included in the spatial plot. """
+        # Get new value for timesteps (Dt, see SpatialPlot.getShotData())
+        Dt = self.spinTWidth.value()
+        
+        # Find time window that best matches user input and internal 
+        # requirements
+        Dt = self.findTWindow(Dt)
+
+        # Correct user input in GUI too
+        self.spinTWidth.setValue(Dt)
+
+        # Update xPlot with new time window
+        self.Dt = Dt
+        self.updatexPlot()
+
+        # Update sliders with new time window
+        self.indicator_range = self.xPlot.realdtrange
+        self.nPlot.indicator.slide()
+        self.TPlot.indicator.slide()
+
+        dt = self.xPlot.realtmax - self.xPlot.realtmin
+        self.lblRealTWidth.setText("= {:.2f}us".format(dt*10**6))
 
 
     def createxPlot(self):
@@ -322,8 +457,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.TPlotCanvas = self.TPlot.canvas
         self.TPlotLayout.addWidget(self.TPlotCanvas)
 
-        #self.TPlotCanvas.mpl_connect('button_release_event',self.onPanZoom)
-
 
     def createnPlot(self):
         try:
@@ -336,8 +469,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.nPlotCanvas = self.nPlot.canvas
         self.nPlotLayout.addWidget(self.nPlotCanvas)
         
-        #self.nPlotCanvas.mpl_connect('button_release_event',self.onPanZoom)
-
 
     def onPanZoom(self,event):
         self.updatexPlot()
@@ -347,8 +478,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         """ Retrieves langmuir data and strikeline positions from AUG shotfiles. This is an expensive operation and should only be invoked when loading a new shotfile. """
         self.langdiag = 'LSD'
         self.sldiag = 'FPG'
+        self.elmdiag = 'ELM'
+        self.jdiag = 'LSC'
 
-        # Try to read shot number. If it's not valid, prompt user and abort
+        # Try to read langmuir data. If shot number not valid, prompt user and abort
         try:
             self.shotnr = int(self.shotNumberEdit.text())
         except Exception:
@@ -472,6 +605,21 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         else:
             print "Successfully read strikeline positions"
 
+
+        # Get jsat
+        try:
+            self.jshot = dd.shotfile(self.jdiag, self.shotnr)
+        except:
+            msg = QMessageBox()
+            msg.setText("The shot file with the probe current data could not be loaded. It might have not been written for this shot.")
+            msg.setWindowTitle("Shotfile could not be loaded")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setDefaultButton(QMessageBox.Ok)
+            msg.setEscapeButton(QMessageBox.Ok)
+            self.hideProgress()
+            return
+
+
         # Flag denoting successful shotfile load
         self.succeeded = 1
 
@@ -515,7 +663,7 @@ class ColorPatch(QtWidgets.QWidget):
 
 
     def drawPatch(self, qp):
-        print "Drawing color", self.color
+        #print "Drawing color", self.color
         qp.setBrush(QColor(self.color))
         qp.drawRect(10, 10, 10, 10)
 
@@ -540,7 +688,7 @@ class Indicator():
         tplus = time + self.gui.indicator_range[1]
         print('tminus: {}, tplus: {}'.format(tminus, tplus))
 
-        # Remove previous indicator if there already is one
+        # Update previous indicator if there already is one
         if hasattr(self, "indic"):
             self.indic.set_xdata(time)
             self.indic_fill.remove()
@@ -583,6 +731,16 @@ class SpatialPlot():
     def __init__(self, gui):
         print("Initiating spatial plot")
         self.gui = gui
+        # Number of timesteps around the current time to include in the plot (see getShotData())
+        self.Dt = gui.Dt
+        # Number of data points over which to average
+        self.avgNum = gui.avgNum
+
+        # If this value is 1 then averaged values are not nans if one or more of the values used to calculate it is a nan
+        # This setting is ignored if all values to be averaged over are nans
+        self.ignoreNans = 1
+
+        self.fixyLim = False
 
         fig = Figure()
         self.axes = fig.add_subplot(111)
@@ -625,24 +783,17 @@ class SpatialPlot():
         # Get current time index from GUI slider
         self.time = self.gui.xTimeSlider.value()
 
-        # Number of data points over which to average
-        self.avgNum = 3
-        # Number of averaged data points to be shown per probe
-        self.datNum = 5
-        # If this value is 1 then averaged values are not nans if one or more of the values used to calculate it is a nan
-        # This setting is ignored if all values to be averaged over are nans
-        self.ignoreNans = 1
-
         # Time range expressed by indices in shotfile
-        self.dt = (self.avgNum * self.datNum - 1)/2 
+        self.dt = (self.gui.Dt - 1)/2 
 
+        print "Getting shot data for {} time steps".format(self.gui.Dt)
         # Min and max time expressed by indices in shotfile
         tmin = self.time - self.dt
         tmax = self.time + self.dt
 
         probeNamePrefix = self.quantity + '-' + self.region
 
-        print "Filtering array for specified probes and time range"
+        print "Filtering array for time range", self.dt
         self.data = {}
         self.realtime_arr = {}
         for probe in self.gui.langData.keys():
@@ -696,17 +847,21 @@ class SpatialPlot():
         for probe in self.data.keys():
             data = self.data[probe]
             self.avgData[probe] = []
+            
+            print "Probe {} - Data points: {}".format(probe, data.size)
 
             # If this probe didn't record any values at this point in time, continue with the next one
-            if len(data) == 0: continue
+            if data.size == 0: continue
 
             i=0
-            # Take values in the range 0 to avgNum and average them
+            # Take values in the range 0 to avgNum-1 and average them
             # valcount is used to calculate average value because of the possibility of nans
             while True:
                 xsum=0
                 valcount=0
 
+                print "Averaging {} data points".format(data.size)    
+                print "Taking {} values to average over".format(self.avgNum)
                 for x in np.arange(self.avgNum):
                     # Ignore nans if wished
                     if self.ignoreNans == 1 and np.isnan(data[i]):
@@ -783,7 +938,7 @@ class SpatialPlot():
 
     def initPlot(self, ):
         """ Populates canvas with initial plot. Creates Line2D object that will be updated when plot has to change based on GUI interaction."""
-        print("Populating canvas with spatial plot")
+        #print("Populating canvas with spatial plot")
         x = []
         y = []
         for probe in self.avgData.keys():
@@ -798,6 +953,9 @@ class SpatialPlot():
 
     
     def update(self, ):
+        self.avgNum = self.gui.avgNum
+        print "updating spatial plot"
+        print "avgNum:", self.avgNum
         self.getShotData()
         self.averageData()
 
@@ -867,7 +1025,7 @@ class TemporalPlot():
         self.gui = gui
         self.quantity = quantity
         self.region = 'ua'
-        self.selectedProbes = [probe for probe in self.gui.selectedProbes if probe.startswith(self.quantity)]
+        self.selectedProbes = self.gui.selectedProbes['t']
 
         self.data = {}
         self.time = {}
@@ -898,7 +1056,7 @@ class TemporalPlot():
 
 
     def getShotData(self):
-        print("Getting temporal shot data")
+        #print("Getting temporal shot data")
         self.probeNamePrefix = self.quantity + '-' + self.region
         for probe in self.gui.langData.keys():
             if probe.startswith(self.probeNamePrefix):
@@ -908,9 +1066,15 @@ class TemporalPlot():
 
     def averageData(self):
         """ Averages data for selected probes if average data does not exist for them yet. """
-        for probe in self.gui.selectedProbes:
+        self.selectedProbes = self.gui.selectedProbes['t']
+
+        #print "Selected probes when averaging:", self.selectedProbes
+        #print "Prefix:", self.probeNamePrefix
+
+        for probe in self.selectedProbes:
+            #print "Averaging probe:", probe
             if probe.startswith(self.probeNamePrefix) and probe not in self.avgData.keys():
-                print("Averaging temporal data")
+                #print("Averaging temporal data")
                 self.avgData[probe] = []
                 self.avgTime[probe] = []
                 self.maxDataPoints = 0
@@ -953,16 +1117,15 @@ class TemporalPlot():
     def update(self):
         """ Plots temporal data if it hasn't been plotted yet. If it has been plotted, it is set to visible. """
         # Get currently selected probes from GUI
-        self.selectedProbes = self.gui.selectedProbes
+        self.selectedProbes = self.gui.selectedProbes['t']
 
-        print "Selected probes:", self.selectedProbes
         # Update plots
         for probe in self.avgData.keys(): 
             # If probe hasn't been plotted yet, is selected, and belongs to this canvas, plot it
             if probe not in self.plots.keys() \
                     and probe in self.selectedProbes \
                     and probe.startswith(self.probeNamePrefix):
-                print("{} hasn't been plotted yet".format(probe))
+                #print("{} hasn't been plotted yet".format(probe))
                 y = self.avgData[probe]
                 x = self.avgTime[probe]
 
@@ -972,7 +1135,7 @@ class TemporalPlot():
                    y = Conversion.removeNans(y) 
 
                 # Plot data
-                color = self.gui.probeColors[probe]
+                color = self.gui.probeColors[probe[3:]]
                 self.plot, = self.axes.plot(x,y, color=color)
 
                 # Save artist for future reference
@@ -982,7 +1145,7 @@ class TemporalPlot():
             elif probe in self.plots.keys() \
                     and probe not in self.selectedProbes \
                     and self.plots[probe].get_visible():
-                print("Setting probe {} invisible".format(probe))
+                #print("Setting probe {} invisible".format(probe))
                 self.plots[probe].set_visible(False)
                 self.canvas.draw()
 
@@ -990,7 +1153,7 @@ class TemporalPlot():
             elif probe in self.plots.keys() \
                     and probe in self.selectedProbes \
                     and not self.plots[probe].get_visible():
-                print("Setting probe {} visible".format(probe))
+                #print("Setting probe {} visible".format(probe))
                 self.plots[probe].set_visible(True)
                 self.canvas.draw()
 
@@ -1043,7 +1206,7 @@ class TemporalPlot():
             else:
                 # deal with something that should never happen
                 scale_factor = 1
-                print event.button
+                #print event.button
 
             # New axes limits. Don't allow zooming out beyond original boundaries
             xlim = [max(xlim_orig[0], xdata - cur_xrange*scale_factor), min(xlim_orig[1], xdata + cur_xrange*scale_factor)]

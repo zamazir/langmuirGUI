@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>785</width>
-    <height>642</height>
+    <width>1234</width>
+    <height>964</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,87 +15,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QWidget" name="shotDetailBar" native="true">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>40</height>
-       </size>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <item>
-        <widget class="QLabel" name="shotLabel">
-         <property name="maximumSize">
-          <size>
-           <width>35</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Shot</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="shotNumberEdit">
-         <property name="maximumSize">
-          <size>
-           <width>100</width>
-           <height>30</height>
-          </size>
-         </property>
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Insert a shot number and press enter to load shot data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="statDurationLabel">
-         <property name="maximumSize">
-          <size>
-           <width>55</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Duration:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="dynDurationLabel">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The duration of the shot&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>B</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Other</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
     <item>
      <widget class="QWidget" name="body" native="true">
       <layout class="QVBoxLayout" name="bodyLayout">
@@ -117,24 +36,210 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
-             <widget class="QComboBox" name="switchxPlot">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select which quantity to show as a function of delta s&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <widget class="QWidget" name="shotDetailBar" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
               </property>
-              <item>
-               <property name="text">
-                <string>Temperature</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Density</string>
-               </property>
-              </item>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>40</height>
+               </size>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_3">
+               <item>
+                <widget class="QLabel" name="shotLabel">
+                 <property name="maximumSize">
+                  <size>
+                   <width>35</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Shot</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="shotNumberEdit">
+                 <property name="maximumSize">
+                  <size>
+                   <width>100</width>
+                   <height>30</height>
+                  </size>
+                 </property>
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Insert a shot number and press enter to load shot data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="statDurationLabel">
+                 <property name="maximumSize">
+                  <size>
+                   <width>55</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Duration:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="dynDurationLabel">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The duration of the shot&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
             <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <widget class="QComboBox" name="switchxPlot">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select which quantity to show as a function of delta s&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>Temperature</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Density</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_3">
+                <property name="maximumSize">
+                 <size>
+                  <width>100</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Fix plot height to</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="lineEdit">
+                <property name="maximumSize">
+                 <size>
+                  <width>70</width>
+                  <height>25</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_4">
+                <property name="maximumSize">
+                 <size>
+                  <width>10</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>*</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboBox">
+                <property name="maximumSize">
+                 <size>
+                  <width>70</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>1</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10²</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10³</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10⁴</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10⁵</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10⁶</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10⁷</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10⁸</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10⁹</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10^10</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>10^11</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
              <widget class="QWidget" name="xPlot" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <layout class="QVBoxLayout" name="xPlotLayout"/>
              </widget>
             </item>
@@ -153,6 +258,13 @@
                </size>
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <item>
+                <widget class="QLabel" name="lblStatTime">
+                 <property name="text">
+                  <string>Time</string>
+                 </property>
+                </widget>
+               </item>
                <item>
                 <widget class="QSlider" name="xTimeSlider">
                  <property name="toolTip">
@@ -173,6 +285,23 @@
                  </property>
                  <property name="toolTip">
                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Insert a specific time that you would like the plot to show&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblTWidth">
+                 <property name="text">
+                  <string>Window width</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="spinTWidth"/>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblRealTWidth">
+                 <property name="text">
+                  <string/>
                  </property>
                 </widget>
                </item>
@@ -202,8 +331,9 @@
            <zorder>xPlot</zorder>
            <zorder>xPlotControls</zorder>
            <zorder>statsAndPos</zorder>
-           <zorder>switchxPlot</zorder>
            <zorder>switchStatPos</zorder>
+           <zorder>shotDetailBar</zorder>
+           <zorder>horizontalLayoutWidget</zorder>
           </widget>
          </item>
          <item>
@@ -283,63 +413,87 @@
             </item>
             <item>
              <widget class="QWidget" name="tPlotControls" native="true">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>250</height>
+               </size>
+              </property>
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
-                <height>200</height>
+                <height>250</height>
                </size>
               </property>
               <layout class="QVBoxLayout" name="tPlotCtrlLayout">
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>9</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
                <item>
-                <layout class="QHBoxLayout" name="horizontalLayout">
-                 <property name="sizeConstraint">
-                  <enum>QLayout::SetMaximumSize</enum>
-                 </property>
-                 <item>
-                  <widget class="QPushButton" name="btnPan">
-                   <property name="text">
-                    <string>Pan</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="btnZoom">
-                   <property name="text">
-                    <string>Zoom</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="btnReset">
-                   <property name="text">
-                    <string>Reset</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <widget class="QScrollArea" name="scrollPlotList">
+                <widget class="QWidget" name="buttoContainer" native="true">
                  <property name="maximumSize">
                   <size>
                    <width>16777215</width>
-                   <height>150</height>
+                   <height>45</height>
                   </size>
                  </property>
-                 <property name="widgetResizable">
-                  <bool>true</bool>
-                 </property>
-                 <widget class="QWidget" name="scrollAreaWidgetContents">
-                  <property name="geometry">
-                   <rect>
-                    <x>0</x>
-                    <y>0</y>
-                    <width>341</width>
-                    <height>143</height>
-                   </rect>
+                 <layout class="QHBoxLayout" name="horizontalLayout">
+                  <property name="sizeConstraint">
+                   <enum>QLayout::SetMaximumSize</enum>
                   </property>
-                  <zorder>verticalLayoutWidget_2</zorder>
-                 </widget>
+                  <item>
+                   <widget class="QPushButton" name="btnPan">
+                    <property name="text">
+                     <string>Pan</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btnZoom">
+                    <property name="text">
+                     <string>Zoom</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btnReset">
+                    <property name="text">
+                     <string>Reset</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QTableWidget" name="probeTable">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>500</width>
+                   <height>200</height>
+                  </size>
+                 </property>
                 </widget>
                </item>
               </layout>
@@ -360,7 +514,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>785</width>
+     <width>1234</width>
      <height>23</height>
     </rect>
    </property>
@@ -386,6 +540,7 @@
     </property>
     <addaction name="actionToggle_plot"/>
     <addaction name="actionMaximize_plot"/>
+    <addaction name="menuFixxPlotyLim"/>
    </widget>
    <widget class="QMenu" name="menuShot">
     <property name="title">
@@ -425,10 +580,18 @@
      <addaction name="menuELMs"/>
      <addaction name="actionZeroes"/>
      <addaction name="actionCusto_m_filter"/>
+     <addaction name="actionFilter_NaNs"/>
+    </widget>
+    <widget class="QMenu" name="menuAvg">
+     <property name="title">
+      <string>Averaging</string>
+     </property>
+     <addaction name="menuAvgSpatial"/>
+     <addaction name="menuAvgTemporal"/>
     </widget>
     <addaction name="actionRedo_Statistics"/>
     <addaction name="separator"/>
-    <addaction name="actionAveraging"/>
+    <addaction name="menuAvg"/>
     <addaction name="menuFiltering"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
@@ -496,11 +659,6 @@
     <string>Lower outer array</string>
    </property>
   </action>
-  <action name="actionAveraging">
-   <property name="text">
-    <string>Averaging</string>
-   </property>
-  </action>
   <action name="actionSet_threshold_value">
    <property name="text">
     <string>Set threshold value</string>
@@ -534,6 +692,31 @@
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionFilter_NaNs">
+   <property name="text">
+    <string>Filter NaNs</string>
+   </property>
+  </action>
+  <action name="actionNumber_of_points">
+   <property name="text">
+    <string>Number of points</string>
+   </property>
+  </action>
+  <action name="menuAvgSpatial">
+   <property name="text">
+    <string>Spatial plots</string>
+   </property>
+  </action>
+  <action name="menuAvgTemporal">
+   <property name="text">
+    <string>Temporal plots</string>
+   </property>
+  </action>
+  <action name="menuFixxPlotyLim">
+   <property name="text">
+    <string>Fix spatial plot height</string>
    </property>
   </action>
  </widget>
