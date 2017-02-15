@@ -333,25 +333,11 @@
            <zorder>statsAndPos</zorder>
            <zorder>switchStatPos</zorder>
            <zorder>shotDetailBar</zorder>
-           <zorder>horizontalLayoutWidget</zorder>
           </widget>
          </item>
          <item>
           <widget class="QWidget" name="tPlotContainer" native="true">
            <layout class="QVBoxLayout" name="tPlotContainerLayout">
-            <item>
-             <widget class="QLabel" name="tempLabel">
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>20</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Temperature</string>
-              </property>
-             </widget>
-            </item>
             <item>
              <widget class="QWidget" name="TPlot" native="true">
               <property name="minimumSize">
@@ -364,19 +350,6 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="label">
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>20</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Density</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QWidget" name="nPlot" native="true">
               <property name="minimumSize">
                <size>
@@ -385,19 +358,6 @@
                </size>
               </property>
               <layout class="QVBoxLayout" name="nPlotLayout"/>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_2">
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>20</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Current</string>
-              </property>
              </widget>
             </item>
             <item>

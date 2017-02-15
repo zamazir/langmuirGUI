@@ -1,0 +1,16 @@
+probe   length  width
+ua1     25      5
+ua2     25      5
+ua3     25      5
+ua4     25      5
+ua5     25      5
+ua6     25      5
+ua7     25      5
+ua8     25      5
+ua9     30      6
+uaa     30      6
+uab     30      6
+uac     30      6
+uad     21      5
+uae     21      5
+uaf     25      5

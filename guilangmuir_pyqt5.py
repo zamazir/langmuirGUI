@@ -1,7 +1,7 @@
 ##############################################################################
 #
-# guilangmuir.py -  A graphical user interface for langmuir data evaluation of 
-#                   ASDEX Upgrade shotfiles
+# guilangmuir.py -  A graphical user interface for investigating detachment
+#                   states at ASDEX Upgrade 
 #
 # This program was written as part of the master's thesis of Amazigh Zerzour. 
 # Its aim is to provide a visual and interactive way of recognizing and 
@@ -15,12 +15,56 @@
 #
 # Issues:
 # - Data evaluation will be unreliable if the time data arrays vary from probe to probe
-# - Crashes if xTimeSlider is set to the maximum value
-# - On xPlotSwitch, the indicator jumps to the start of the time window
+#
+# - At application start, jPlot is not synced with the others. This changes when one of
+#   the plots is zoomed twice
 #
 # To do:
-# - Set constant color for each probe
 # - Increase speed when moving the indicator
+#
+# - Update temporal plots when entering time for spatial plot
+#
+# - Increase speed by not having the indicator move as long as user is panning
+#
+# - Increase speed when calibrating current
+#
+# - Suppress checkbox events when initializing so that all temporal plots are
+#   plotted when initialization is finished
+#
+# - Add options to change paths to calibration, probe position, and mapping files.
+#   Store those in a config file
+#
+# - Create new class Plot with shared attributes such as
+#       * self.region
+#       * self.probeDomain
+#
+# - Add options to change all parameters like
+#       * showgaps
+#       * Indicator.color
+#       * SpatialPlot.region
+#       * SpatialPlot.ignoreNans
+#       * TemporalPlot.axTitles
+#       * Plot.region
+#       * Plot.probeDomain
+#       * CurrentPlot.mapDir
+#       * CurrentPlot.mapDiag
+#       * CurrentPlot.diag
+#   from within the GUI
+#
+# - Read the following parameters from a config file at startup:
+#       * AplicationWindow.Dt
+#       * AplicationWindow.avgNum
+#       * Indicator.color
+#       * SpatialPlot.region
+#       * SpatialPlot.ignoreNans
+#       * TemporalPlot.axTitles
+#       * Plot.region
+#       * Plot.probeDomain
+#       * CurrentPlot.mapDir
+#       * CurrentPlot.mapDiag
+#       * CurrentPlot.diag
+#
+# - Think of a better way to implement axTitles
 # 
 # 
 ##############################################################################
@@ -140,6 +184,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.indicator_range = self.xPlot.realdtrange
             self.createnPlot()
             self.createTPlot()
+            self.createjPlot()
 
             # Select default probe
             for cb in self.checkBoxes['ua1'].values():
@@ -148,11 +193,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             # Add matplotlib toolbar functionality
             self.nToolbar = NavigationToolbar(self.nPlot.canvas, self)
             self.TToolbar = NavigationToolbar(self.TPlot.canvas, self)
+            self.jToolbar = NavigationToolbar(self.jPlot.canvas, self)
             self.nToolbar.hide()
             self.TToolbar.hide()
+            self.jToolbar.hide()
 
             # Synchronize temporal plots
-            Sync.sync(self.nPlot,self.TPlot)
+            Sync.sync(self.nPlot, self.TPlot, self.jPlot)
 
             # Update GUI appearance with current values
             self.xPlot.setTimeText()
@@ -179,6 +226,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.btnZoom.clicked.connect(self.nToolbar.zoom)
             self.btnPan.clicked.connect(self.TToolbar.pan)
             self.btnZoom.clicked.connect(self.TToolbar.zoom)
+            self.btnPan.clicked.connect(self.jToolbar.pan)
+            self.btnZoom.clicked.connect(self.jToolbar.zoom)
             self.btnReset.clicked.connect(self.resettPlots)
 
             self.menuAvgSpatial.triggered.connect(self.setAvgNum)
@@ -224,11 +273,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         """ Updates all indicators. """
         self.nPlot.indicator.slide()
         self.TPlot.indicator.slide()
+        self.jPlot.indicator.slide()
     
     
     def togglePlots(self, cbID):
         """ Toggles temporal plots based on checkbox selection. """
-        #print "\n\nCheckbox clicked:", cbID
+        print "\n\nCheckbox clicked:", cbID
         # Mapper returns unicode string. Must be converted to standard string
         probe, quantity, axType = str(cbID).split('-')
         pnq = quantity + '-' + probe 
@@ -252,11 +302,18 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.TPlot.averageData()
         self.TPlot.update()
         self.TPlot.canvas.draw()
+        self.jPlot.averageData()
+        self.jPlot.update()
+        self.jPlot.canvas.draw()
         
 
     def resettPlots(self):
         self.nPlot.reset()
+        self.TPlot.reset()
+        self.jPlot.reset()
         self.nPlotCanvas.draw()
+        self.TPlotCanvas.draw()
+        self.jPlotCanvas.draw()
 
 
     def getPlotOption(self):
@@ -469,6 +526,18 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.nPlotCanvas = self.nPlot.canvas
         self.nPlotLayout.addWidget(self.nPlotCanvas)
         
+    
+    def createjPlot(self):
+        try:
+            self.jPlotLayout.removeWidget(self.jPlotCanvas)
+            self.jPlotCanvas.close()
+        except:
+            pass
+
+        self.jPlot = CurrentPlot(self)
+        self.jPlotCanvas = self.jPlot.canvas
+        self.jPlotLayout.addWidget(self.jPlotCanvas)
+
 
     def onPanZoom(self,event):
         self.updatexPlot()
@@ -479,7 +548,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.langdiag = 'LSD'
         self.sldiag = 'FPG'
         self.elmdiag = 'ELM'
-        self.jdiag = 'LSC'
+        self.jdiag = 'LSF'
 
         # Try to read langmuir data. If shot number not valid, prompt user and abort
         try:
@@ -712,7 +781,8 @@ class Conversion():
     @staticmethod
     def removeNans(array, refarray=None):
         """ Removes values from array based on the indices of NaN values in refarray. If refarray is not specified, NaN values are removed from array. Expects numpy arrays """ 
-        if refarray == None:
+        # If refarray was passed, comparing it to None would be deprecated
+        if type(refarray).__name__ == 'NoneType':
             refarray = array
 
         return array[~np.isnan(refarray)]
@@ -757,9 +827,7 @@ class SpatialPlot():
             self.quantity = 'ne'
 
         self.getShotData()
-        print self.data
         self.averageData()
-        print self.avgData
         self.getProbePositions()
         self.rztods()
         self.initPlot()
@@ -781,7 +849,6 @@ class SpatialPlot():
 
         # Get current time index from GUI slider
         self.time = self.gui.xTimeSlider.value()
-        print "Current time:", self.time
 
         # Time range expressed by indices in shotfile
         self.dt = (self.gui.Dt - 1)/2 
@@ -833,7 +900,6 @@ class SpatialPlot():
                 realdtminus = self.realtime - self.realtmin
                 realdtplus = -(self.realtime - self.realtmax)
                 self.realdtrange = (realdtminus, realdtplus)
-        print "REALDTRANGE:", self.realdtrange
 
 
     def averageData(self):
@@ -850,8 +916,6 @@ class SpatialPlot():
             data = self.data[probe]
             self.avgData[probe] = []
            
-            print "Data points for probe {}: {}".format(probe, data.size)
-            print "Averaging {} data points to values made up of {} data point each".format(self.Dt, self.avgNum)
             # If this probe didn't record any values at this point in time, continue with the next one
             if data.size == 0: continue
 
@@ -862,9 +926,7 @@ class SpatialPlot():
                 xsum=0
                 valcount=0
 
-                print "Starting new averaging process"
                 for x in np.arange(self.avgNum):
-                    print "Processing value", i
                     # Ignore nans if wished
                     if self.ignoreNans == 1 and np.isnan(data[i]):
                         pass
@@ -944,13 +1006,9 @@ class SpatialPlot():
         x = []
         y = []
         for probe in self.avgData.keys():
-            print "Plotting", probe
             for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
                 x.append(position)
                 y.append(value)
-            print "Data:"
-            print x
-            print y
         self.scatter = self.axes.scatter(x, y)
 
         self.axes.set_title("{} distribution on the outer lower target plate in AUG @{:.4f}s".format(self.option,self.realtime))
@@ -1026,6 +1084,7 @@ class TemporalPlot():
     #
     def __init__(self, gui, quantity):
 
+        self.axTitles = {'te': 'Temperature [$^\circ$C]', 'ne': 'Density [1/m$^3$]'}
         self.gui = gui
         self.quantity = quantity
         self.region = 'ua'
@@ -1045,6 +1104,8 @@ class TemporalPlot():
         self.axes = fig.add_subplot(111)
         self.canvas = FigureCanvas(fig)
 
+        self.axes.set_ylabel(self.axTitles[self.quantity])
+        self.axes.set_xlabel('Time [s]')
         self.axes.autoscale()
 
         self.getShotData()
@@ -1070,18 +1131,13 @@ class TemporalPlot():
 
     def averageData(self):
         """ Averages data for selected probes if average data does not exist for them yet. """
+        #print "Data before averaging:", self.data
         self.selectedProbes = self.gui.selectedProbes['t']
 
-        #print "Selected probes when averaging:", self.selectedProbes
-        #print "Prefix:", self.probeNamePrefix
-
         for probe in self.selectedProbes:
-            #print "Averaging probe:", probe
             if probe.startswith(self.probeNamePrefix) and probe not in self.avgData.keys():
-                #print("Averaging temporal data")
                 self.avgData[probe] = []
                 self.avgTime[probe] = []
-                self.maxDataPoints = 0
 
                 i=0
                 while True:
@@ -1100,12 +1156,8 @@ class TemporalPlot():
                         break
                     if i == self.data[probe].size: break
                  
-                # Save maximum data array length
-                if len(self.avgData[probe]) > self.maxDataPoints:
-                    self.maxDataPoints = self.avgData[probe]
-
-                self.avgData[probe] = np.array(self.avgData[probe])
-                self.avgTime[probe] = np.array(self.avgTime[probe])
+                self.data[probe] = np.array(self.avgData[probe])
+                self.time[probe] = np.array(self.avgTime[probe])
 
 
     def reset(self):
@@ -1120,18 +1172,20 @@ class TemporalPlot():
 
     def update(self):
         """ Plots temporal data if it hasn't been plotted yet. If it has been plotted, it is set to visible. """
+        print "\nplotting", self.quantity
         # Get currently selected probes from GUI
         self.selectedProbes = self.gui.selectedProbes['t']
+        print "Selected probes:", self.selectedProbes
 
         # Update plots
-        for probe in self.avgData.keys(): 
+        for probe in self.data.keys(): 
             # If probe hasn't been plotted yet, is selected, and belongs to this canvas, plot it
             if probe not in self.plots.keys() \
                     and probe in self.selectedProbes \
                     and probe.startswith(self.probeNamePrefix):
-                #print("{} hasn't been plotted yet".format(probe))
-                y = self.avgData[probe]
-                x = self.avgTime[probe]
+                print("{} hasn't been plotted yet".format(probe))
+                y = self.data[probe]
+                x = self.time[probe]
 
                 # Filter NaNs if wished
                 if self.showGaps == 0:
@@ -1139,7 +1193,8 @@ class TemporalPlot():
                    y = Conversion.removeNans(y) 
 
                 # Plot data
-                color = self.gui.probeColors[probe[3:]]
+                uniqueProbe = probe.split('-')[1]
+                color = self.gui.probeColors[uniqueProbe]
                 self.plot, = self.axes.plot(x,y, color=color)
 
                 # Save artist for future reference
@@ -1149,7 +1204,7 @@ class TemporalPlot():
             elif probe in self.plots.keys() \
                     and probe not in self.selectedProbes \
                     and self.plots[probe].get_visible():
-                #print("Setting probe {} invisible".format(probe))
+                print("Setting probe {} invisible".format(probe))
                 self.plots[probe].set_visible(False)
                 self.canvas.draw()
 
@@ -1157,9 +1212,13 @@ class TemporalPlot():
             elif probe in self.plots.keys() \
                     and probe in self.selectedProbes \
                     and not self.plots[probe].get_visible():
-                #print("Setting probe {} visible".format(probe))
+                print("Setting probe {} visible".format(probe))
                 self.plots[probe].set_visible(True)
                 self.canvas.draw()
+            
+            # If something went wrong
+            #elif probe.startswith(self.probeNamePrefix):
+            #    print 'Something went wrong with probe', probe
 
         # Get current axes limits
         xlim = self.axes.get_xlim()
@@ -1225,6 +1284,180 @@ class TemporalPlot():
 
         #return the function
         return zoom_fun
+
+
+
+class CurrentPlot(TemporalPlot):
+    # Get mapping between probes and channels from files at /afs/ipp/home/d/dacar/divertor/
+    # If no file present, try to get the mapping from LSC
+    # Calibrate the measurements with probe surfaces to obtain current densities
+    # Plot results
+    def __init__(self, gui):
+        self.gui         = gui
+        self.quantity    = 'j'
+        self.region      = 'ua'
+        self.probeNamePrefix = self.quantity + '-' + self.region
+        self.selectedProbes  = self.gui.selectedProbes['t']
+        self.probeDomain = '8'
+        self.mapDir      = 'afs/ipp/home/d/dacar/divertor/'
+        self.mapDiag     = 'LSC'
+        self.diag       = 'LSF'
+        self.shotnr      = gui.shotnr
+        self.hasMapping  = False
+        self.calib       = {}
+        self.map         = {}
+        self.data        = {}
+        self.avgData     = {}
+        self.avgTime     = {}
+        self.time        = {}
+        self.plots       = {}
+        self.xlim_orig   = [9999999999999, -999999999999]
+        self.ylim_orig   = [9999999999999, -999999999999]
+
+        self.showGaps = 0
+
+        fig = Figure()
+        self.axes = fig.add_subplot(111)
+        self.canvas = FigureCanvas(fig)
+
+        self.axes.set_ylabel('Current density [A/m$^2$]')
+        self.axes.set_xlabel('Time [s]')
+        self.axes.autoscale()
+
+        self.indicator = Indicator(self)
+
+        # Implement interactive behavior: Event handling when zoomed or dragged
+        # Zoom with mouse wheel
+        #self.enableMouseZoom()
+        self.axes.callbacks.connect('xlim_changed', self.setSliderRange)
+
+        self.getShotData()
+        #self.calibrateData()
+        self.averageData()
+        self.update()
+
+
+    def getShotData(self, diag=None):
+        """ Loads jsat data from shotfile (default: LSF). """
+        # If no mapping available yet, get it
+        if len(self.map) < 1:
+            hasMapping = self.getMapping()
+        
+        if not hasMapping:
+            return
+
+        if diag != None:
+            self.diag = diag
+        try:
+            shot = dd.shotfile(self.diag, self.shotnr)
+        except Exception:
+            print "Shotfile not found"
+            self.statusbar.showMessage("Shotfile could not be loaded")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("No jsat shotfile could be found at {} for this shot.".format(self.diag))
+            msg.setWindowTitle("Shotfile not found")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setDefaultButton(QMessageBox.Ok)
+            msg.setEscapeButton(QMessageBox.Ok)
+            msg.exec_()
+            return
+        
+        for key, objName in shot.getObjectNames().iteritems():
+            if objName.startswith('CH'):
+                for probe, (channel, ind) in self.map.iteritems():
+                    if channel == objName:
+                        #print "Getting data for probe {} from channel {}-{}".format(probe,channel,ind)
+                        self.data[probe] = shot.getObjectData(channel)[ind]
+                        self.time[probe] = shot.getTimeBase(channel)
+
+
+    def getMapping(self, filePath=None):
+        """ Loads probe-channel mapping from file. Tries to load from LSC if file not available. """
+        # Try to get mapping from file
+        filePath = "../Probes/Configuration_32898_DAQ_26_I_2016.txt"
+        ok = True
+        if filePath == None:
+            filePath, ok = QtWidgets.QFileDialog.getOpenFileName(self.gui, 'Load mapping file')
+        if not ok:
+            return False
+        else:
+            with open(filePath) as f:
+                lines = f.readlines()
+                for line in lines:
+                    try:
+                        probe, quantity, channel, ind = line.split()
+                    except:
+                        print "Failed to read probe-channel mapping file", filePath
+                        break
+
+                    # If channel doesn't start with "CH", add the prefix so LSF shotfile can be read with it
+                    if not channel.startswith('CH'): channel = 'CH' + channel
+
+                    # ind is saved as str from 1-6 but must serve as an index from 0-5
+                    ind = int(ind) - 1
+
+                    # Only care about probes in this domain and region and the saturation current
+                    if probe.startswith(self.probeDomain + self.region) and quantity == 'Isat':
+                        # Cut off probe domain and add quantity identifier
+                        # Identifier is needed for using the TemporalPlot.update() method
+                        probe = 'j-' + probe[1:].lower()
+                        print "Found Isat for probe {} on channel {}-{}".format(probe,channel, ind)
+                        self.map[probe] = (channel, ind)
+
+            # Exit if this worked
+            if len(self.map) > 0:
+                "+++++++++++++Found mappings :)"
+                return True
+
+        # If that failed, try to get mapping from LSC
+        self.statusbar.showMessage("Trying to get probe-channel mapping from LSC")
+        try:
+            shot = dd.getshot(self.mapDiag, self.shotnr)
+        except Exception:
+            print "LSC not available"
+            self.statusbar.showMessage("LSC not available for this shot")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("No LSC shotfile could be found for this shot. jsat will not be plotted.")
+            msg.setWindowTitle("LSC shotfile not found")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setDefaultButton(QMessageBox.Ok)
+            msg.setEscapeButton(QMessageBox.Ok)
+            msg.exec_()
+            return False
+        print 'LSC not impemented yet. Aborting'
+        return False
+
+
+        # If that failed, abort plotting current
+        print "Failed to get probe-channel mapping. jsat will not be plotted"
+        return False
+
+
+    def calibrateData(self, cal=None):
+        """ Converts current to current density. """
+        print "Calibrating data"
+        if cal != None:
+            self.calib = cal
+        else:
+            self.getCalibrations()
+
+        for probe in self.data.keys():
+            l, w = self.calib[probe[2:]]
+            self.data[probe] = np.array([val/(l*w) for val in self.data[probe]])
+
+
+    def getCalibrations(self, path=None):
+        """ Loads probe dimensions from file so current can be converted to current density. """
+        if path == None:
+            path = './calibrations.txt'
+
+        with open(path) as f:
+            lines = f.readlines()[1:]
+            for line in lines:
+                probe, l, w = line.split()
+                self.calib[probe] = (float(l), float(w))
 
 
 
