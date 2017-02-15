@@ -121,115 +121,6 @@
                 </item>
                </widget>
               </item>
-              <item>
-               <widget class="QLabel" name="label_3">
-                <property name="maximumSize">
-                 <size>
-                  <width>100</width>
-                  <height>25</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>Fix plot height to</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLineEdit" name="lineEdit">
-                <property name="maximumSize">
-                 <size>
-                  <width>70</width>
-                  <height>25</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_4">
-                <property name="maximumSize">
-                 <size>
-                  <width>10</width>
-                  <height>25</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>*</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QComboBox" name="comboBox">
-                <property name="maximumSize">
-                 <size>
-                  <width>70</width>
-                  <height>25</height>
-                 </size>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>1</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10²</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10³</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10⁴</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10⁵</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10⁶</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10⁷</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10⁸</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10⁹</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10^10</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>10^11</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
              </layout>
             </item>
             <item>
@@ -340,35 +231,86 @@
            <layout class="QVBoxLayout" name="tPlotContainerLayout">
             <item>
              <widget class="QWidget" name="TPlot" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="minimumSize">
                <size>
                 <width>0</width>
                 <height>0</height>
                </size>
               </property>
-              <layout class="QVBoxLayout" name="TPlotLayout"/>
+              <layout class="QVBoxLayout" name="TPlotLayout">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="sizeConstraint">
+                <enum>QLayout::SetMaximumSize</enum>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+              </layout>
              </widget>
             </item>
             <item>
              <widget class="QWidget" name="nPlot" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="minimumSize">
                <size>
                 <width>0</width>
                 <height>0</height>
                </size>
               </property>
-              <layout class="QVBoxLayout" name="nPlotLayout"/>
+              <property name="layoutDirection">
+               <enum>Qt::LeftToRight</enum>
+              </property>
+              <layout class="QVBoxLayout" name="nPlotLayout">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+              </layout>
              </widget>
             </item>
             <item>
              <widget class="QWidget" name="jPlot" native="true">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="minimumSize">
                <size>
                 <width>0</width>
                 <height>0</height>
                </size>
               </property>
-              <layout class="QVBoxLayout" name="jPlotLayout"/>
+              <layout class="QVBoxLayout" name="jPlotLayout">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+              </layout>
              </widget>
             </item>
             <item>

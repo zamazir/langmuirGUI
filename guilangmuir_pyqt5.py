@@ -19,6 +19,7 @@
 # - At application start, jPlot is not synced with the others. This changes when one of
 #   the plots is zoomed twice
 #
+#
 # To do:
 # - Increase speed when moving the indicator
 #
@@ -31,27 +32,23 @@
 # - Suppress checkbox events when initializing so that all temporal plots are
 #   plotted when initialization is finished
 #
-# - Add options to change paths to calibration, probe position, and mapping files.
-#   Store those in a config file
-#
-# - Create new class Plot with shared attributes such as
-#       * self.region
-#       * self.probeDomain
-#
 # - Add options to change all parameters like
-#       * showgaps
 #       * Indicator.color
 #       * SpatialPlot.region
 #       * SpatialPlot.ignoreNans
 #       * TemporalPlot.axTitles
+#       * TemporalPlot.showgaps
 #       * Plot.region
-#       * Plot.probeDomain
+#       * Plot.domain
 #       * CurrentPlot.mapDir
 #       * CurrentPlot.mapDiag
 #       * CurrentPlot.diag
-#   from within the GUI
+#       * Path to calibrations
+#       * Path to probe positions
+#       * Path to mappings
+#   from within the GUI and store them in a config file
 #
-# - Read the following parameters from a config file at startup:
+# - Read the following parameters from the config file at startup:
 #       * AplicationWindow.Dt
 #       * AplicationWindow.avgNum
 #       * Indicator.color
@@ -59,15 +56,24 @@
 #       * SpatialPlot.ignoreNans
 #       * TemporalPlot.axTitles
 #       * Plot.region
-#       * Plot.probeDomain
+#       * Plot.domain
 #       * CurrentPlot.mapDir
 #       * CurrentPlot.mapDiag
 #       * CurrentPlot.diag
+#       * Path to calibrations
+#       * Path to probe positions
+#       * Path to mappings
 #
 # - Think of a better way to implement axTitles
+#
+# - Implement getting mappings for CurrentPlot from LSC
 # 
+# - Make Indicator update time window when moving away from t=0
+#
+# - Implement option to automatically zoom temporal plots to their value limits
 # 
 ##############################################################################
+
 
 import matplotlib as mpl
 mpl.use('Qt5Agg')
@@ -394,7 +400,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def updatexPlot(self):
-        #self.xPlot.fixyLim = self.menuFixxPlotyLim.checkState()
+        self.xPlot.fixyLim = self.menuFixxPlotyLim.isChecked()
         self.xPlot.update()
         self.xPlotCanvas.draw()
 
@@ -503,6 +509,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.xPlotLayout.addWidget(self.xPlotCanvas)
 
 
+
     def createTPlot(self):
         try:
             self.TPlotLayout.removeWidget(self.TPlotCanvas)
@@ -525,8 +532,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.nPlot = TemporalPlot(self,'ne')
         self.nPlotCanvas = self.nPlot.canvas
         self.nPlotLayout.addWidget(self.nPlotCanvas)
-        
     
+
     def createjPlot(self):
         try:
             self.jPlotLayout.removeWidget(self.jPlotCanvas)
@@ -537,7 +544,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.jPlot = CurrentPlot(self)
         self.jPlotCanvas = self.jPlot.canvas
         self.jPlotLayout.addWidget(self.jPlotCanvas)
-
+        
 
     def onPanZoom(self,event):
         self.updatexPlot()
@@ -788,8 +795,20 @@ class Conversion():
         return array[~np.isnan(refarray)]
 
 
+class Plot(object):
+    def __init__(self, gui):
+        self.region = 'ua'
+        self.domain = '8'
+        self.gui = gui
 
-class SpatialPlot():
+        self.fig = Figure()
+        self.axes = self.fig.add_subplot(111)
+        self.canvas = FigureCanvas(self.fig)
+
+
+
+
+class SpatialPlot(Plot):
     """ Class for spatial temperature and density plots. Subclass of Plot. Needs the application object as an argument to be able to manipulate GUI elements. """
     ### TO DO
     #
@@ -798,8 +817,10 @@ class SpatialPlot():
     # - In update(), proper scaling of the scatter is achieved by adding a plot, rescaling, and removing that plot. A more elegant solution is desirable
     #
     def __init__(self, gui):
+        super(SpatialPlot, self).__init__(gui)
+        self.scatter = {}
+        
         print("Initiating spatial plot")
-        self.gui = gui
         # Number of timesteps around the current time to include in the plot (see getShotData())
         self.Dt = gui.Dt
         # Number of data points over which to average
@@ -811,15 +832,10 @@ class SpatialPlot():
 
         self.fixyLim = False
 
-        fig = Figure()
-        self.axes = fig.add_subplot(111)
-        self.canvas = FigureCanvas(fig)
-
         self.Rsl = self.gui.Rsl
         self.ssl = self.gui.ssl
         self.zsl = self.gui.zsl
         
-        self.region = 'ua' 
         self.option = self.gui.getPlotOption()
         if self.option == 'Temperature':
             self.quantity = 'te'
@@ -1002,14 +1018,16 @@ class SpatialPlot():
 
     def initPlot(self, ):
         """ Populates canvas with initial plot. Creates Line2D object that will be updated when plot has to change based on GUI interaction."""
-        #print("Populating canvas with spatial plot")
+        print("Populating canvas with spatial plot")
         x = []
         y = []
         for probe in self.avgData.keys():
             for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
                 x.append(position)
                 y.append(value)
-        self.scatter = self.axes.scatter(x, y)
+            color = self.gui.probeColors[probe.split('-')[1]]
+            print "Plotting {} in {}".format(probe, color)
+            self.scatter[probe] = self.axes.scatter(x, y, color=color)
 
         self.axes.set_title("{} distribution on the outer lower target plate in AUG @{:.4f}s".format(self.option,self.realtime))
         self.axes.set_ylabel(self.option)
@@ -1017,31 +1035,31 @@ class SpatialPlot():
 
     
     def update(self, ):
+        print "Updating spatial plot"
         self.avgNum = self.gui.avgNum
         self.getShotData()
         self.averageData()
 
-        x = []
-        y = []
+        xtot = []
+        ytot = []
         for probe in self.avgData.keys():
+            x = []
+            y = []
             for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
                 x.append(position)
                 y.append(value)
+            self.scatter[probe].set_offsets([x,y])
 
-        # Insert dummy plot for proper scaling
-        plot, = self.axes.plot(x,y)
-
-        # If scatter exists, update data
-        if "scatter" in [str(el) for el in dir(self)]:
-            newdata = [list(t) for t in zip(x,y)]
-            self.scatter.set_offsets(newdata)
+        if self.fixyLim:
+            pass
         else:
-            print("Critical: Scatter plot has not been initialized!")
+            # Insert dummy plot for proper scaling
+            plot, = self.axes.plot(xtot,ytot)
 
-        # Scale the canvas and remove the dummy plot
-        self.axes.relim()
-        self.axes.autoscale()
-        plot.remove()
+            # Scale the canvas and remove the dummy plot
+            self.axes.relim()
+            self.axes.autoscale()
+            plot.remove()
 
         # Update title based on new time
         self.axes.set_title("{} distribution on the outer lower target plate in AUG @{:.4f}s".format(self.option,self.realtime))
@@ -1075,7 +1093,8 @@ class SpatialPlot():
 
 
 
-class TemporalPlot():
+class TemporalPlot(Plot):
+    """ Class for temporal temperature and density plots. Subclass of Plot. Needs the application object as an argument to be able to manipulate GUI elements and the quantity that is to be plotted. """
     #######
     # To do:
     #
@@ -1083,11 +1102,10 @@ class TemporalPlot():
     # - Rename reset to View all
     #
     def __init__(self, gui, quantity):
+        super(TemporalPlot, self).__init__(gui)
 
-        self.axTitles = {'te': 'Temperature [$^\circ$C]', 'ne': 'Density [1/m$^3$]'}
-        self.gui = gui
+        self.axTitles = {'te': 'Temperature [eV]', 'ne': 'Density [1/m$^3$]'}
         self.quantity = quantity
-        self.region = 'ua'
         self.selectedProbes = self.gui.selectedProbes['t']
 
         self.data = {}
@@ -1100,13 +1118,10 @@ class TemporalPlot():
 
         self.showGaps = 0
 
-        fig = Figure()
-        self.axes = fig.add_subplot(111)
-        self.canvas = FigureCanvas(fig)
-
         self.axes.set_ylabel(self.axTitles[self.quantity])
         self.axes.set_xlabel('Time [s]')
         self.axes.autoscale()
+        self.fig.tight_layout()
 
         self.getShotData()
         self.averageData()
@@ -1114,9 +1129,6 @@ class TemporalPlot():
 
         self.indicator = Indicator(self)
 
-        # Implement interactive behavior: Event handling when zoomed or dragged
-        # Zoom with mouse wheel
-        #self.enableMouseZoom()
         self.axes.callbacks.connect('xlim_changed', self.setSliderRange)
 
 
@@ -1293,12 +1305,10 @@ class CurrentPlot(TemporalPlot):
     # Calibrate the measurements with probe surfaces to obtain current densities
     # Plot results
     def __init__(self, gui):
-        self.gui         = gui
+        Plot.__init__(self, gui)
         self.quantity    = 'j'
-        self.region      = 'ua'
         self.probeNamePrefix = self.quantity + '-' + self.region
         self.selectedProbes  = self.gui.selectedProbes['t']
-        self.probeDomain = '8'
         self.mapDir      = 'afs/ipp/home/d/dacar/divertor/'
         self.mapDiag     = 'LSC'
         self.diag       = 'LSF'
@@ -1316,13 +1326,10 @@ class CurrentPlot(TemporalPlot):
 
         self.showGaps = 0
 
-        fig = Figure()
-        self.axes = fig.add_subplot(111)
-        self.canvas = FigureCanvas(fig)
-
         self.axes.set_ylabel('Current density [A/m$^2$]')
         self.axes.set_xlabel('Time [s]')
         self.axes.autoscale()
+        self.fig.tight_layout()
 
         self.indicator = Indicator(self)
 
@@ -1398,7 +1405,7 @@ class CurrentPlot(TemporalPlot):
                     ind = int(ind) - 1
 
                     # Only care about probes in this domain and region and the saturation current
-                    if probe.startswith(self.probeDomain + self.region) and quantity == 'Isat':
+                    if probe.startswith(self.domain + self.region) and quantity == 'Isat':
                         # Cut off probe domain and add quantity identifier
                         # Identifier is needed for using the TemporalPlot.update() method
                         probe = 'j-' + probe[1:].lower()
