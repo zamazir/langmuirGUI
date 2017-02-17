@@ -621,7 +621,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.TPlotCanvas = self.TPlot.canvas
         self.TPlotLayout.addWidget(self.TPlotCanvas)
         self.TPlot.parent = self.TPlotLayout
-        #self.TPlotLayout.addWidget(self.TPlot.indicator.canvas)
 
 
     def createnPlot(self):
@@ -635,7 +634,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.nPlotCanvas = self.nPlot.canvas
         self.nPlotLayout.addWidget(self.nPlotCanvas)
         self.nPlot.parent = self.nPlotLayout
-        #self.nPlotLayout.addWidget(self.nPlot.indicator.canvas)
     
 
     def createjPlot(self):
@@ -649,7 +647,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.jPlotCanvas = self.jPlot.canvas
         self.jPlotLayout.addWidget(self.jPlotCanvas)
         self.jPlot.parent = self.jPlotLayout
-        #self.jPlotLayout.addWidget(self.jPlot.indicator.canvas)
         
 
     def onPanZoom(self,event):
@@ -846,46 +843,23 @@ class ColorPatch(QtWidgets.QWidget):
 
 
 
-class QFigure(QWidget, Figure):
-    def __init__(self,parent):
-        QWidget.__init__(self, parent)
-
-
-
 class Indicator():
     """ Class for creating an indicator on a temporal plot to show the time that is displayed in the spatial plot. """
     def __init__(self, parent):
         self.parent = parent
         self.gui = parent.gui
         self.color = self.gui.config['Indicators']['color']
-        self.gui.xTimeSlider = self.gui.xTimeSlider
 
-        # Lay a new figure over the parent figure
-        self.fig = QFigure(parent.canvas)
-        self.axes = self.fig.add_axes(parent.axes.get_position(),
-                frameon=False, sharex=parent.axes, sharey=parent.axes)
-        self.canvas = FigureCanvas(self.fig)
-        plt.get_current_fig_manager().window.setGeometry(parent.parent.geometry())
-
-        for child in self.axes.get_children():
-                child.set_visible(False)
-        self.fig.show()
-        self.canvas.draw()
         self.slide()
+
 
     def slide(self):
         """ Repositions indicator according to time slider value. """
-        self.fig.patch.set_visible(True)
-        try:
-            self.indic.remove()
-            self.indic_fill.remove()
-        except: pass
-
         # Get current time from time slider and convert it
         pos = self.gui.xTimeSlider.value()
         time= self.gui.dtime[pos]
         tminus = time - self.gui.indicator_range[0]
-        tplus = time + self.gui.indicator_range[1]
+        tplus  = time + self.gui.indicator_range[1]
 
         # Update previous indicator if there already is one
         if hasattr(self, "indic"):
@@ -901,20 +875,17 @@ class Indicator():
 
             self.indic_fill.set_xy(xy)
 
-            self.axes.draw_artist(self.fig.patch)
-            self.axes.draw_artist(self.indic)
-            self.axes.draw_artist(self.indic_fill)
-            self.fig.patch.set_visible(False)
-            self.axes.draw_artist(self.fig.patch)
-            self.canvas.update()
-            self.canvas.flush_events()
+            self.parent.axes.draw_artist(self.indic)
+            self.parent.axes.draw_artist(self.indic_fill)
+            self.parent.canvas.update()
+            self.parent.canvas.flush_events()
 
         #Plot new indicator if there is none
         else:
-            self.indic = self.axes.axvline(x=time, color=self.color)
-            self.indic_fill = self.axes.axvspan(tminus, tplus, alpha=0.5,
+            self.indic      = self.parent.axes.axvline(x=time, color=self.color)
+            self.indic_fill = self.parent.axes.axvspan(tminus, tplus, alpha=0.5,
                     color=self.color)
-            self.canvas.draw()
+            self.parent.canvas.draw()
 
 
 
@@ -952,11 +923,6 @@ class Plot(object):
         self.fig = Figure(dpi=self.dpi)
         self.axes = self.fig.add_subplot(111)
         self.canvas = FigureCanvas(self.fig)
-
-        # Capture background so it can be restored when updating plots. This
-        # ensures that old artists vanish from the canvas
-        self.canvas.draw()
-        self.background = self.canvas.copy_from_bbox(self.axes.bbox)
 
 
 
@@ -1297,7 +1263,9 @@ class SpatialPlot(Plot):
         else:
             # Insert dummy plot for proper scaling
             self.axes.set_ylim(min(ytot)*0.9, max(ytot)*1.1)
-            self.axes.set_xlim(min(xtot)*0.9, max(xtot)*1.1)
+            # This creates too much space on the right
+            #self.axes.set_xlim(min(xtot)*0.9, max(xtot)*1.1)
+            self.axes.set_xlim(min(xtot)*0.9, 0.35)
             self.canvas.draw()
 
 
