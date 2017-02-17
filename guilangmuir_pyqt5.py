@@ -21,19 +21,14 @@
 #
 #
 # To do:
-# - Increase speed when moving the indicator
-#
 # - Update temporal plots when entering time for spatial plot
-#
-# - Increase speed by not having the indicator move as long as user is panning
 #
 # - Increase speed when calibrating current
 #
-# - Suppress checkbox events when initializing so that all temporal plots are
-#   plotted when initialization is finished
-#
 # - Add options to change all parameters like
 #       * Indicator.color
+#       * SpatialPlot.coloring = 1
+#       * SpatialPlot.defaultColor = 'b'
 #       * SpatialPlot.region
 #       * SpatialPlot.ignoreNans
 #       * TemporalPlot.axTitles
@@ -48,22 +43,6 @@
 #       * Path to mappings
 #   from within the GUI and store them in a config file
 #
-# - Read the following parameters from the config file at startup:
-#       * AplicationWindow.Dt
-#       * AplicationWindow.avgNum
-#       * Indicator.color
-#       * SpatialPlot.region
-#       * SpatialPlot.ignoreNans
-#       * TemporalPlot.axTitles
-#       * Plot.region
-#       * Plot.domain
-#       * CurrentPlot.mapDir
-#       * CurrentPlot.mapDiag
-#       * CurrentPlot.diag
-#       * Path to calibrations
-#       * Path to probe positions
-#       * Path to mappings
-#
 # - Think of a better way to implement axTitles
 #
 # - Implement getting mappings for CurrentPlot from LSC
@@ -72,6 +51,14 @@
 #
 # - Implement option to automatically zoom temporal plots to their value limits
 # 
+# - Implement ELM synchronized plots
+#       * ELM length: maximum ELM length
+#       * modes:
+#           + stretch: all ELM durations are normalized wrt longest ELM
+#           + original: ELMs are plotted with their original length
+#       * Set slider range to [0,ELM lenght] if mode=original
+#         Set slider range to [0,1] if mode=stretch
+#         
 ##############################################################################
 
 
@@ -83,10 +70,11 @@ from matplotlib import patches
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.widgets import SpanSelector
 
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import (QWidget, QMessageBox)
 from PyQt5.QtGui import (QPainter, QColor)
 from PyQt5.uic import loadUiType
 
@@ -96,6 +84,10 @@ from PyQt5.uic import loadUiType
 import ddlocal
 import numpy as np
 import sys
+import os
+
+from configobj import ConfigObj
+from validate import Validator
 
 Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
 
@@ -142,12 +134,72 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
         super(ApplicationWindow, self).__init__()
 
+        # Default configuration. Used when validation of config file fails
+        self.defaultConfig = {}
+        self.defaultConfig['Application'] = {
+                'Dt': 15,
+                'avgNum': 3,
+                'colorScheme': 'gist_rainbow',
+                'langmuirDiag': 'LSD',
+                'strikelineDiag': 'FPG',
+        }
+        self.defaultConfig['Indicators'] = {
+                'color': 'b',
+        }
+        self.defaultConfig['Plots'] = {
+                'region': 'ua',
+                'domain': '8',
+                'dpi': 80,
+        }
+        self.defaultConfig['Plots']['Spatial'] = {
+                'coloring': True,
+                'defaultColor': 'b',
+                'ignoreNans': True,
+                'positionsFile': 'Position_pins_08-2015.txt',
+        }
+        self.defaultConfig['Plots']['Temporal'] = {
+                'axTitles': {
+                    'te': 'Temperature [eV]',
+                    'ne': 'Density [1/m$^3]',
+                }
+        }
+        self.defaultConfig['Plots']['Temporal']['Current'] = {
+                'mapDir': '/afs/ipp/home/d/dacar/divertor/',
+                'mapFile':
+                '/afs/ipp/home/d/dacar/divertor/Configuration_32163_DAQ_28_IX_2015.txt',
+                'mapDiag': 'LSC',
+                'diag': 'LSF',
+                'calibFile': './calibrations.txt',
+        }
+
+        # Read config file
+        configFile = 'config.ini'
+        validFile  = 'validation.ini'
+        
+        if not os.path.isfile(validFile):
+            validFile = None
+        if os.path.isfile(configFile):
+            self.loadConfig(configFile, validFile)
+        else:
+            self.createConfig(configFile, validFile)
+
+        # Reference configuration for this class
+        config = self.config['Application']
+
+        # Configuration
+        self.avgNum     = config['avgNum']
+        self.Dt         = config['Dt']
+        self.langdiag   = config['langmuirDiag']
+        self.sldiag     = config['strikelineDiag']
+        self.colorScheme= config['colorScheme']
+
         # Set up UI
         self.setupUi(self)
         self.xTimeSlider.setTickPosition(QtWidgets.QSlider.NoTicks)
+        self.btnELMplot.hide()
 
         # Prepare probe table
-        columnNames = ['Probe','Color','Style','T(x)','n(x)','T(t)','n(t)','jsat(t)']
+        columnNames = ['Probe','Color','Style','T/n(x)','T(t)','n(t)','jsat(t)']
         self.probeTable.setColumnCount(len(columnNames))
         self.probeTable.setHorizontalHeaderLabels(columnNames)
         
@@ -160,15 +212,35 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         # Hide vertical header
         self.probeTable.verticalHeader().setVisible(False)
 
-        # Parameters for averaging spatial plot
-        self.avgNum = 3
-        self.Dt = 15
-
         # Set general behavior of GUI
         self.shotNumberEdit.returnPressed.connect(self.load)
         self.xTimeEdit.setMaxLength(7)
         self.shotNumberEdit.setMaxLength(5)
         self.shotNumberEdit.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+
+
+    def loadConfig(self, f, specf=None):
+        self.config = ConfigObj(f, configspec=specf)
+
+        # Validate/convert settings
+        val = Validator()
+        succeeded = self.config.validate(val)
+        
+        if not succeeded:
+            print "Config file validation failed. Using default values"
+            self.config = self.defaultConfig
+
+    
+    def createConfig(self, f, specf=None):
+        """ 
+        Creates cofiguration file using default values
+        """
+        self.config = ConfigObj(f, configspec=specf, create_empty=True)
+
+        # Copy default values to config and save it to file
+        for key, value in self.defaultConfig.iteritems():
+            self.config[key] = value
+        self.config.write()
 
 
     def load(self, ):
@@ -182,7 +254,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             
             self.getPlotOption()
             self.populateProbeList()
-            self.selectedProbes = {'x': [], 't': []}
+            self.selectedProbes = {'x': [], 't': ['te-ua1','ne-ua1','j-ua1']}
+            self.ELMphase = (0,0)
 
             # Update plots
             self.createxPlot()
@@ -191,10 +264,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.createnPlot()
             self.createTPlot()
             self.createjPlot()
-
-            # Select default probe
-            for cb in self.checkBoxes['ua1'].values():
-                cb.setCheckState(True)
 
             # Add matplotlib toolbar functionality
             self.nToolbar = NavigationToolbar(self.nPlot.canvas, self)
@@ -222,9 +291,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.xTimeEdit.returnPressed.connect(self.updateSlider)
             self.xTimeEdit.returnPressed.connect(self.updatexPlot)
 
-            self.xTimeSlider.sliderMoved.connect(self.updatexPlot)
+            self.xTimeSlider.valueChanged.connect(self.updatexPlot)
             self.xTimeSlider.valueChanged.connect(self.updateTimeText)
             self.xTimeSlider.valueChanged.connect(self.updateIndicators)
+            self.xTimeSlider.sliderReleased.connect(self.updatexPlotText)
         
             self.spinTWidth.editingFinished.connect(self.updateTWindow)
 
@@ -251,6 +321,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             print("No valid shot number has been entered yet.")
 
 
+    def updatexPlotText(self):
+        self.xPlot.updateText()
+
     def setAvgNum(self):
         avgNum, ok = QtWidgets.QInputDialog.getInt(self, 'Averaging spatial plot', 'Number of data points to average to one scatter plot point:\n\navgNum = ', value= self.avgNum, min=0)
 
@@ -265,14 +338,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def updateTWindowControls(self):
         """ Updates time window controls with current value of avgNum (number of data point to average over). """
         # SpinBox
-        # Save old value
         self.spinTWidth.setRange(self.avgNum, self.avgNum + 100)
         self.spinTWidth.setSingleStep(self.avgNum)
         self.spinTWidth.setValue(self.Dt)
 
         # Real time label
         dt = self.xPlot.realtmax - self.xPlot.realtmin
-        self.lblRealTWidth.setText("= {:.2f}us".format(dt*10**6))
+        self.lblRealTWidth.setText("= {:.1f}us".format(dt*10**6))
 
 
     def updateIndicators(self):
@@ -294,23 +366,31 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         # If probe is checked, add it to selectedProbes
         # If not, make sure it's not in selectedProbes
         if cb.checkState() and pnq not in self.selectedProbes[axType]:
-            #print("Adding {} to selectedProbes".format(pnq))
+            print("Adding {} to selectedProbes".format(pnq))
             self.selectedProbes[axType].append(pnq)
         elif not cb.checkState() and pnq in self.selectedProbes[axType]:
             while pnq in self.selectedProbes[axType]:
                 self.selectedProbes[axType].remove(pnq)
-                #print("Removing {} from selectedProbes".format(pnq))
+                print("Removing {} from selectedProbes".format(pnq))
 
         #print "Selected probes after the update:", self.selectedProbes
-        self.nPlot.averageData()
-        self.nPlot.update()
-        self.nPlot.canvas.draw()
-        self.TPlot.averageData()
-        self.TPlot.update()
-        self.TPlot.canvas.draw()
-        self.jPlot.averageData()
-        self.jPlot.update()
-        self.jPlot.canvas.draw()
+        if axType == 't':
+            if quantity == 'ne':
+                self.nPlot.averageData()
+                self.nPlot.update()
+                self.nPlot.canvas.draw()
+            elif quantity == 'te':
+                self.TPlot.averageData()
+                self.TPlot.update()
+                self.TPlot.canvas.draw()
+            elif quantity == 'j':
+                self.jPlot.averageData()
+                self.jPlot.update()
+                self.jPlot.canvas.draw()
+        if axType == 'x':
+            print "axType is x"
+            self.xPlot.toggleProbe(probe, cb.checkState())
+            self.xPlot.canvas.draw()
         
 
     def resettPlots(self):
@@ -347,7 +427,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         table.setRowCount(0)
 
         # Set color scheme for currently available probes
-        cm = plt.get_cmap('gist_rainbow')
+        cm = plt.get_cmap(self.colorScheme)
         colors = cm(np.linspace(0, 1, len(self.uniqueProbes)))
 
         self.probeColors = {}
@@ -371,13 +451,23 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
             # Checkboxes
             mapper = QtCore.QSignalMapper(self)
-            for i, cbType in enumerate(('te-x','ne-x','te-t','ne-t','j-t')):
+            for i, cbType in enumerate(('te-x','te-t','ne-t','j-t')):
                 cb = QtWidgets.QCheckBox()
                 cbID = probe + '-' + cbType
                 mapper.setMapping(cb, cbID) 
                 cb.stateChanged.connect(mapper.map)
                 table.setCellWidget(rowPos, i+3, cb)
                 self.checkBoxes[probe][cbType] = cb
+
+                # Make checkboxes 0 or 1 only
+                cb.setTristate(False)
+
+                # Check ua1 plots
+                if probe == 'ua1':
+                    cb.setChecked(True)
+                # Check all spatial plots
+                elif cbType[-1] == 'x':
+                    cb.setChecked(True)
 
             mapper.mapped['QString'].connect(self.togglePlots)
 
@@ -402,7 +492,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def updatexPlot(self):
         self.xPlot.fixyLim = self.menuFixxPlotyLim.isChecked()
         self.xPlot.update()
-        self.xPlotCanvas.draw()
 
 
     def updateSlider(self):
@@ -492,9 +581,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.lblRealTWidth.setText("= {:.2f}us".format(dt*10**6))
 
 
-    def createxPlot(self):
-        """ Updates spatial plot by trying to remove the previous plot and creating a new canvas. Creates a SpatialPlot object. """
-        # If canvas already exists, delete it
+    def createOverlayPlot(self):
+        self.clearxPlot()
+        # create new canvas
+        self.xPlot = SpatialPlot(self)
+        self.xPlotCanvas = self.xPlot.canvas
+        self.xPlotLayout.addWidget(self.xPlotCanvas)
+
+
+    def clearxPlot(self):
         try:
             print("Deleting old canvas")
             self.xPlotLayout.removeWidget(self.xPlotCanvas)
@@ -503,11 +598,16 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             print("Old canvas could not be deleted")
             pass
 
+
+    def createxPlot(self):
+        """ Updates spatial plot by trying to remove the previous plot and creating a new canvas. Creates a SpatialPlot object. """
+        # If canvas already exists, delete it
+        self.clearxPlot()
+
         # create new canvas
         self.xPlot = SpatialPlot(self)
         self.xPlotCanvas = self.xPlot.canvas
         self.xPlotLayout.addWidget(self.xPlotCanvas)
-
 
 
     def createTPlot(self):
@@ -520,6 +620,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.TPlot = TemporalPlot(self,'te')
         self.TPlotCanvas = self.TPlot.canvas
         self.TPlotLayout.addWidget(self.TPlotCanvas)
+        self.TPlot.parent = self.TPlotLayout
+        #self.TPlotLayout.addWidget(self.TPlot.indicator.canvas)
 
 
     def createnPlot(self):
@@ -532,6 +634,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.nPlot = TemporalPlot(self,'ne')
         self.nPlotCanvas = self.nPlot.canvas
         self.nPlotLayout.addWidget(self.nPlotCanvas)
+        self.nPlot.parent = self.nPlotLayout
+        #self.nPlotLayout.addWidget(self.nPlot.indicator.canvas)
     
 
     def createjPlot(self):
@@ -544,6 +648,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.jPlot = CurrentPlot(self)
         self.jPlotCanvas = self.jPlot.canvas
         self.jPlotLayout.addWidget(self.jPlotCanvas)
+        self.jPlot.parent = self.jPlotLayout
+        #self.jPlotLayout.addWidget(self.jPlot.indicator.canvas)
         
 
     def onPanZoom(self,event):
@@ -552,11 +658,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def getShot(self):
         """ Retrieves langmuir data and strikeline positions from AUG shotfiles. This is an expensive operation and should only be invoked when loading a new shotfile. """
-        self.langdiag = 'LSD'
-        self.sldiag = 'FPG'
-        self.elmdiag = 'ELM'
-        self.jdiag = 'LSF'
-
         # Try to read langmuir data. If shot number not valid, prompt user and abort
         try:
             self.shotnr = int(self.shotNumberEdit.text())
@@ -745,18 +846,41 @@ class ColorPatch(QtWidgets.QWidget):
 
 
 
+class QFigure(QWidget, Figure):
+    def __init__(self,parent):
+        QWidget.__init__(self, parent)
+
+
+
 class Indicator():
     """ Class for creating an indicator on a temporal plot to show the time that is displayed in the spatial plot. """
-    def __init__(self, plot):
-        self.plot = plot
-        self.gui = plot.gui
-        self.color = 'b'
+    def __init__(self, parent):
+        self.parent = parent
+        self.gui = parent.gui
+        self.color = self.gui.config['Indicators']['color']
         self.gui.xTimeSlider = self.gui.xTimeSlider
 
+        # Lay a new figure over the parent figure
+        self.fig = QFigure(parent.canvas)
+        self.axes = self.fig.add_axes(parent.axes.get_position(),
+                frameon=False, sharex=parent.axes, sharey=parent.axes)
+        self.canvas = FigureCanvas(self.fig)
+        plt.get_current_fig_manager().window.setGeometry(parent.parent.geometry())
+
+        for child in self.axes.get_children():
+                child.set_visible(False)
+        self.fig.show()
+        self.canvas.draw()
         self.slide()
 
     def slide(self):
         """ Repositions indicator according to time slider value. """
+        self.fig.patch.set_visible(True)
+        try:
+            self.indic.remove()
+            self.indic_fill.remove()
+        except: pass
+
         # Get current time from time slider and convert it
         pos = self.gui.xTimeSlider.value()
         time= self.gui.dtime[pos]
@@ -766,16 +890,31 @@ class Indicator():
         # Update previous indicator if there already is one
         if hasattr(self, "indic"):
             self.indic.set_xdata(time)
-            self.indic_fill.remove()
-            self.indic_fill = self.plot.axes.axvspan(tminus, tplus, alpha=0.5, color=self.color)
+            xy = self.indic_fill.get_xy()
+            xy = [
+                    [tminus,xy[0][1]],
+                    [tminus,xy[1][1]],
+                    [tplus,xy[2][1]],
+                    [tplus,xy[3][1]],
+                    [tminus,xy[4][1]]
+                ]
 
+            self.indic_fill.set_xy(xy)
+
+            self.axes.draw_artist(self.fig.patch)
+            self.axes.draw_artist(self.indic)
+            self.axes.draw_artist(self.indic_fill)
+            self.fig.patch.set_visible(False)
+            self.axes.draw_artist(self.fig.patch)
+            self.canvas.update()
+            self.canvas.flush_events()
+
+        #Plot new indicator if there is none
         else:
-            #Plot new indicator
-            self.indic = self.plot.axes.axvline(x=time, color=self.color)
-            self.indic_fill = self.plot.axes.axvspan(tminus, tplus, alpha=0.5, color=self.color)
-
-        # Re-draw canvas
-        self.plot.canvas.draw()
+            self.indic = self.axes.axvline(x=time, color=self.color)
+            self.indic_fill = self.axes.axvspan(tminus, tplus, alpha=0.5,
+                    color=self.color)
+            self.canvas.draw()
 
 
 
@@ -795,16 +934,41 @@ class Conversion():
         return array[~np.isnan(refarray)]
 
 
+
 class Plot(object):
     def __init__(self, gui):
-        self.region = 'ua'
-        self.domain = '8'
         self.gui = gui
+        config = gui.config['Plots']
+        self.region = config['region']
+        self.domain = config['domain']
+        self.dpi    = config['dpi']
 
-        self.fig = Figure()
+        self.parents = {
+                'te': 'TPlotLayout',
+                'ne': 'nPlotLayout',
+                'j': 'jPlotLayout',
+                }
+
+        self.fig = Figure(dpi=self.dpi)
         self.axes = self.fig.add_subplot(111)
         self.canvas = FigureCanvas(self.fig)
 
+        # Capture background so it can be restored when updating plots. This
+        # ensures that old artists vanish from the canvas
+        self.canvas.draw()
+        self.background = self.canvas.copy_from_bbox(self.axes.bbox)
+
+
+
+class OverlayPlot(Plot):
+    def __init__(self, gui, quantity):
+        super(OverlayPlot, self).__init__(gui)
+
+        self.mode = 'stretch' # |conserve
+
+
+    def plot(self):
+        pass        
 
 
 
@@ -818,29 +982,35 @@ class SpatialPlot(Plot):
     #
     def __init__(self, gui):
         super(SpatialPlot, self).__init__(gui)
-        self.scatter = {}
+
+        config = gui.config['Plots']['Spatial']
+        self.coloring = config['coloring']
+        self.defaultColor = config['defaultColor']
+        self.posFile = config['positionsFile']
+        self.fixyLim = config['fixyLim']
+        # If this value is 1 then averaged values are not nans if one or more
+        # of the values used to calculate it is a nan
+        # This setting is ignored if all values to be averaged over are nans
+        self.ignoreNans = config['ignoreNans']
+
+        self.scatters = {}
+        self.quantities = {
+                'Temperature': 'te',
+                'Density': 'ne',
+                'Saturation current density': 'j'
+                }
         
-        print("Initiating spatial plot")
         # Number of timesteps around the current time to include in the plot (see getShotData())
         self.Dt = gui.Dt
         # Number of data points over which to average
         self.avgNum = gui.avgNum
-
-        # If this value is 1 then averaged values are not nans if one or more of the values used to calculate it is a nan
-        # This setting is ignored if all values to be averaged over are nans
-        self.ignoreNans = 1
-
-        self.fixyLim = False
 
         self.Rsl = self.gui.Rsl
         self.ssl = self.gui.ssl
         self.zsl = self.gui.zsl
         
         self.option = self.gui.getPlotOption()
-        if self.option == 'Temperature':
-            self.quantity = 'te'
-        if self.option == 'Density':
-            self.quantity = 'ne'
+        self.quantity = self.quantities[self.option]
 
         self.getShotData()
         self.averageData()
@@ -887,11 +1057,7 @@ class SpatialPlot(Plot):
 
                 # Time converted to actual time values
                 # If there is an index error, take the global minimum or maximum
-                try:
-                    self.realtmin = dtime[tmin]
-                except Exception:
-                    self.realtmin = dtime[0]
-                    print("Minimum value of time range to evaluate is out of range. Using minimum of available time range.")
+                self.realtmin = dtime[tmin]
                 try:
                     self.realtmax = dtime[tmax]
                 except Exception:
@@ -912,9 +1078,9 @@ class SpatialPlot(Plot):
                 self.realtime_arr[probe] = dtime[ind]
 
                 # Save the time data of the last probe as the global time data. This assumes that all time arrays of the probes are identical
-                self.dtime = dtime
-                realdtminus = self.realtime - self.realtmin
-                realdtplus = -(self.realtime - self.realtmax)
+                self.dtime  = dtime
+                realdtminus = abs(self.realtime - self.realtmin)
+                realdtplus  = abs(self.realtime - self.realtmax)
                 self.realdtrange = (realdtminus, realdtplus)
 
 
@@ -967,23 +1133,29 @@ class SpatialPlot(Plot):
 
 
     def getProbePositions(self):
-        """ Gets positions of probes in the specified region in terms of R,z coordinates. Saves the coordinates as tuples in a class parameter array "probePositions" with the probe names as keys. """
+        """ 
+        Gets positions of probes in the specified region in terms of R,z
+        coordinates. Saves the coordinates as tuples in a class parameter array
+        "probePositions" with the probe names as keys. 
+        """
         self.probePositions = {}
 
-        posFile = open("Position_pins_08-2015.txt")
-
         # Read probe name and R and z coordinates of each probe
-        for line in posFile:
-            probeName = line.split()[0][1:]                 # Probe name
-            R = float(line.split()[1].replace(",","."))     # R
-            z = float(line.split()[2].replace(",","."))     # z
-        
-            self.probePositions[probeName] = (R,z)
-        posFile.close()
+        with open(self.posFile) as f:
+            lines = f.readlines()
+            for line in lines:
+                probeName = line.split()[0][1:]                 # Probe name
+                R = float(line.split()[1].replace(",","."))     # R
+                z = float(line.split()[2].replace(",","."))     # z
+                 
+                self.probePositions[probeName] = (R,z)
 
 
     def rztods(self):
-        """ Converts probe positions from (R,z) coordinates to delta-s coordinate based on current strikeline position. This enables plots in units of delta-s along the x-axis. It is implicitly assumed that the divertor tile is flat."""
+        """ Converts probe positions from (R,z) coordinates to delta-s
+        coordinate based on current strikeline position. This enables plots in
+        units of delta-s along the x-axis. It is implicitly assumed that the
+        divertor tile is flat."""
         self.plotPositions = {}
         
         for probe in self.data.keys():
@@ -995,7 +1167,9 @@ class SpatialPlot(Plot):
 
             for time in self.realtime_arr[probe]:
                 # Get R and z coordinates of strikeline at this point in time
-                # Finding the index of the time value closest to the current time is less prone to errors than trying to find the exact value
+                # Finding the index of the time value closest to the current
+                # time is less prone to errors than trying to find the exact
+                # value
                 ind_R = np.abs((self.Rsl['time'] - time)).argmin()
                 R_sl = self.Rsl['data'][ind_R]
                 ind_z = np.abs((self.zsl['time'] - time)).argmin()
@@ -1003,13 +1177,19 @@ class SpatialPlot(Plot):
 
                 # Throw error if timestamps don't match
                 if self.zsl['time'][ind_z] != self.Rsl['time'][ind_R]:
-                    print('++++CRITICAL++++\n\nTried to find timestamps of strikeline R and z measurements at times closest to {} in the respective shot file data but the found values for R and z don\'t match! Data evaluation will not be reliable.')
+                    print('++++CRITICAL++++\n\nTried to find timestamps of\
+                            strikeline R and z measurements at times closest\
+                            to {} in the respective shot file data but the\
+                            found values for R and z don\'t match! Data\
+                            evaluation will not be reliable.')
 
                 # Calculate delta-s
                 # Assumption: divertor tile is flat
                 ds = np.sqrt( (R_sl-R_p)**2 + (z_sl-z_p)**2 ) 
-                # If the z coordinate of the probe is smaller than that of the strikeline, 
-                # then the delta-s associated with this probe at this time is negative
+                # If the z coordinate of the probe is smaller than that of the
+                # strikeline, 
+                # then the delta-s associated with this probe at this time is
+                # negative
                 if z_p < z_sl: ds = -ds
 
                 #print('Position of strikeline at time {}: R = {}, z = {} resulting in ds = {}'.format(self.zsl['time'][ind_z],R_sl,z_sl,ds))
@@ -1017,25 +1197,70 @@ class SpatialPlot(Plot):
 
 
     def initPlot(self, ):
-        """ Populates canvas with initial plot. Creates Line2D object that will be updated when plot has to change based on GUI interaction."""
+        """ Populates canvas with initial plot. Creates PathCollection objects that will be updated when plot has to change based on GUI interaction."""
         print("Populating canvas with spatial plot")
-        x = []
-        y = []
         for probe in self.avgData.keys():
+            x = []
+            y = []
             for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
                 x.append(position)
                 y.append(value)
-            color = self.gui.probeColors[probe.split('-')[1]]
-            print "Plotting {} in {}".format(probe, color)
-            self.scatter[probe] = self.axes.scatter(x, y, color=color)
 
-        self.axes.set_title("{} distribution on the outer lower target plate in AUG @{:.4f}s".format(self.option,self.realtime))
+            # Use different color for each probe if wished
+            if self.coloring:
+                color = self.gui.probeColors[probe.split('-')[1]]
+            else:
+                color = self.defaultColor
+
+            # Plot
+            self.scatters[probe.split('-')[1]] = self.axes.scatter(x, y, color=color)
+
+        # Add text box showing the current time
+        self.updateText()
+        
+        # Set axes labels
+        self.axes.set_title("{} distribution on the outer lower target plate".format(self.option))
         self.axes.set_ylabel(self.option)
         self.axes.set_xlabel("$\Delta$s")
 
+        self.fig.tight_layout()
+
+
+    def updateText(self):
+        """ Updates the figure text and its position according to the current
+        time"""
+        t    = self.realtime
+        dt   = (self.realdtrange[0]*10**6, 
+                self.realdtrange[1]*10**6)
+
+        text = r"$@{0:.7f}s^{{+{1:.1f}\mu s}}_{{-{2:.1f}\mu s}}$".format(t,
+                dt[0], dt[1])
     
+        if not len(self.axes.texts):
+            self.axes.text(0.1, 0.9, text, 
+                            ha='left', va='center',
+                            transform=self.axes.transAxes)
+        else:
+            self.axes.texts[0].set_text(text)
+        
+        if self.fixyLim:
+            try:
+                self.axes.draw_artist(self.axes.texts[0])
+            except:
+                pass
+            else:
+                self.canvas.update()
+                self.canvas.flush_events()
+        else:
+            self.canvas.draw()
+    
+
     def update(self, ):
-        print "Updating spatial plot"
+        """ Updates scatter plots based on the current time. If y-axis is
+        fixed, only the background and the scatter plots are updated with
+        a succeding call of ax.update() which considerably improves
+        performance. If the y-axis is not fixed, the whole canvas is
+        re-drawn."""
         self.avgNum = self.gui.avgNum
         self.getShotData()
         self.averageData()
@@ -1043,26 +1268,44 @@ class SpatialPlot(Plot):
         xtot = []
         ytot = []
         for probe in self.avgData.keys():
+            scatter = self.scatters[probe.split('-')[1]]
             x = []
             y = []
             for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
                 x.append(position)
                 y.append(value)
-            self.scatter[probe].set_offsets([x,y])
-
+                xtot.append(position)
+                ytot.append(value)
+             
+            newdata = [list(t) for t in zip(x,y)]
+            scatter.set_offsets(newdata)
+        
+        # Only update changing artists if axes are fixed
         if self.fixyLim:
-            pass
+            # Background
+            self.axes.draw_artist(self.axes.patch)
+            # Scatter plots
+            for scatter in self.scatters.values():
+                self.axes.draw_artist(scatter)
+            # Spines
+            #for spine in self.axes.spines.values():
+            #    self.axes.draw_artist(spine)
+            self.canvas.update()
+            self.canvas.flush_events()
+
+        # Re-draw everything if axes are not fixed
         else:
             # Insert dummy plot for proper scaling
-            plot, = self.axes.plot(xtot,ytot)
+            self.axes.set_ylim(min(ytot)*0.9, max(ytot)*1.1)
+            self.axes.set_xlim(min(xtot)*0.9, max(xtot)*1.1)
+            self.canvas.draw()
 
-            # Scale the canvas and remove the dummy plot
-            self.axes.relim()
-            self.axes.autoscale()
-            plot.remove()
 
-        # Update title based on new time
-        self.axes.set_title("{} distribution on the outer lower target plate in AUG @{:.4f}s".format(self.option,self.realtime))
+    def toggleProbe(self, probe, vis):
+        """ Toggle probes to show in scatter plot. """
+        print "Toggling probe", probe
+        scatter = self.scatters[probe]
+        scatter.set_visible(vis)
 
 
     def setTimeText(self):
@@ -1104,9 +1347,14 @@ class TemporalPlot(Plot):
     def __init__(self, gui, quantity):
         super(TemporalPlot, self).__init__(gui)
 
-        self.axTitles = {'te': 'Temperature [eV]', 'ne': 'Density [1/m$^3$]'}
+        config = gui.config['Plots']['Temporal']
+        self.axTitles = config['axTitles']
+        self.showGaps = config['showGaps']
+        self.rescaling = config['rescale-y']
+
         self.quantity = quantity
         self.selectedProbes = self.gui.selectedProbes['t']
+        self.parent = getattr(gui, self.parents[quantity])
 
         self.data = {}
         self.time = {}
@@ -1116,20 +1364,57 @@ class TemporalPlot(Plot):
         self.xlim_orig = [9999999999999, -999999999999]
         self.ylim_orig = [9999999999999, -999999999999]
 
-        self.showGaps = 0
+        # Enable span selector for ELM evaluation
+        self.spanSelector = SpanSelector(self.axes, self.onSpanSelect,
+                                        'horizontal', span_stays=True,
+                                        useblit=True, button=1)
 
+        # Set axes labels
         self.axes.set_ylabel(self.axTitles[self.quantity])
         self.axes.set_xlabel('Time [s]')
         self.axes.autoscale()
         self.fig.tight_layout()
 
+        # Initial plot
         self.getShotData()
         self.averageData()
         self.update()
-
         self.indicator = Indicator(self)
 
         self.axes.callbacks.connect('xlim_changed', self.setSliderRange)
+        self.axes.callbacks.connect('xlim_changed', self.rescaleyAxis)
+
+
+    def onSpanSelect(self, xmin, xmax):
+        self.gui.ELMphase = (xmin, xmax)
+        self.gui.btnELMplot.show()
+
+
+    def rescaleyAxis(self, event):
+        """
+        Rescales yaxis to better resolve data in y-direction if
+        TemporalPlot.rescaling is True. This function is triggered when zooming
+        in x-direction.
+        """
+        pass
+        #print dir(event)
+        #print "RESCALE TRIGGERED"
+        #if self.rescaling:
+        #    print "Rescaling axes"
+        #    # Get currently visible ydata based on current xdata
+        #    yvis = []
+        #    xlims= self.axes.get_xlim()
+        #    for plot in self.plots.values():
+        #        xdata = plot.get_xdata()
+        #        ydata = plot.get_ydata()
+
+        #        for x, y in zip(xdata, ydata):
+        #            if xlims[0] < x < xlims[1]:
+        #                yvis.append(y)
+
+        #    # Rescale yaxis based on visible ydata
+        #    if len(yvis) > 0:
+        #        self.axes.set_ylim(min(yvis), max(yvis))
 
 
     def getShotData(self):
@@ -1207,7 +1492,7 @@ class TemporalPlot(Plot):
                 # Plot data
                 uniqueProbe = probe.split('-')[1]
                 color = self.gui.probeColors[uniqueProbe]
-                self.plot, = self.axes.plot(x,y, color=color)
+                self.plot, = self.axes.plot(x,y, color=color, zorder=50)
 
                 # Save artist for future reference
                 self.plots[probe] = self.plot
@@ -1253,66 +1538,30 @@ class TemporalPlot(Plot):
         self.gui.xTimeSlider.setMaximum(Conversion.valtoind(maxTime, self.gui.dtime))
 
 
-    def enableMouseZoom(self, base_scale = .5):
-        """ Enables zooming with the scroll wheel if called on a matplotlib canvas. """
-        def zoom_fun(event):
-            """ Zooms plot using mouse wheel motion. """
-            # Original axes limits
-            xlim_orig = self.xlim_orig
-            ylim_orig = self.ylim_orig
-
-            # get the current x and y limits
-            cur_xlim = self.axes.get_xlim()
-            cur_ylim = self.axes.get_ylim()
-            cur_xrange = (cur_xlim[1] - cur_xlim[0])*.5
-            cur_yrange = (cur_ylim[1] - cur_ylim[0])*.5
-             
-            # Get event location
-            xdata = event.xdata
-            ydata = event.ydata
-
-            # Handle zoom events
-            if event.button == 'down':
-                # deal with zoom in
-                scale_factor = 1/base_scale
-            elif event.button == 'up':
-                # deal with zoom out
-                scale_factor = base_scale
-            else:
-                # deal with something that should never happen
-                scale_factor = 1
-                #print event.button
-
-            # New axes limits. Don't allow zooming out beyond original boundaries
-            xlim = [max(xlim_orig[0], xdata - cur_xrange*scale_factor), min(xlim_orig[1], xdata + cur_xrange*scale_factor)]
-            #ylim = [max(ylim_orig[0], ydata - cur_yrange*scale_factor), min(ylim_orig[1], ydata + cur_yrange*scale_factor)]
-
-            # set new limits
-            self.axes.set_xlim(xlim)
-            #self.axes.set_ylim(ylim)
-            
-            # Re-draw canvas
-            self.canvas.draw()
-
-        #return the function
-        return zoom_fun
-
-
 
 class CurrentPlot(TemporalPlot):
-    # Get mapping between probes and channels from files at /afs/ipp/home/d/dacar/divertor/
-    # If no file present, try to get the mapping from LSC
-    # Calibrate the measurements with probe surfaces to obtain current densities
-    # Plot results
+    # Get mapping between probes and channels from files at
+    # /afs/ipp/home/d/dacar/divertor/ If no file present, try to get the
+    # mapping from LSC Calibrate the measurements with probe surfaces to obtain
+    # current densities Plot results
     def __init__(self, gui):
         Plot.__init__(self, gui)
+
+        # Configuration
+        config = gui.config['Plots']['Temporal']['Current']
+        self.mapDir      = config['mapDir']
+        self.mapDiag     = config['mapDiag']
+        self.diag        = config['diag']
+        self.calibFile   = config['calibFile']
+        self.mapFilePath = config['mapFile']
+        self.showGaps    = gui.config['Plots']['Temporal']['showGaps']
+        self.rescaling   = gui.config['Plots']['Temporal']['rescale-y']
+
+        # Attributes
         self.quantity    = 'j'
+        self.shotnr      = gui.shotnr
         self.probeNamePrefix = self.quantity + '-' + self.region
         self.selectedProbes  = self.gui.selectedProbes['t']
-        self.mapDir      = 'afs/ipp/home/d/dacar/divertor/'
-        self.mapDiag     = 'LSC'
-        self.diag       = 'LSF'
-        self.shotnr      = gui.shotnr
         self.hasMapping  = False
         self.calib       = {}
         self.map         = {}
@@ -1323,8 +1572,7 @@ class CurrentPlot(TemporalPlot):
         self.plots       = {}
         self.xlim_orig   = [9999999999999, -999999999999]
         self.ylim_orig   = [9999999999999, -999999999999]
-
-        self.showGaps = 0
+        self.parent      = getattr(gui, self.parents[self.quantity])
 
         self.axes.set_ylabel('Current density [A/m$^2$]')
         self.axes.set_xlabel('Time [s]')
@@ -1333,10 +1581,8 @@ class CurrentPlot(TemporalPlot):
 
         self.indicator = Indicator(self)
 
-        # Implement interactive behavior: Event handling when zoomed or dragged
-        # Zoom with mouse wheel
-        #self.enableMouseZoom()
         self.axes.callbacks.connect('xlim_changed', self.setSliderRange)
+        self.axes.callbacks.connect('xlim_changed', self.rescaleyAxis)
 
         self.getShotData()
         #self.calibrateData()
@@ -1379,17 +1625,21 @@ class CurrentPlot(TemporalPlot):
                         self.time[probe] = shot.getTimeBase(channel)
 
 
-    def getMapping(self, filePath=None):
+    def getMapping(self):
         """ Loads probe-channel mapping from file. Tries to load from LSC if file not available. """
-        # Try to get mapping from file
-        filePath = "../Probes/Configuration_32898_DAQ_26_I_2016.txt"
         ok = True
-        if filePath == None:
-            filePath, ok = QtWidgets.QFileDialog.getOpenFileName(self.gui, 'Load mapping file')
+        # File load dialog if mapFilePath was set to None during runtime
+        if self.mapFilePath == None:
+            self.mapFilePath, ok = \
+                    QtWidgets.QFileDialog.getOpenFileName(
+                        self.gui,
+                        dir=self.mapDir,
+                        caption='Load mapping file'
+                    )
         if not ok:
             return False
         else:
-            with open(filePath) as f:
+            with open(self.mapFilePath) as f:
                 lines = f.readlines()
                 for line in lines:
                     try:
@@ -1458,7 +1708,7 @@ class CurrentPlot(TemporalPlot):
     def getCalibrations(self, path=None):
         """ Loads probe dimensions from file so current can be converted to current density. """
         if path == None:
-            path = './calibrations.txt'
+            path = self.calibFile
 
         with open(path) as f:
             lines = f.readlines()[1:]

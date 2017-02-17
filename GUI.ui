@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1234</width>
-    <height>964</height>
+    <height>1061</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -99,6 +99,25 @@
                  </property>
                 </widget>
                </item>
+               <item>
+                <widget class="QPushButton" name="btnELMplot">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Create ELM region plot</string>
+                 </property>
+                </widget>
+               </item>
               </layout>
              </widget>
             </item>
@@ -111,12 +130,17 @@
                 </property>
                 <item>
                  <property name="text">
+                  <string>Density</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
                   <string>Temperature</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
-                  <string>Density</string>
+                  <string>Saturation current density</string>
                  </property>
                 </item>
                </widget>
@@ -126,7 +150,7 @@
             <item>
              <widget class="QWidget" name="xPlot" native="true">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+               <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -200,30 +224,26 @@
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="switchStatPos">
-              <item>
-               <property name="text">
-                <string>Statistics</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Probe positions</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <widget class="QWidget" name="statsAndPos" native="true">
-              <layout class="QVBoxLayout" name="verticalLayout_8"/>
+             <widget class="QTableWidget" name="probeTable">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>500</width>
+                <height>100</height>
+               </size>
+              </property>
              </widget>
             </item>
            </layout>
            <zorder>xPlot</zorder>
            <zorder>xPlotControls</zorder>
-           <zorder>statsAndPos</zorder>
-           <zorder>switchStatPos</zorder>
            <zorder>shotDetailBar</zorder>
+           <zorder>probeTable</zorder>
           </widget>
          </item>
          <item>
@@ -232,7 +252,7 @@
             <item>
              <widget class="QWidget" name="TPlot" native="true">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -259,7 +279,7 @@
             <item>
              <widget class="QWidget" name="nPlot" native="true">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -289,7 +309,7 @@
             <item>
              <widget class="QWidget" name="jPlot" native="true">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -327,13 +347,13 @@
               <property name="minimumSize">
                <size>
                 <width>0</width>
-                <height>250</height>
+                <height>60</height>
                </size>
               </property>
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
-                <height>250</height>
+                <height>100</height>
                </size>
               </property>
               <layout class="QVBoxLayout" name="tPlotCtrlLayout">
@@ -347,11 +367,17 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QWidget" name="buttoContainer" native="true">
+                <widget class="QWidget" name="buttonContainer" native="true">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>50</height>
+                  </size>
+                 </property>
                  <property name="maximumSize">
                   <size>
                    <width>16777215</width>
-                   <height>45</height>
+                   <height>200</height>
                   </size>
                  </property>
                  <layout class="QHBoxLayout" name="horizontalLayout">
@@ -380,22 +406,6 @@
                    </widget>
                   </item>
                  </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="QTableWidget" name="probeTable">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="minimumSize">
-                  <size>
-                   <width>500</width>
-                   <height>200</height>
-                  </size>
-                 </property>
                 </widget>
                </item>
               </layout>
@@ -508,6 +518,7 @@
      <addaction name="actionStyle"/>
     </widget>
     <addaction name="menuGraphs"/>
+    <addaction name="actionSettings"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -619,6 +630,11 @@
   <action name="menuFixxPlotyLim">
    <property name="text">
     <string>Fix spatial plot height</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="text">
+    <string>Settings</string>
    </property>
   </action>
  </widget>
