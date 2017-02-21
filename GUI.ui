@@ -450,9 +450,16 @@
     <property name="title">
      <string>View</string>
     </property>
+    <widget class="QMenu" name="menuSpatial_Plot">
+     <property name="title">
+      <string>Spatial Plot</string>
+     </property>
+     <addaction name="menuIgnoreNaNsSpatial"/>
+    </widget>
     <addaction name="actionToggle_plot"/>
     <addaction name="actionMaximize_plot"/>
     <addaction name="menuFixxPlotyLim"/>
+    <addaction name="menuSpatial_Plot"/>
    </widget>
    <widget class="QMenu" name="menuShot">
     <property name="title">
@@ -628,6 +635,9 @@
    </property>
   </action>
   <action name="menuFixxPlotyLim">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Fix spatial plot height</string>
    </property>
@@ -635,6 +645,25 @@
   <action name="actionSettings">
    <property name="text">
     <string>Settings</string>
+   </property>
+  </action>
+  <action name="menuIgnoreNaNsSpatial">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Ignore NaNs</string>
+   </property>
+   <property name="toolTip">
+    <string>Ignoring NaNs will ensure plotting of points even if one of the data points they represent is NaN</string>
+   </property>
+  </action>
+  <action name="actionStuuff">
+   <property name="text">
+    <string>stuuff</string>
    </property>
   </action>
  </widget>

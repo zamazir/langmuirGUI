@@ -19,7 +19,6 @@
 # - At application start, jPlot is not synced with the others. This changes when one of
 #   the plots is zoomed twice
 #
-#
 # To do:
 # - Update temporal plots when entering time for spatial plot
 #
@@ -89,6 +88,10 @@ import os
 from configobj import ConfigObj
 from validate import Validator
 
+# Set recursion limit high so using the slider won't crash the app
+sys.setrecursionlimit(10000)
+
+# Load UI
 Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
 
 # Uncomment the following line if using ddlocal
@@ -198,6 +201,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.xTimeSlider.setTickPosition(QtWidgets.QSlider.NoTicks)
         self.btnELMplot.hide()
 
+        # Set GUI options to what was read from config.ini
+        self.menuFixxPlotyLim.setChecked(self.config['Plots']['Spatial']['fixyLim'])
+        self.menuIgnoreNaNsSpatial.setChecked(self.config['Plots']['Spatial']['ignoreNans'])
+
         # Prepare probe table
         columnNames = ['Probe','Color','Style','T/n(x)','T(t)','n(t)','jsat(t)']
         self.probeTable.setColumnCount(len(columnNames))
@@ -269,9 +276,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.nToolbar = NavigationToolbar(self.nPlot.canvas, self)
             self.TToolbar = NavigationToolbar(self.TPlot.canvas, self)
             self.jToolbar = NavigationToolbar(self.jPlot.canvas, self)
+            self.xToolbar = NavigationToolbar(self.xPlot.canvas, self)
             self.nToolbar.hide()
             self.TToolbar.hide()
             self.jToolbar.hide()
+            self.xToolbar.hide()
 
             # Synchronize temporal plots
             Sync.sync(self.nPlot, self.TPlot, self.jPlot)
@@ -281,19 +290,18 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.xPlot.setDurationText()
             self.updateTWindowControls()
 
-            # Make some menu elements checkable
-            self.menuFixxPlotyLim.setCheckable(True)
-
             # Implement GUI logic
             # This has to be done after updating the plots because the plot objects are referenced
             self.switchxPlot.activated.connect(self.createxPlot)
 
             self.xTimeEdit.returnPressed.connect(self.updateSlider)
             self.xTimeEdit.returnPressed.connect(self.updatexPlot)
+            self.xTimeEdit.returnPressed.connect(self.updatexPlotText)
 
             self.xTimeSlider.valueChanged.connect(self.updatexPlot)
             self.xTimeSlider.valueChanged.connect(self.updateTimeText)
             self.xTimeSlider.valueChanged.connect(self.updateIndicators)
+            self.xTimeSlider.sliderReleased.connect(self.updatexPlotText)
             self.xTimeSlider.sliderReleased.connect(self.updatexPlotText)
         
             self.spinTWidth.editingFinished.connect(self.updateTWindow)
@@ -305,10 +313,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.btnPan.clicked.connect(self.jToolbar.pan)
             self.btnZoom.clicked.connect(self.jToolbar.zoom)
             self.btnReset.clicked.connect(self.resettPlots)
+            self.btnPan.clicked.connect(self.xToolbar.pan)
+            self.btnZoom.clicked.connect(self.xToolbar.zoom)
+            self.btnReset.clicked.connect(self.xToolbar.home)
 
             self.menuAvgSpatial.triggered.connect(self.setAvgNum)
-            
             self.menuFixxPlotyLim.toggled.connect(self.updatexPlot)
+            self.menuIgnoreNaNsSpatial.toggled.connect(self.updatexPlot)
 
         # If shot data was not loaded successfully, unbind actions
         else:
@@ -323,6 +334,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def updatexPlotText(self):
         self.xPlot.updateText()
+
 
     def setAvgNum(self):
         avgNum, ok = QtWidgets.QInputDialog.getInt(self, 'Averaging spatial plot', 'Number of data points to average to one scatter plot point:\n\navgNum = ', value= self.avgNum, min=0)
@@ -491,6 +503,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def updatexPlot(self):
         self.xPlot.fixyLim = self.menuFixxPlotyLim.isChecked()
+        self.xPlot.ignoreNans = self.menuIgnoreNaNsSpatial.isChecked()
         self.xPlot.update()
 
 
@@ -875,6 +888,8 @@ class Indicator():
 
             self.indic_fill.set_xy(xy)
 
+            self.parent.axes.draw_artist(self.parent.axes.patch)
+            self.parent.axes.draw_artist(self.parent.plot)
             self.parent.axes.draw_artist(self.indic)
             self.parent.axes.draw_artist(self.indic_fill)
             self.parent.canvas.update()
@@ -965,7 +980,12 @@ class SpatialPlot(Plot):
                 'Density': 'ne',
                 'Saturation current density': 'j'
                 }
-        
+        self.axLabels = {
+                'Temperature': 'T$_{e,t}$ [eV]',
+                'Density': 'n$_{e,t}$ [1/m$^3$]',
+                'Saturation current density': 'j$_sat$ [A/m$^2$]'
+                }
+
         # Number of timesteps around the current time to include in the plot (see getShotData())
         self.Dt = gui.Dt
         # Number of data points over which to average
@@ -978,6 +998,15 @@ class SpatialPlot(Plot):
         self.option = self.gui.getPlotOption()
         self.quantity = self.quantities[self.option]
 
+        # Set axes labels
+        self.axes.set_title("{} distribution on the outer lower target plate".format(self.option))
+        self.axes.set_ylabel(self.axLabels[self.option])
+        self.axes.set_xlabel("$\Delta$s")
+
+        # Hide axes offsets
+        self.axes.yaxis.get_offset_text().set_visible(False)
+        self.axes.xaxis.get_offset_text().set_visible(False)
+        
         self.getShotData()
         self.averageData()
         self.getProbePositions()
@@ -1075,8 +1104,10 @@ class SpatialPlot(Plot):
                 valcount=0
 
                 for x in np.arange(self.avgNum):
-                    # Ignore nans if wished
-                    if self.ignoreNans == 1 and np.isnan(data[i]):
+                    # Ignore nans if wished. Ignoring will ensure plot points
+                    # to be plotted even if one or more of its data points are
+                    # NaNs
+                    if self.ignoreNans and np.isnan(data[i]):
                         pass
                     else:
                         xsum += data[i]
@@ -1184,11 +1215,8 @@ class SpatialPlot(Plot):
         # Add text box showing the current time
         self.updateText()
         
-        # Set axes labels
-        self.axes.set_title("{} distribution on the outer lower target plate".format(self.option))
-        self.axes.set_ylabel(self.option)
-        self.axes.set_xlabel("$\Delta$s")
-
+        self.updateAxesLabels()
+        
         self.fig.tight_layout()
 
 
@@ -1203,7 +1231,7 @@ class SpatialPlot(Plot):
                 dt[0], dt[1])
     
         if not len(self.axes.texts):
-            self.axes.text(0.1, 0.9, text, 
+            self.axes.text(0.7, 0.9, text, 
                             ha='left', va='center',
                             transform=self.axes.transAxes)
         else:
@@ -1220,6 +1248,25 @@ class SpatialPlot(Plot):
         else:
             self.canvas.draw()
     
+
+    def updateAxesLabels(self):
+        """ Updates axes labels with current offsets. """
+        oldyLabel   = self.axes.get_ylabel()
+        yOffsetText = self.axes.yaxis.get_offset_text().get_text()
+
+        # Make offset text pretty
+        if 'e' in yOffsetText:
+            yOffsetText = yOffsetText.replace('e','$^{') + '}$'
+
+        # Add offset to label
+        newyLabel = oldyLabel.split()[0] + ' ' \
+                    + yOffsetText + ' '
+
+        # Add unit to label
+        if len(oldyLabel.split()) > 1: 
+            newyLabel += oldyLabel.split()[-1]
+        self.axes.set_ylabel(newyLabel)
+
 
     def update(self, ):
         """ Updates scatter plots based on the current time. If y-axis is
@@ -1245,7 +1292,7 @@ class SpatialPlot(Plot):
              
             newdata = [list(t) for t in zip(x,y)]
             scatter.set_offsets(newdata)
-        
+
         # Only update changing artists if axes are fixed
         if self.fixyLim:
             # Background
@@ -1261,12 +1308,22 @@ class SpatialPlot(Plot):
 
         # Re-draw everything if axes are not fixed
         else:
-            # Insert dummy plot for proper scaling
-            self.axes.set_ylim(min(ytot)*0.9, max(ytot)*1.1)
-            # This creates too much space on the right
-            #self.axes.set_xlim(min(xtot)*0.9, max(xtot)*1.1)
-            self.axes.set_xlim(min(xtot)*0.9, 0.35)
+            plot, = self.axes.plot(xtot,ytot)
+            self.axes.relim()
+            self.axes.autoscale()
+            plot.remove()
+            #if min(ytot) > 0:
+            #    self.axes.set_ylim(min(ytot)*0.9, max(ytot)*1.2)
+            #if min(ytot) == 0:
+            #    self.axes.set_ylim(-1, max(ytot)*1.2)
+            #else:
+            #    self.axes.set_ylim(min(ytot)*1.2, max(ytot)*1.2)
+            ## This creates too much space on the right
+            ##self.axes.set_xlim(min(xtot)*0.9, max(xtot)*1.1)
+            #self.axes.set_xlim(-0.1, 0.35)
+            self.updateAxesLabels()
             self.canvas.draw()
+            
 
 
     def toggleProbe(self, probe, vis):
