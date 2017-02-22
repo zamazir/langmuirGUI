@@ -91,6 +91,9 @@ from validate import Validator
 # Set recursion limit high so using the slider won't crash the app
 sys.setrecursionlimit(10000)
 
+# Don't cut off axes labels or ticks
+mpl.rcParams.update({'figure.autolayout': True})
+
 # Load UI
 Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
 
