@@ -434,13 +434,14 @@
     <property name="title">
      <string>File</string>
     </property>
-    <widget class="QMenu" name="menuSave_as">
+    <widget class="QMenu" name="menuSaveFigure">
      <property name="title">
-      <string>Save as</string>
+      <string>Save figure</string>
      </property>
-     <addaction name="action_png"/>
+     <addaction name="menuSaveSpatialPlot"/>
+     <addaction name="menuSaveCurrentPlot"/>
     </widget>
-    <addaction name="menuSave_as"/>
+    <addaction name="menuSaveFigure"/>
     <addaction name="actionExport"/>
     <addaction name="actionImport"/>
     <addaction name="separator"/>
@@ -544,9 +545,9 @@
     <string>Import</string>
    </property>
   </action>
-  <action name="action_png">
+  <action name="menuSaveSpatialPlot">
    <property name="text">
-    <string>*.png</string>
+    <string>Spatial plot</string>
    </property>
   </action>
   <action name="actionToggle_plot">
@@ -664,6 +665,11 @@
   <action name="actionStuuff">
    <property name="text">
     <string>stuuff</string>
+   </property>
+  </action>
+  <action name="menuSaveCurrentPlot">
+   <property name="text">
+    <string>Current density</string>
    </property>
   </action>
  </widget>

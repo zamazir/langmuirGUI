@@ -42,8 +42,6 @@
 #       * Path to mappings
 #   from within the GUI and store them in a config file
 #
-# - Think of a better way to implement axTitles
-#
 # - Implement getting mappings for CurrentPlot from LSC
 # 
 # - Make Indicator update time window when moving away from t=0
@@ -198,7 +196,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.langdiag   = config['langmuirDiag']
         self.sldiag     = config['strikelineDiag']
         self.colorScheme= config['colorScheme']
-
+        self.defaultExtension = config['defaultExtension'] 
+        self.defaultFilter = '{} (*.{})'.format(self.defaultExtension[1:].upper(),
+                                                self.defaultExtension[1:].lower())
+        
         # Set up UI
         self.setupUi(self)
         self.xTimeSlider.setTickPosition(QtWidgets.QSlider.NoTicks)
@@ -323,6 +324,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.menuAvgSpatial.triggered.connect(self.setAvgNum)
             self.menuFixxPlotyLim.toggled.connect(self.updatexPlot)
             self.menuIgnoreNaNsSpatial.toggled.connect(self.updatexPlot)
+            self.menuSaveSpatialPlot.triggered.connect(self.savexPlot)
+            self.menuSaveCurrentPlot.triggered.connect(self.savejPlot)
 
         # If shot data was not loaded successfully, unbind actions
         else:
@@ -838,6 +841,53 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 """)
 
 
+    def savexPlot(self):
+        """ Saves spatial plot figure. """
+        t  = self.xPlot.realtime
+        dt = self.lblRealTWidth.text().split()[1]
+        defaultName = 'Spatial_{}_{:.7f}s_{}{}'.format(self.xPlot.quantity, t,
+                                                        dt, self.defaultExtension)
+
+        print "Default filter: ", self.defaultFilter
+        dialog = QtWidgets.QFileDialog()
+        dialog.setDefaultSuffix(self.defaultExtension)
+        fileName, ok = dialog\
+                        .getSaveFileName(self,
+                                        directory='./' + defaultName,
+                                        caption = "Save figure as",
+                                        filter="PNG (*.png);;EPS (*.eps);;SVG (*.svg)",
+                                        initialFilter=self.defaultFilter)
+        if ok:
+            if len(fileName.split('.')) < 2:
+                print "Extension missing. Figure not saved"
+                return
+            fmt = fileName.split('.')[-1]
+            self.xPlot.fig.savefig(fileName, format=fmt)
+
+
+    def savejPlot(self):
+        """ Saves current density plot figure. """
+        plot = self.jPlot
+        defaultName = 'Temporal_{}_{:.7f}s_{:.0f}us{}'.format(plot.quantity,
+                                                        plot.indicator.time,
+                                                        plot.indicator.dt*10**6,
+                                                        self.defaultExtension)
+        dialog = QtWidgets.QFileDialog()
+        dialog.setDefaultSuffix(self.defaultExtension)
+        fileName, ok = dialog\
+                        .getSaveFileName(self,
+                                        directory='./' + defaultName,
+                                        caption = "Save figure as",
+                                        filter="PNG (*.png);;EPS (*.eps);;SVG (*.svg)",
+                                        initialFilter=self.defaultFilter)
+        if ok:
+            if len(fileName.split('.')) < 2:
+                print "Extension missing. Figure not saved"
+                return
+            fmt = fileName.split('.')[-1]
+            plot.fig.savefig(fileName, format=fmt)
+
+
 
 class ColorPatch(QtWidgets.QWidget):
     def __init__(self, color):
@@ -863,8 +913,14 @@ class Indicator():
     """ Class for creating an indicator on a temporal plot to show the time that is displayed in the spatial plot. """
     def __init__(self, parent):
         self.parent = parent
-        self.gui = parent.gui
-        self.color = self.gui.config['Indicators']['color']
+        self.gui    = parent.gui
+        self.color  = self.gui.config['Indicators']['color']
+
+        self.pos    = 0
+        self.time   = 0
+        self.tminus = 0
+        self.tplus  = 0
+        self.dt     = 0
 
         self.slide()
 
@@ -872,27 +928,30 @@ class Indicator():
     def slide(self):
         """ Repositions indicator according to time slider value. """
         # Get current time from time slider and convert it
-        pos = self.gui.xTimeSlider.value()
-        time= self.gui.dtime[pos]
-        tminus = time - self.gui.indicator_range[0]
-        tplus  = time + self.gui.indicator_range[1]
+        self.pos    = self.gui.xTimeSlider.value()
+        self.time   = self.gui.dtime[self.pos]
+        self.tminus = self.time - self.gui.indicator_range[0]
+        self.tplus  = self.time + self.gui.indicator_range[1]
+        self.dt     = self.tplus - self.tminus
 
         # Update previous indicator if there already is one
         if hasattr(self, "indic"):
-            self.indic.set_xdata(time)
+            self.indic.set_xdata(self.time)
             xy = self.indic_fill.get_xy()
             xy = [
-                    [tminus,xy[0][1]],
-                    [tminus,xy[1][1]],
-                    [tplus,xy[2][1]],
-                    [tplus,xy[3][1]],
-                    [tminus,xy[4][1]]
+                    [self.tminus,xy[0][1]],
+                    [self.tminus,xy[1][1]],
+                    [self.tplus,xy[2][1]],
+                    [self.tplus,xy[3][1]],
+                    [self.tminus,xy[4][1]]
                 ]
 
             self.indic_fill.set_xy(xy)
 
             self.parent.axes.draw_artist(self.parent.axes.patch)
-            self.parent.axes.draw_artist(self.parent.plot)
+            for plot in self.parent.plots.values():
+                if plot.get_visible():
+                    self.parent.axes.draw_artist(plot)
             self.parent.axes.draw_artist(self.indic)
             self.parent.axes.draw_artist(self.indic_fill)
             self.parent.canvas.update()
@@ -900,9 +959,9 @@ class Indicator():
 
         #Plot new indicator if there is none
         else:
-            self.indic      = self.parent.axes.axvline(x=time, color=self.color)
-            self.indic_fill = self.parent.axes.axvspan(tminus, tplus, alpha=0.5,
-                    color=self.color)
+            self.indic      = self.parent.axes.axvline(x=self.time, color=self.color)
+            self.indic_fill = self.parent.axes.axvspan(self.tminus, self.tplus,
+                                                        alpha=0.5, color=self.color)
             self.parent.canvas.draw()
 
 
@@ -1520,10 +1579,10 @@ class TemporalPlot(Plot):
                 # Plot data
                 uniqueProbe = probe.split('-')[1]
                 color = self.gui.probeColors[uniqueProbe]
-                self.plot, = self.axes.plot(x,y, color=color, zorder=50)
+                plot, = self.axes.plot(x,y, color=color, zorder=50)
 
                 # Save artist for future reference
-                self.plots[probe] = self.plot
+                self.plots[probe] = plot
 
             # If probe has been plotted, is not selected, and is visible, hide it
             elif probe in self.plots.keys() \
@@ -1540,10 +1599,6 @@ class TemporalPlot(Plot):
                 print("Setting probe {} visible".format(probe))
                 self.plots[probe].set_visible(True)
                 self.canvas.draw()
-            
-            # If something went wrong
-            #elif probe.startswith(self.probeNamePrefix):
-            #    print 'Something went wrong with probe', probe
 
         # Get current axes limits
         xlim = self.axes.get_xlim()
@@ -1661,7 +1716,7 @@ class CurrentPlot(TemporalPlot):
             self.mapFilePath, ok = \
                     QtWidgets.QFileDialog.getOpenFileName(
                         self.gui,
-                        dir=self.mapDir,
+                        directory=self.mapDir,
                         caption='Load mapping file'
                     )
         if not ok:
