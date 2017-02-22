@@ -77,8 +77,8 @@ from PyQt5.uic import loadUiType
 
 # Either use network libraries or local ones depending on internet access
 # Local ones might be outdated but don't require internet access
-#import dd
-import ddlocal
+import dd
+#import ddlocal
 import numpy as np
 import sys
 import os
@@ -96,7 +96,7 @@ mpl.rcParams.update({'figure.autolayout': True})
 Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
 
 # Uncomment the following line if using ddlocal
-dd = ddlocal
+# dd = ddlocal
 
 
 class Sync():
@@ -301,6 +301,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.xTimeEdit.returnPressed.connect(self.updateSlider)
             self.xTimeEdit.returnPressed.connect(self.updatexPlot)
             self.xTimeEdit.returnPressed.connect(self.updatexPlotText)
+            self.xTimeEdit.returnPressed.connect(self.updatetPlots)
 
             self.xTimeSlider.valueChanged.connect(self.updatexPlot)
             self.xTimeSlider.valueChanged.connect(self.updateTimeText)
@@ -336,6 +337,25 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.xTimeEdit.disconnect()
             except Exception: pass
             print("No valid shot number has been entered yet.")
+
+
+    def updatetPlots(self):
+        """ Updates xlims of the temporal plots if the time value entered is
+        not within the current xlims """
+        time = float(self.xTimeEdit.text())
+
+        # get current x-axis limits of any temporal plot
+        # TO DO: MAKE INDEPENDENT OF TEMPORAL PLOTS
+        # ONLY MAKES SENSE IF ALL PLOTS ARE SYNCHED
+        currxmin, currxmax = self.jPlot.axes.get_xlim()
+        dt = currxmax - currxmin
+
+        if not currxmin < time < currxmax:
+            newxmin = max(0, time)
+            newxmax = min(time + dt, self.xPlot.dtime[-1])
+            self.jPlot.axes.set_xlim(newxmin, newxmax)
+            self.nPlot.axes.set_xlim(newxmin, newxmax)
+            self.TPlot.axes.set_xlim(newxmin, newxmax)
 
 
     def updatexPlotText(self):
@@ -1407,12 +1427,26 @@ class SpatialPlot(Plot):
 
     def setxTimeSlider(self):
         """ Updates time scrollbar based on text in GUI time edit field"""
+        self.slider = self.gui.xTimeSlider
+
         # GUI line edit expects a real time value
         realtime = float(self.gui.xTimeEdit.text())
+
         # Convert to corresponding timestep
-        time = Conversion.valtoind(realtime, self.dtime)
+        time = int(Conversion.valtoind(realtime, self.dtime))
+
+        # If new slider position is out of slider range, set slider range start
+        # to new slider position while retaining range size as long as it's not
+        # exceeding available time values
+        if not self.slider.minimum() < time < self.slider.maximum():
+            dt = self.slider.maximum() - self.slider.minimum()
+            self.slider.setMinimum(max(0, time))
+            self.slider.setMaximum(min(self.slider.minimum() + dt,
+                                        len(self.dtime)))
+
         # Update slider position
-        self.gui.xTimeSlider.setValue(float(time))
+        self.slider.setValue(time)
+
         # Update line edit text with the time corresponding to the found timestep
         self.gui.xTimeEdit.setText("{:.10f}".format(self.dtime[time]))
 
