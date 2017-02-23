@@ -16,12 +16,9 @@
 # Issues:
 # - Data evaluation will be unreliable if the time data arrays vary from probe to probe
 #
-# - At application start, jPlot is not synced with the others. This changes when one of
-#   the plots is zoomed twice
+# - At application start, jPlot is not synced with the others
 #
 # To do:
-# - Update temporal plots when entering time for spatial plot
-#
 # - Increase speed when calibrating current
 #
 # - Add options to change all parameters like
