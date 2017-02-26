@@ -74,11 +74,15 @@ from PyQt5.uic import loadUiType
 
 # Either use network libraries or local ones depending on internet access
 # Local ones might be outdated but don't require internet access
-import dd
-#import ddlocal
+#import dd
+import ddlocal
 import numpy as np
 import sys
 import os
+from copy import copy
+
+# This is needed for passing arguments to callback functions
+import functools
 
 from configobj import ConfigObj
 from validate import Validator
@@ -93,7 +97,7 @@ mpl.rcParams.update({'figure.autolayout': True})
 Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
 
 # Uncomment the following line if using ddlocal
-# dd = ddlocal
+dd = ddlocal
 
 
 class Sync():
@@ -290,6 +294,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.xPlot.setTimeText()
             self.xPlot.setDurationText()
             self.updateTWindowControls()
+        
+            # Instantiate child windows to host plot matrices
+            self.matricesVisible = False
+            self.jMatrixWindow = MatrixWindow(self)
+            #self.nMatrixWindow = MatrixWindow(self)
+            #self.TMatrixWindow = MatrixWindow(self)
+
 
             # Implement GUI logic
             # This has to be done after updating the plots because the plot objects are referenced
@@ -318,6 +329,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.btnPan.clicked.connect(self.xToolbar.pan)
             self.btnZoom.clicked.connect(self.xToolbar.zoom)
             self.btnReset.clicked.connect(self.xToolbar.home)
+            
+            self.btnAddToMatrices.clicked.connect(self.addToMatrices)
 
             self.menuAvgSpatial.triggered.connect(self.setAvgNum)
             self.menuFixxPlotyLim.toggled.connect(self.updatexPlot)
@@ -334,6 +347,22 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.xTimeEdit.disconnect()
             except Exception: pass
             print("No valid shot number has been entered yet.")
+
+
+    def addToMatrices(self):
+        self.jMatrixWindow.addAxes(self.jPlot.axes)
+        #self.nMatrixWindow.addAxes(self.nPlot.axes)
+        #self.TMatrixWindow.addAxes(self.TPlot.axes)
+        if not self.matricesVisible:
+            self.showMatrices()
+
+
+    def showMatrices(self):
+        self.jMatrixWindow.show()
+        #self.nMatrixWindow.show()
+        #self.TMatrixWindow.show()
+
+        self.matricesVisible = True
 
 
     def updatetPlots(self):
@@ -1338,12 +1367,13 @@ class SpatialPlot(Plot):
             yOffsetText = yOffsetText.replace('e','$^{') + '}$'
 
         # Add offset to label
-        newyLabel = oldyLabel.split()[0] + ' ' \
-                    + yOffsetText + ' '
 
         # Add unit to label
         if len(oldyLabel.split()) > 1: 
-            newyLabel += oldyLabel.split()[-1]
+            newyLabel = oldyLabel.split()[0] + ' ' \
+                        + yOffsetText + ' ' + oldyLabel.split()[-1]
+        else:
+            newyLabel = oldyLabel
         self.axes.set_ylabel(newyLabel)
 
 
@@ -1829,6 +1859,544 @@ class CurrentPlot(TemporalPlot):
             for line in lines:
                 probe, l, w = line.split()
                 self.calib[probe] = (float(l), float(w))
+
+
+
+class MatrixWindow(QtWidgets.QWidget):
+    def __init__(self, parent):
+        QtWidgets.QWidget.__init__(self)
+        self.gui = parent
+
+        # Initialize figure
+        self.fig = Figure()
+        self.canvas = FigureCanvas(self.fig)
+
+        print "Canvas:", type(self.canvas)
+
+        self.rows = 1
+        self.cols = 1
+        self.currentRow = 1
+        self.currentCol = 1
+        self.prevRow = 0
+        self.prevCol = 0
+        self.axNum = 1
+        self.newRow = False
+
+        self.btnAddRow = QtWidgets.QPushButton("Next phase")
+
+        self.layout = QtWidgets.QHBoxLayout()
+        self.layout.addWidget(self.canvas)
+        self.layout.addWidget(self.btnAddRow)
+
+        self.setLayout(self.layout)
+
+        self.resize(self.sizeHint())
+
+        self.btnAddRow.clicked.connect(self.addRow)
+
+        # Config from Plot
+        config = self.gui.config['Plots']
+        self.region = config['region']
+        self.domain = config['domain']
+        self.dpi    = config['dpi']
+
+        self.parents = {
+                'te': 'TPlotLayout',
+                'ne': 'nPlotLayout',
+                'j': 'jPlotLayout',
+                }
+
+        # Config from SpatialPlot
+        config = self.gui.config['Plots']['Spatial']
+        self.coloring = config['coloring']
+        self.defaultColor = config['defaultColor']
+        self.posFile = config['positionsFile']
+        self.fixyLim = config['fixyLim']
+        # If this value is 1 then averaged values are not nans if one or more
+        # of the values used to calculate it is a nan
+        # This setting is ignored if all values to be averaged over are nans
+        self.ignoreNans = config['ignoreNans']
+
+        self.scatters = {}
+        self.quantities = {
+                'Temperature': 'te',
+                'Density': 'ne',
+                'Saturation current density': 'j'
+                }
+        self.axLabels = {
+                'Temperature': 'T$_{e,t}$ [eV]',
+                'Density': 'n$_{e,t}$ [1/m$^3$]',
+                'Saturation current density': 'j$_sat$ [A/m$^2$]'
+                }
+
+        # Number of timesteps around the current time to include in the plot (see getShotData())
+        self.Dt = self.gui.Dt
+        # Number of data points over which to average
+        self.avgNum = self.gui.avgNum
+
+        self.Rsl = self.gui.Rsl
+        self.ssl = self.gui.ssl
+        self.zsl = self.gui.zsl
+        
+        self.option = self.gui.getPlotOption()
+        self.quantity = self.quantities[self.option]
+
+        # Hide axes offsets
+        if hasattr(self, 'axes'):
+            self.axes.yaxis.get_offset_text().set_visible(False)
+            self.axes.xaxis.get_offset_text().set_visible(False)
+
+
+    def addRow(self):
+        """ Adds another row to the figure and selects it. """
+        print "Adding row"
+        self.newRow  = True
+        self.prevRow = self.currentRow
+        self.prevCol = self.currentCol
+        self.rows += 1
+        self.currentRow += 1
+        if self.cols >= self.currentCol:
+            self.cols -= 1
+        self.currentCol = 0
+
+
+    def addAxes(self, axes):
+        #axesInRow = [ax for ax in self.fig.axes 
+        #                          if ax.get_geometry()[0] == self.currentRow]
+        #n = len(axesInRow)
+        print "\nAdding axes"
+        print "Current row:", self.currentRow
+        print "Total rows:", self.rows
+        print "Current col:", self.currentCol
+        print "Total cols:", self.cols
+        print "Current axNum:", self.axNum
+
+
+        n = self.axNum
+
+        neighbor = None
+        neighborLoc = None
+        hasNeighborAbove = False
+        for ax in self.fig.axes:
+            k, l, m = ax.get_geometry()
+            print "Changing geometry from ({},{},{}) to ({},{},{})".format(k,l,m,self.rows,self.cols,m)
+            ax.change_geometry(self.rows, self.cols , m)
+
+            # Find neighbor to share axes with
+            # Neighbor to the left
+            if self.currentCol != 0 and m == n - 1:
+                neighborLoc = 'left'
+                neighbor = ax
+            # No neighbor
+            elif self.currentCol == 0 and self.currentRow == 0:
+                neighborLoc = None
+                neighbor = None
+            # Neighbor above
+            elif self.currentCol == 0 \
+                and k == self.currentRow - 1 \
+                and m == n - self.prevCol:
+                    neighborLoc = 'above'
+                    neighbor = ax
+            # If this axes has a neighbor above, remove its neighbor's xticklabels
+            if self.currentCol != 0 \
+                and self.currentRow != 0 \
+                and l == n - self.cols:
+                    for lbl in ax.get_xticklabels():
+                        lbl.set_visible(False)
+
+        print "Inserting axes at ({},{},{})".format(self.rows,self.cols,n)
+        if neighbor != None:
+            print "Neighbor at", neighbor.get_geometry()
+        else:
+            print "No neighbor"
+        if neighborLoc == None:
+            self.axes = self.fig.add_subplot(self.rows, self.cols, n)
+        elif neighborLoc == 'left':
+            self.axes = self.fig.add_subplot(self.rows, self.cols, n,
+                    sharey=neighbor)
+            # Set tick labels invisible
+            for lbl in self.axes.get_yticklabels():
+                lbl.set_visible(False)
+        elif neighborLoc == 'above':
+            self.axes = self.fig.add_subplot(self.rows, self.cols, n,
+                    sharex=neighbor)
+            # Set tick labels invisible
+            for lbl in neighbor.get_xticklabels():
+                lbl.set_visible(False)
+
+        self.getShotData()
+        self.averageData()
+        self.getProbePositions()
+        self.rztods()
+        self.initPlot()
+
+        self.axNum += 1
+        self.currentCol += 1
+        # If this column is smaller than the maximum number of columns, don't
+        # add another column
+        if self.currentCol >= self.cols:
+            self.cols += 1
+            self.newRow = False
+
+        self.canvas.draw()
+
+
+    def updateText(self):
+        """ Updates the figure text and its position according to the current
+        time"""
+        t    = self.realtime
+        dt   = (self.realdtrange[0]*10**6, 
+                self.realdtrange[1]*10**6)
+
+        text = r"$@{0:.7f}s^{{+{1:.1f}\mu s}}_{{-{2:.1f}\mu s}}$".format(t,
+                dt[0], dt[1])
+    
+        if not len(self.axes.texts):
+            self.axes.text(0.7, 0.9, text, 
+                            ha='left', va='center',
+                            transform=self.axes.transAxes)
+        else:
+            self.axes.texts[0].set_text(text)
+        
+        if self.fixyLim:
+            try:
+                self.axes.draw_artist(self.axes.texts[0])
+            except:
+                pass
+            else:
+                self.canvas.update()
+                self.canvas.flush_events()
+        else:
+            self.canvas.draw()
+    
+
+    def updateAxesLabels(self):
+        """ Updates axes labels with current offsets. """
+        oldyLabel   = self.axes.get_ylabel()
+        yOffsetText = self.axes.yaxis.get_offset_text().get_text()
+
+        # Make offset text pretty
+        if 'e' in yOffsetText:
+            yOffsetText = yOffsetText.replace('e','$^{') + '}$'
+
+        # Add offset to label
+
+        # Add unit to label
+        if len(oldyLabel.split()) > 1: 
+            newyLabel = oldyLabel.split()[0] + ' ' \
+                        + yOffsetText + ' ' + oldyLabel.split()[-1]
+        else:
+            newyLabel = oldyLabel
+        self.axes.set_ylabel(newyLabel)
+
+
+    def update(self, ):
+        """ Updates scatter plots based on the current time. If y-axis is
+        fixed, only the background and the scatter plots are updated with
+        a succeding call of ax.update() which considerably improves
+        performance. If the y-axis is not fixed, the whole canvas is
+        re-drawn."""
+        self.avgNum = self.gui.avgNum
+        self.getShotData()
+        self.averageData()
+
+        xtot = []
+        ytot = []
+        for probe in self.avgData.keys():
+            scatter = self.scatters[probe.split('-')[1]]
+            x = []
+            y = []
+            for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
+                x.append(position)
+                y.append(value)
+                xtot.append(position)
+                ytot.append(value)
+             
+            newdata = [list(t) for t in zip(x,y)]
+            scatter.set_offsets(newdata)
+
+        # Only update changing artists if axes are fixed
+        if self.fixyLim:
+            # Background
+            self.axes.draw_artist(self.axes.patch)
+            # Scatter plots
+            for scatter in self.scatters.values():
+                self.axes.draw_artist(scatter)
+            # Spines
+            #for spine in self.axes.spines.values():
+            #    self.axes.draw_artist(spine)
+            self.canvas.update()
+            self.canvas.flush_events()
+
+        # Re-draw everything if axes are not fixed
+        else:
+            plot, = self.axes.plot(xtot,ytot)
+            self.axes.relim()
+            self.axes.autoscale()
+            plot.remove()
+            #if min(ytot) > 0:
+            #    self.axes.set_ylim(min(ytot)*0.9, max(ytot)*1.2)
+            #if min(ytot) == 0:
+            #    self.axes.set_ylim(-1, max(ytot)*1.2)
+            #else:
+            #    self.axes.set_ylim(min(ytot)*1.2, max(ytot)*1.2)
+            ## This creates too much space on the right
+            ##self.axes.set_xlim(min(xtot)*0.9, max(xtot)*1.1)
+            #self.axes.set_xlim(-0.1, 0.35)
+            self.updateAxesLabels()
+            self.canvas.draw()
+            
+
+    def toggleProbe(self, probe, vis):
+        """ Toggle probes to show in scatter plot. """
+        print "Toggling probe", probe
+        scatter = self.scatters[probe]
+        scatter.set_visible(vis)
+
+
+    def setTimeText(self):
+        """ Updates GUI time edit field based on scrollbar value """
+        # GUI scrollbar provides timestep (index of time array)
+        time = self.gui.xTimeSlider.value()
+        # Convert to realtime
+        realtime = self.dtime[time]
+        # Update line edit text
+        self.gui.xTimeEdit.setText("{:.4f}".format(realtime))
+
+
+    def setxTimeSlider(self):
+        """ Updates time scrollbar based on text in GUI time edit field"""
+        self.slider = self.gui.xTimeSlider
+
+        # GUI line edit expects a real time value
+        realtime = float(self.gui.xTimeEdit.text())
+
+        # Convert to corresponding timestep
+        time = int(Conversion.valtoind(realtime, self.dtime))
+
+        # If new slider position is out of slider range, set slider range start
+        # to new slider position while retaining range size as long as it's not
+        # exceeding available time values
+        if not self.slider.minimum() < time < self.slider.maximum():
+            dt = self.slider.maximum() - self.slider.minimum()
+            self.slider.setMinimum(max(0, time))
+            self.slider.setMaximum(min(self.slider.minimum() + dt,
+                                        len(self.dtime)))
+
+        # Update slider position
+        self.slider.setValue(time)
+
+        # Update line edit text with the time corresponding to the found timestep
+        self.gui.xTimeEdit.setText("{:.10f}".format(self.dtime[time]))
+
+
+    def setDurationText(self):
+        """ Updates the shot duration in the info bar. """
+        self.gui.dynDurationLabel.setText("{:.3f}".format(self.dtime[-1]))
+
+
+    def getShotData(self):
+        """ Gets data specified by class variables "quantity" and "region" from shotfile for times in range dt. Saves this data and associated timestamps in class arrays "data" and "realtime_arr", respectively """
+        ##############
+        # Let the number of data points to be averaged to one value be n and the number of averaged values to show per probe be m.
+        # The time offset dt is the number of timesteps to go left and right from the current time to define the time range Dt over which to average.
+        # Then the data points filtered symmetrically around the current time will be Dt = dt*2+1 in number, which should equal n*m
+        #          dt   t   dt
+        #       <====== | ======>
+        #       * * * * * * * * *  time steps
+        #       <===============>
+        #              Dt
+        # The time offset corresponding to n and m is then dt = k(n*m-1)/2, where k is a natural number.
+        # Since Dt will always be an odd number and n and m are natural numbers, n and m both have to be odd too.
+
+        # Get current time index from GUI slider
+        self.time = self.gui.xTimeSlider.value()
+
+        # Time range expressed by indices in shotfile
+        self.dt = (self.gui.Dt - 1)/2 
+
+        # Min and max time expressed by indices in shotfile
+        # Prevent tmin to take negative values so getting value by index
+        # won't cause problems
+        tmin = max(self.time - self.dt, 0)
+        tmax = self.time + self.dt
+
+        probeNamePrefix = self.quantity + '-' + self.region
+
+        self.data = {}
+        self.realtime_arr = {}
+        for probe in self.gui.langData.keys():
+            # filter for specified probes
+            if probe.startswith(probeNamePrefix):
+                dtime = self.gui.langData[probe]['time']
+                data = self.gui.langData[probe]['data']
+
+                # Time converted to actual time values
+                # If there is an index error, take the global minimum or maximum
+                self.realtmin = dtime[tmin]
+                try:
+                    self.realtmax = dtime[tmax]
+                except Exception:
+                    self.realtmax = dtime[-1]
+                    print("Maximum value of time range to evaluate is out of range. Using maximum of available time range.")
+                try:
+                    self.realtime = dtime[self.time]
+                except Exception:
+                    print "Could not determine realtime from time array"
+                    if self.time >= dtime.size: self.realtime = dtime[-1]
+                    elif self.time < dtime.size: self.realtime = dtime[0]
+                    else: print("FATAL: Realtime could not be determined.")
+                
+                # Filter for time range. 
+                ##### SAVE DATA TO ARRAY #####
+                ind = np.ma.where((dtime >= self.realtmin) & (dtime <= self.realtmax))
+                self.data[probe] = data[ind]
+                self.realtime_arr[probe] = dtime[ind]
+
+                # Save the time data of the last probe as the global time data. This assumes that all time arrays of the probes are identical
+                self.dtime  = dtime
+                realdtminus = abs(self.realtime - self.realtmin)
+                realdtplus  = abs(self.realtime - self.realtmax)
+                self.realdtrange = (realdtminus, realdtplus)
+
+
+    def averageData(self):
+        """ Averages data points over specified number of points. """
+        self.avgData = {}
+
+        # If no averaging wished, use the data as received from shotfile
+        if self.avgNum == 0:
+            self.avgData = self.data 
+            return
+
+        # Averaging
+        for probe in self.data.keys():
+            data = self.data[probe]
+            self.avgData[probe] = []
+           
+            # If this probe didn't record any values at this point in time, continue with the next one
+            if data.size == 0: continue
+
+            i=0
+            # Take values in the range 0 to avgNum-1 and average them
+            # valcount is used to calculate average value because of the possibility of nans
+            while True:
+                xsum=0
+                valcount=0
+
+                for x in np.arange(self.avgNum):
+                    # Ignore nans if wished. Ignoring will ensure plot points
+                    # to be plotted even if one or more of its data points are
+                    # NaNs
+                    if self.ignoreNans and np.isnan(data[i]):
+                        pass
+                    else:
+                        xsum += data[i]
+                        valcount += 1 
+                    i += 1
+
+                # If all values were nans, ignore the result no matter what the value of ignoreNans is
+                if valcount == 0:
+                    avg = np.NAN
+                else:
+                    avg = xsum/float(valcount)
+
+                # Save averages to new array
+                self.avgData[probe].append(avg)
+
+                # End loop if end of data array will be reached next time
+                if i + self.avgNum > data.size: break
+            
+            self.avgData[probe] = np.array(self.avgData[probe])
+
+
+    def getProbePositions(self):
+        """ 
+        Gets positions of probes in the specified region in terms of R,z
+        coordinates. Saves the coordinates as tuples in a class parameter array
+        "probePositions" with the probe names as keys. 
+        """
+        self.probePositions = {}
+
+        # Read probe name and R and z coordinates of each probe
+        with open(self.posFile) as f:
+            lines = f.readlines()
+            for line in lines:
+                probeName = line.split()[0][1:]                 # Probe name
+                R = float(line.split()[1].replace(",","."))     # R
+                z = float(line.split()[2].replace(",","."))     # z
+                 
+                self.probePositions[probeName] = (R,z)
+
+
+    def rztods(self):
+        """ Converts probe positions from (R,z) coordinates to delta-s
+        coordinate based on current strikeline position. This enables plots in
+        units of delta-s along the x-axis. It is implicitly assumed that the
+        divertor tile is flat."""
+        self.plotPositions = {}
+        
+        for probe in self.data.keys():
+            self.plotPositions[probe] = []
+
+            # Get R and z coordinates of probe
+            R_p = self.probePositions[probe[3:]][0]
+            z_p = self.probePositions[probe[3:]][1]
+
+            for time in self.realtime_arr[probe]:
+                # Get R and z coordinates of strikeline at this point in time
+                # Finding the index of the time value closest to the current
+                # time is less prone to errors than trying to find the exact
+                # value
+                ind_R = np.abs((self.Rsl['time'] - time)).argmin()
+                R_sl = self.Rsl['data'][ind_R]
+                ind_z = np.abs((self.zsl['time'] - time)).argmin()
+                z_sl = self.zsl['data'][ind_z]
+
+                # Throw error if timestamps don't match
+                if self.zsl['time'][ind_z] != self.Rsl['time'][ind_R]:
+                    print('++++CRITICAL++++\n\nTried to find timestamps of\
+                            strikeline R and z measurements at times closest\
+                            to {} in the respective shot file data but the\
+                            found values for R and z don\'t match! Data\
+                            evaluation will not be reliable.')
+
+                # Calculate delta-s
+                # Assumption: divertor tile is flat
+                ds = np.sqrt( (R_sl-R_p)**2 + (z_sl-z_p)**2 ) 
+                # If the z coordinate of the probe is smaller than that of the
+                # strikeline, 
+                # then the delta-s associated with this probe at this time is
+                # negative
+                if z_p < z_sl: ds = -ds
+
+                #print('Position of strikeline at time {}: R = {}, z = {} resulting in ds = {}'.format(self.zsl['time'][ind_z],R_sl,z_sl,ds))
+                self.plotPositions[probe].append(ds)
+
+
+    def initPlot(self, ):
+        """ Populates canvas with initial plot. Creates PathCollection objects that will be updated when plot has to change based on GUI interaction."""
+        print("Populating canvas with spatial plot")
+        for probe in self.avgData.keys():
+            x = []
+            y = []
+            for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
+                x.append(position)
+                y.append(value)
+
+            # Use different color for each probe if wished
+            if self.coloring:
+                color = self.gui.probeColors[probe.split('-')[1]]
+            else:
+                color = self.defaultColor
+
+            # Plot
+            self.scatters[probe.split('-')[1]] = self.axes.scatter(x, y, color=color)
+
+        # Add text box showing the current time
+        self.updateText()
+
+
 
 
 
