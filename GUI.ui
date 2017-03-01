@@ -100,7 +100,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="btnELMplot">
+                <widget class="QPushButton" name="btnCohELMavg">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -114,7 +114,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>Create ELM plot</string>
+                  <string>Coherent ELM Averaging</string>
                  </property>
                 </widget>
                </item>

@@ -91,7 +91,7 @@ from validate import Validator
 sys.setrecursionlimit(10000)
 
 # Don't cut off axes labels or ticks
-mpl.rcParams.update({'figure.autolayout': True})
+#mpl.rcParams.update({'figure.autolayout': True})
 
 # Load UI
 Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
@@ -196,6 +196,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.Dt         = config['Dt']
         self.langdiag   = config['langmuirDiag']
         self.sldiag     = config['strikelineDiag']
+        self.ELMdiag    = config['ELMDiag']
         self.colorScheme= config['colorScheme']
         self.defaultExtension = config['defaultExtension'] 
         self.defaultFilter = '{} (*.{})'.format(self.defaultExtension[1:].upper(),
@@ -204,11 +205,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         # Set up UI
         self.setupUi(self)
         self.xTimeSlider.setTickPosition(QtWidgets.QSlider.NoTicks)
-        self.btnELMplot.hide()
+        #self.btnELMplot.hide()
 
         # Set GUI options to what was read from config.ini
         self.menuFixxPlotyLim.setChecked(self.config['Plots']['Spatial']['fixyLim'])
-        self.menuIgnoreNaNsSpatial.setChecked(self.config['Plots']['Spatial']['ignoreNans'])
+        self.menuIgnoreNaNsSpatial.setChecked(self.config['Plots']['ignoreNans'])
 
         # Prepare probe table
         columnNames = ['Probe','Color','Style','T/n(x)','T(t)','n(t)','jsat(t)']
@@ -331,6 +332,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.btnReset.clicked.connect(self.xToolbar.home)
             
             self.btnAddToMatrices.clicked.connect(self.addToMatrices)
+
+            self.btnCohELMavg.clicked.connect(self.createCohELMPlot)
 
             self.menuAvgSpatial.triggered.connect(self.setAvgNum)
             self.menuFixxPlotyLim.toggled.connect(self.updatexPlot)
@@ -859,6 +862,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             #return
 
 
+        # Get ELM times
+        shot = dd.shotfile(self.ELMdiag,self.shotnr)
+        self.ELMonsets = shot('t_begELM')
+        self.ELMends   = shot('t_endELM').data
+        self.ELMmaxima = shot('t_maxELM').data
+
+
         # Flag denoting successful shotfile load
         self.succeeded = 1
 
@@ -932,6 +942,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 return
             fmt = fileName.split('.')[-1]
             plot.fig.savefig(fileName, format=fmt)
+
+
+    def createCohELMPlot(self):
+        self.jPlot.coherentELMaveraging()
 
 
 
@@ -1025,6 +1039,9 @@ class Conversion():
         if type(refarray).__name__ == 'NoneType':
             refarray = array
 
+        array = np.array(array)
+        refarray = np.array(refarray)
+
         return array[~np.isnan(refarray)]
 
 
@@ -1036,6 +1053,11 @@ class Plot(object):
         self.region = config['region']
         self.domain = config['domain']
         self.dpi    = config['dpi']
+        self.ignoreNans    = config['ignoreNans']
+
+        self.ELMonsets = gui.ELMonsets
+        self.ELMends   = gui.ELMends
+
 
         self.parents = {
                 'te': 'TPlotLayout',
@@ -1046,18 +1068,6 @@ class Plot(object):
         self.fig = Figure(dpi=self.dpi)
         self.axes = self.fig.add_subplot(111)
         self.canvas = FigureCanvas(self.fig)
-
-
-
-class OverlayPlot(Plot):
-    def __init__(self, gui, quantity):
-        super(OverlayPlot, self).__init__(gui)
-
-        self.mode = 'stretch' # |conserve
-
-
-    def plot(self):
-        pass        
 
 
 
@@ -1080,7 +1090,7 @@ class SpatialPlot(Plot):
         # If this value is 1 then averaged values are not nans if one or more
         # of the values used to calculate it is a nan
         # This setting is ignored if all values to be averaged over are nans
-        self.ignoreNans = config['ignoreNans']
+        self.ignoreNans = self.ignoreNans
 
         self.scatters = {}
         self.quantities = {
@@ -1109,7 +1119,7 @@ class SpatialPlot(Plot):
         # Set axes labels
         self.axes.set_title("{} distribution on the outer lower target plate".format(self.option))
         self.axes.set_ylabel(self.axLabels[self.option])
-        self.axes.set_xlabel("$\Delta$s")
+        self.axes.set_xlabel("$\Delta$s [m]")
 
         # Hide axes offsets
         self.axes.yaxis.get_offset_text().set_visible(False)
@@ -1364,7 +1374,7 @@ class SpatialPlot(Plot):
 
         # Make offset text pretty
         if 'e' in yOffsetText:
-            yOffsetText = yOffsetText.replace('e','$^{') + '}$'
+            yOffsetText = yOffsetText.replace('e','0$^{') + '}$'
 
         # Add offset to label
 
@@ -1535,7 +1545,7 @@ class TemporalPlot(Plot):
 
     def onSpanSelect(self, xmin, xmax):
         self.gui.ELMphase = (xmin, xmax)
-        self.gui.btnELMplot.show()
+        #self.gui.btnELMplot.show()
 
 
     def rescaleyAxis(self, event):
@@ -1572,6 +1582,28 @@ class TemporalPlot(Plot):
             if probe.startswith(self.probeNamePrefix):
                 self.time[probe] = self.gui.langData[probe]['time']
                 self.data[probe] = self.gui.langData[probe]['data']
+
+
+    #def coherentELMaveraging(self):
+    #    self.axes.clear()
+
+    #    self.phaseOn  = 6.0
+    #    self.phaseEnd = 6.5
+    #    ttot = []
+    #    ytot = []
+    #    for ton, tend in zip(self.ELMonsets, self.ELMends):
+    #        if ton >= self.phaseOn and tend <= self.phaseEnd:
+    #            tonInd  = Conversion.valtoind(ton, self.time)
+    #            tendInd = Conversion.valtoind(tend, self.time)
+    #            t = self.time[tonInd:tendInd]
+    #            y = self.data[tonInd:tendInd]
+    #            ttot.append(t)
+    #            ytot.append(y)
+    #            self.axes.plot(t,y,color='b') 
+
+    #    self.axes.set_xlim(min(ttot), max(ttot))
+    #    self.axes.set_ylim(min(ytot), max(ytot))
+    #    self.canvas.draw()
 
 
     def averageData(self):
@@ -1861,6 +1893,35 @@ class CurrentPlot(TemporalPlot):
                 self.calib[probe] = (float(l), float(w))
 
 
+    def coherentELMaveraging(self):
+        self.axes.clear()
+        probe = 'j-ua3'
+        time = self.time[probe]
+        data = self.data[probe]
+
+        self.phaseOn  = 5.8
+        self.phaseEnd = 6.5
+        ttot = []
+        ytot = []
+        for ton, tend in zip(self.ELMonsets, self.ELMends):
+            if ton >= self.phaseOn and tend <= self.phaseEnd:
+                tonInd  = Conversion.valtoind(ton, time)
+                tendInd = Conversion.valtoind(tend, time)
+                t = time[tonInd:tendInd] - ton
+                y = data[tonInd:tendInd]
+                ttot.extend(t)
+                ytot.extend(y)
+
+                if self.ignoreNans:
+                    t = Conversion.removeNans(t,y)
+                    y = Conversion.removeNans(y)
+
+                self.axes.plot(t,y,color='b') 
+
+        self.axes.set_xlim(min(ttot), max(ttot))
+        self.axes.set_ylim(min(ytot), max(ytot))
+        self.canvas.draw()
+
 
 class MatrixWindow(QtWidgets.QWidget):
     def __init__(self, parent):
@@ -1881,18 +1942,23 @@ class MatrixWindow(QtWidgets.QWidget):
         self.prevCol = 0
         self.axNum = 1
         self.newRow = False
+        self.defaultExtension = '.svg'
+        self.defaultFilter = 'SVG (*.svg)'
 
         self.btnAddRow = QtWidgets.QPushButton("Next phase")
+        self.btnSave   = QtWidgets.QPushButton("Save matrix")
 
         self.layout = QtWidgets.QHBoxLayout()
         self.layout.addWidget(self.canvas)
         self.layout.addWidget(self.btnAddRow)
+        self.layout.addWidget(self.btnSave)
 
         self.setLayout(self.layout)
 
-        self.resize(self.sizeHint())
+        self.resize(500,300)
 
         self.btnAddRow.clicked.connect(self.addRow)
+        self.btnSave.clicked.connect(self.saveMatrix)
 
         # Config from Plot
         config = self.gui.config['Plots']
@@ -2395,8 +2461,25 @@ class MatrixWindow(QtWidgets.QWidget):
 
         # Add text box showing the current time
         self.updateText()
-
-
+    
+    
+    def saveMatrix(self):
+        """ Saves current density plot figure. """
+        defaultName = "Matrix" 
+        dialog = QtWidgets.QFileDialog()
+        dialog.setDefaultSuffix(self.defaultExtension)
+        fileName, ok = dialog\
+                        .getSaveFileName(self,
+                                        directory='./' + defaultName,
+                                        caption = "Save figure as",
+                                        filter="PNG (*.png);;EPS (*.eps);;SVG (*.svg)",
+                                        initialFilter=self.defaultFilter)
+        if ok:
+            if len(fileName.split('.')) < 2:
+                print "Extension missing. Figure not saved"
+                return
+            fmt = fileName.split('.')[-1]
+            self.fig.savefig(fileName, format=fmt)
 
 
 
