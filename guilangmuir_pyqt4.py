@@ -209,6 +209,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         # Set GUI options to what was read from config.ini
         self.menuFixxPlotyLim.setChecked(self.config['Plots']['Spatial']['fixyLim'])
+        self.menuShowGaps.setChecked(self.config['Plots']['Temporal']['showGaps'])
         self.menuIgnoreNaNsSpatial.setChecked(self.config['Plots']['ignoreNans'])
 
         # Prepare probe table
@@ -240,7 +241,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         succeeded = self.config.validate(val)
         
         if not succeeded:
-            print "Config file validation failed. Using default values"
+            print "Warning: Config file validation failed. Using default values"
             self.config = self.defaultConfig
 
     
@@ -309,7 +310,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.xTimeEdit.returnPressed.connect(self.updateSlider)
             self.xTimeEdit.returnPressed.connect(self.updatexPlot)
             self.xTimeEdit.returnPressed.connect(self.updatexPlotText)
-            self.xTimeEdit.returnPressed.connect(self.updatetPlots)
+            self.xTimeEdit.returnPressed.connect(self.updatetPlotXlims)
 
             self.xTimeSlider.valueChanged.connect(self.updatexPlot)
             self.xTimeSlider.valueChanged.connect(self.updateTimeText)
@@ -339,6 +340,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.menuIgnoreNaNsSpatial.toggled.connect(self.updatexPlot)
             self.menuSaveSpatialPlot.triggered.connect(self.savexPlot)
             self.menuSaveCurrentPlot.triggered.connect(self.savejPlot)
+            self.menuShowGaps.toggled.connect(self.updatetPlots)
 
         # If shot data was not loaded successfully, unbind actions
         else:
@@ -368,6 +370,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def updatetPlots(self):
+        """ Updates all temporal plots """
+        self.nPlot.update()
+        self.TPlot.update()
+        self.jPlot.update()
+
+
+    def updatetPlotXlims(self):
         """ Updates xlims of the temporal plots if the time value entered is
         not within the current xlims """
         time = float(self.xTimeEdit.text())
@@ -1642,6 +1651,7 @@ class TemporalPlot(Plot):
         # Get currently selected probes from GUI
         self.selectedProbes = self.gui.selectedProbes['t']
         print "Selected probes:", self.selectedProbes
+        self.showGaps = self.gui.menuShowGaps.isChecked()
 
         # Update plots
         for probe in self.data.keys(): 
@@ -1654,7 +1664,7 @@ class TemporalPlot(Plot):
                 x = self.time[probe]
 
                 # Filter NaNs if wished
-                if self.showGaps == 0:
+                if self.showGaps == False:
                    x = Conversion.removeNans(x,y) 
                    y = Conversion.removeNans(y) 
 
@@ -2154,7 +2164,9 @@ class SpatialCurrentPlot(SpatialPlot):
         self.fig.tight_layout()
 
 
+
 class CurrentPlot(TemporalPlot):
+    """ Temporal current density plot """
     # Get mapping between probes and channels from files at
     # /afs/ipp/home/d/dacar/divertor/ If no file present, try to get the
     # mapping from LSC Calibrate the measurements with probe surfaces to obtain
@@ -2360,6 +2372,7 @@ class CurrentPlot(TemporalPlot):
         self.axes.set_xlim(min(ttot), max(ttot))
         self.axes.set_ylim(min(ytot), max(ytot))
         self.canvas.draw()
+
 
 
 class MatrixWindow(QtGui.QWidget):

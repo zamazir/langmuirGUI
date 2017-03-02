@@ -462,12 +462,17 @@
      <property name="title">
       <string>Spatial Plot</string>
      </property>
+     <addaction name="menuFixxPlotyLim"/>
      <addaction name="menuIgnoreNaNsSpatial"/>
     </widget>
-    <addaction name="actionToggle_plot"/>
-    <addaction name="actionMaximize_plot"/>
-    <addaction name="menuFixxPlotyLim"/>
+    <widget class="QMenu" name="menuTemporal_Plot">
+     <property name="title">
+      <string>Temporal Plot</string>
+     </property>
+     <addaction name="menuShowGaps"/>
+    </widget>
     <addaction name="menuSpatial_Plot"/>
+    <addaction name="menuTemporal_Plot"/>
    </widget>
    <widget class="QMenu" name="menuShot">
     <property name="title">
@@ -663,7 +668,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Ignore NaNs</string>
+    <string>Show data points containing NaNs</string>
    </property>
    <property name="toolTip">
     <string>Ignoring NaNs will ensure plotting of points even if one of the data points they represent is NaN</string>
@@ -677,6 +682,17 @@
   <action name="menuSaveCurrentPlot">
    <property name="text">
     <string>Current density</string>
+   </property>
+  </action>
+  <action name="menuShowGaps">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show NaNs as gaps</string>
    </property>
   </action>
  </widget>
