@@ -272,7 +272,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
             # Update plots
             self.createxPlot()
-            self.dtime = self.xPlot.dtime
             self.indicator_range = self.xPlot.realdtrange
             self.createnPlot()
             self.createTPlot()
@@ -679,6 +678,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.xPlot = SpatialPlot(self)
         self.xPlotCanvas = self.xPlot.canvas
         self.xPlotLayout.addWidget(self.xPlotCanvas)
+        self.dtime = self.xPlot.dtime
 
 
     def createTPlot(self):
