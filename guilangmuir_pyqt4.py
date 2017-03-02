@@ -63,7 +63,7 @@ from matplotlib import pyplot as plt
 from matplotlib import patches
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.widgets import SpanSelector
 
 from PyQt4 import QtGui
@@ -134,7 +134,7 @@ class Sync():
                         triggerPlot.axes._shared_x_axes.join(triggerPlot.axes, receiverPlot.axes)
 
 
-        
+ 
 class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
         super(ApplicationWindow, self).__init__()
@@ -673,7 +673,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.clearxPlot()
 
         # create new canvas
-        self.xPlot = SpatialPlot(self)
+        if self.getPlotOption() == "Saturation current density":
+            self.xPlot = SpatialCurrentPlot(self)
+        else:
+            self.xPlot = SpatialPlot(self)
         self.xPlotCanvas = self.xPlot.canvas
         self.xPlotLayout.addWidget(self.xPlotCanvas)
 
@@ -847,21 +850,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         else:
             print "Successfully read strikeline positions"
 
-
-        # Get jsat
-        try:
-            self.jshot = dd.shotfile(self.jdiag, self.shotnr)
-        except:
-            msg = QMessageBox()
-            msg.setText("The shot file with the probe current data could not be loaded. It might have not been written for this shot.")
-            msg.setWindowTitle("Shotfile could not be loaded")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.setDefaultButton(QMessageBox.Ok)
-            msg.setEscapeButton(QMessageBox.Ok)
-            self.hideProgress()
-            #return
-
-        for 
 
         # Get ELM times
         shot = dd.shotfile(self.ELMdiag,self.shotnr)
@@ -1088,7 +1076,7 @@ class SpatialPlot(Plot):
         self.defaultColor = config['defaultColor']
         self.posFile = config['positionsFile']
         self.fixyLim = config['fixyLim']
-        # If this value is 1 then averaged values are not nans if one or more
+        # If this value is 1 then averaged values are nohttp://thecodeship.com/patterns/guide-to-python-function-decorators/t nans if one or more
         # of the values used to calculate it is a nan
         # This setting is ignored if all values to be averaged over are nans
         self.ignoreNans = self.ignoreNans
@@ -1273,6 +1261,7 @@ class SpatialPlot(Plot):
         units of delta-s along the x-axis. It is implicitly assumed that the
         divertor tile is flat."""
         self.plotPositions = {}
+        print "Realtime array:", self.realtime_arr
         
         for probe in self.data.keys():
             self.plotPositions[probe] = []
@@ -1717,12 +1706,452 @@ class TemporalPlot(Plot):
 
 class SpatialCurrentPlot(SpatialPlot):
     def __init__(self, gui):
-        super(SpatialCurrentPlot, self).__init__(gui)
+        # config from Plot
+        self.gui = gui
+        config = gui.config['Plots']
+        self.region = config['region']
+        self.domain = config['domain']
+        self.dpi    = config['dpi']
+        self.ignoreNans    = config['ignoreNans']
 
-    def getShotData(self):
+        self.ELMonsets = gui.ELMonsets
+        self.ELMends   = gui.ELMends
+
+        self.parents = {
+                'te': 'TPlotLayout',
+                'ne': 'nPlotLayout',
+                'j': 'jPlotLayout',
+                }
+
+        self.fig = Figure(dpi=self.dpi)
+        self.axes = self.fig.add_subplot(111)
+        self.canvas = FigureCanvas(self.fig)
 
 
+        # config from SpatialPlot
+        config = gui.config['Plots']['Spatial']
+        self.coloring = config['coloring']
+        self.defaultColor = config['defaultColor']
+        self.posFile = config['positionsFile']
+        self.fixyLim = config['fixyLim']
+        # If this value is 1 then averaged values are not nans if one or more
+        # of the values used to calculate it is a nan
+        # This setting is ignored if all values to be averaged over are nans
+        self.ignoreNans = self.ignoreNans
 
+        self.scatters = {}
+        self.quantities = {
+                'Temperature': 'te',
+                'Density': 'ne',
+                'Saturation current density': 'j'
+                }
+        self.axLabels = {
+                'Temperature': 'T$_{e,t}$ [eV]',
+                'Density': 'n$_{e,t}$ [1/m$^3$]',
+                'Saturation current density': 'j$_sat$ [A/m$^2$]'
+                }
+
+        # Number of timesteps around the current time to include in the plot (see getShotData())
+        self.Dt = gui.Dt
+        # Number of data points over which to average
+        self.avgNum = gui.avgNum
+
+        self.Rsl = self.gui.Rsl
+        self.ssl = self.gui.ssl
+        self.zsl = self.gui.zsl
+        
+        self.option = self.gui.getPlotOption()
+        self.quantity = self.quantities[self.option]
+
+        # Set axes labels
+        self.axes.set_title("{} distribution on the outer lower target plate".format(self.option))
+        self.axes.set_ylabel(self.axLabels[self.option])
+        self.axes.set_xlabel("$\Delta$s [m]")
+
+        # Hide axes offsets
+        self.axes.yaxis.get_offset_text().set_visible(False)
+        self.axes.xaxis.get_offset_text().set_visible(False)
+
+        # config from Current plot
+        # Configuration
+        config = gui.config['Plots']['Temporal']['Current']
+        self.mapDir      = config['mapDir']
+        self.mapDiag     = config['mapDiag']
+        self.diag        = config['diag']
+        self.calibFile   = config['calibFile']
+        self.mapFilePath = config['mapFile']
+        self.showGaps    = gui.config['Plots']['Temporal']['showGaps']
+        self.rescaling   = gui.config['Plots']['Temporal']['rescale-y']
+
+        # Attributes
+        self.quantity    = 'j'
+        self.shotnr      = self.gui.shotnr
+        self.selectedProbes  = self.gui.selectedProbes['t']
+        self.hasMapping  = False
+        self.calib       = {}
+        self.map         = {}
+        self.rawdata        = {}
+        self.avgData     = {}
+        self.avgTime     = {}
+        self.rawtime        = {}
+        self.plots       = {}
+        self.xlim_orig   = [9999999999999, -999999999999]
+        self.ylim_orig   = [9999999999999, -999999999999]
+
+        self.probeNamePrefix = self.quantity + '-' + self.region
+    
+        self.getShot()
+        self.getShotData()
+        self.averageData()
+        self.getProbePositions()
+        self.rztods()
+        self.initPlot()
+
+    def getShot(self, diag=None):
+        #Copied from CurrentPlot
+        # If no mapping available yet, get it
+        if len(self.map) < 1:
+            hasMapping = self.getMapping()
+        
+        if not hasMapping:
+            return
+
+        if diag != None:
+            self.diag = diag
+        try:
+            shot = dd.shotfile(self.diag, self.shotnr)
+        except Exception:
+            print "Shotfile not found"
+            self.statusbar.showMessage("Shotfile could not be loaded")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("No jsat shotfile could be found at {} for this shot.".format(self.diag))
+            msg.setWindowTitle("Shotfile not found")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setDefaultButton(QMessageBox.Ok)
+            msg.setEscapeButton(QMessageBox.Ok)
+            msg.exec_()
+            return
+
+        for key, objName in shot.getObjectNames().iteritems():
+            if objName.startswith('CH'):
+                for probe, (channel, ind) in self.map.iteritems():
+                    if channel == objName:
+                        #print "Getting data for probe {} from channel {}-{}".format(probe,channel,ind)
+                        self.rawdata[probe] = shot.getObjectData(channel)[ind]
+                        self.rawtime[probe] = shot.getTimeBase(channel)
+
+
+    def getShotData(self, diag=None):
+        """ Loads jsat data from shotfile (default: LSF). """
+
+        #Copied from SpatialPlot
+        """ Gets data specified by class variables "quantity" and "region" from shotfile for times in range dt. Saves this data and associated timestamps in class arrays "data" and "realtime_arr", respectively """
+        ##############
+        # Let the number of data points to be averaged to one value be n and the number of averaged values to show per probe be m.
+        # The time offset dt is the number of timesteps to go left and right from the current time to define the time range Dt over which to average.
+        # Then the data points filtered symmetrically around the current time will be Dt = dt*2+1 in number, which should equal n*m
+        #          dt   t   dt
+        #       <====== | ======>
+        #       * * * * * * * * *  time steps
+        #       <===============>
+        #              Dt
+        # The time offset corresponding to n and m is then dt = k(n*m-1)/2, where k is a natural number.
+        # Since Dt will always be an odd number and n and m are natural numbers, n and m both have to be odd too.
+
+        # Get current time index from GUI slider
+        self.time = self.gui.xTimeSlider.value()
+        print "time index:", self.time
+
+        # Time range expressed by indices in shotfile
+        self.dt = (self.gui.Dt - 1)/2 
+        print "DT:", self.dt
+
+        # Min and max time expressed by indices in shotfile
+        # Prevent tmin to take negative values so getting value by index
+        # won't cause problems
+        tmin = max(self.time - self.dt, 0)
+        tmax = self.time + self.dt
+        print "TMAX/TMIN INDICES:"
+        print tmin
+        print tmax
+
+        probeNamePrefix = self.quantity + '-' + self.region
+
+        self.data = {}
+        self.realtime_arr = {}
+        for probe in self.rawdata.keys():
+            # filter for specified probes
+            if probe.startswith(probeNamePrefix):
+                dtime = self.rawtime[probe]
+                data = self.rawdata[probe]
+
+                # Time converted to actual time values
+                # If there is an index error, take the global minimum or maximum
+                self.realtmin = dtime[tmin]
+                print "REALTMIN:", self.realtmin
+                try:
+                    self.realtmax = dtime[tmax]
+                except Exception:
+                    self.realtmax = dtime[-1]
+                    print("Maximum value of time range to evaluate is out of range. Using maximum of available time range.")
+                print "REALTMAX:", self.realtmax
+                try:
+                    self.realtime = dtime[self.time]
+                except Exception:
+                    print "Could not determine realtime from time array"
+                    if self.time >= dtime.size: self.realtime = dtime[-1]
+                    elif self.time < dtime.size: self.realtime = dtime[0]
+                    else: print("FATAL: Realtime could not be determined.")
+                print "REALTIME:", self.realtime
+                
+                # Filter for time range. 
+                ##### SAVE DATA TO ARRAY #####
+                ind = np.ma.where((dtime >= self.realtmin) & (dtime <= self.realtmax))
+                self.data[probe] = data[ind]
+                self.realtime_arr[probe] = dtime[ind]
+                print "REALTIME WINDOW:", self.realtime_arr
+
+                # Save the time data of the last probe as the global time data. This assumes that all time arrays of the probes are identical
+                self.dtime  = dtime
+                realdtminus = abs(self.realtime - self.realtmin)
+                realdtplus  = abs(self.realtime - self.realtmax)
+                self.realdtrange = (realdtminus, realdtplus)
+
+
+    def getMapping(self):
+        """ Loads probe-channel mapping from file. Tries to load from LSC if file not available. """
+        ok = True
+        # File load dialog if mapFilePath was set to None during runtime
+        if self.mapFilePath == None:
+            self.mapFilePath, ok = \
+                    QtGui.QFileDialog.getOpenFileName(
+                        self.gui,
+                        directory=self.mapDir,
+                        caption='Load mapping file'
+                    )
+        if not ok:
+            return False
+        else:
+            with open(self.mapFilePath) as f:
+                lines = f.readlines()
+                for line in lines:
+                    try:
+                        probe, quantity, channel, ind = line.split()
+                    except:
+                        print "Failed to read probe-channel mapping file", filePath
+                        break
+
+                    # If channel doesn't start with "CH", add the prefix so LSF shotfile can be read with it
+                    if not channel.startswith('CH'): channel = 'CH' + channel
+
+                    # ind is saved as str from 1-6 but must serve as an index from 0-5
+                    ind = int(ind) - 1
+
+                    # Only care about probes in this domain and region and the saturation current
+                    if probe.startswith(self.domain + self.region) and quantity == 'Isat':
+                        # Cut off probe domain and add quantity identifier
+                        # Identifier is needed for using the TemporalPlot.update() method
+                        probe = 'j-' + probe[1:].lower()
+                        print "Found Isat for probe {} on channel {}-{}".format(probe,channel, ind)
+                        self.map[probe] = (channel, ind)
+
+            # Exit if this worked
+            if len(self.map) > 0:
+                "+++++++++++++Found mappings :)"
+                return True
+
+        # If that failed, try to get mapping from LSC
+        self.statusbar.showMessage("Trying to get probe-channel mapping from LSC")
+        try:
+            shot = dd.getshot(self.mapDiag, self.shotnr)
+        except Exception:
+            print "LSC not available"
+            self.statusbar.showMessage("LSC not available for this shot")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("No LSC shotfile could be found for this shot. jsat will not be plotted.")
+            msg.setWindowTitle("LSC shotfile not found")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setDefaultButton(QMessageBox.Ok)
+            msg.setEscapeButton(QMessageBox.Ok)
+            msg.exec_()
+            return False
+        print 'LSC not impemented yet. Aborting'
+        return False
+
+
+        # If that failed, abort plotting current
+        print "Failed to get probe-channel mapping. jsat will not be plotted"
+        return False
+
+
+    def calibrateData(self, cal=None):
+        """ Converts current to current density. """
+        print "Calibrating data"
+        if cal != None:
+            self.calib = cal
+        else:
+            self.getCalibrations()
+
+        for probe in self.data.keys():
+            l, w = self.calib[probe[2:]]
+            self.data[probe] = np.array([val/(l*w) for val in self.data[probe]])
+
+
+    def getCalibrations(self, path=None):
+        """ Loads probe dimensions from file so current can be converted to current density. """
+        if path == None:
+            path = self.calibFile
+
+        with open(path) as f:
+            lines = f.readlines()[1:]
+            for line in lines:
+                probe, l, w = line.split()
+                self.calib[probe] = (float(l), float(w))
+
+
+    def averageData(self):
+        """ Averages data points over specified number of points. """
+        self.avgData = {}
+
+        # If no averaging wished, use the data as received from shotfile
+        if self.avgNum == 0:
+            self.avgData = self.data 
+            return
+
+        # Averaging
+        for probe in self.data.keys():
+            data = self.data[probe]
+            self.avgData[probe] = []
+           
+            # If this probe didn't record any values at this point in time, continue with the next one
+            if data.size == 0: continue
+
+            i=0
+            # Take values in the range 0 to avgNum-1 and average them
+            # valcount is used to calculate average value because of the possibility of nans
+            while True:
+                xsum=0
+                valcount=0
+
+                for x in np.arange(self.avgNum):
+                    # Ignore nans if wished. Ignoring will ensure plot points
+                    # to be plotted even if one or more of its data points are
+                    # NaNs
+                    if self.ignoreNans and np.isnan(data[i]):
+                        pass
+                    else:
+                        xsum += data[i]
+                        valcount += 1 
+                    i += 1
+
+                # If all values were nans, ignore the result no matter what the value of ignoreNans is
+                if valcount == 0:
+                    avg = np.NAN
+                else:
+                    avg = xsum/float(valcount)
+
+                # Save averages to new array
+                self.avgData[probe].append(avg)
+
+                # End loop if end of data array will be reached next time
+                if i + self.avgNum > data.size: break
+            
+            self.avgData[probe] = np.array(self.avgData[probe])
+
+
+    def getProbePositions(self):
+        """ 
+        Gets positions of probes in the specified region in terms of R,z
+        coordinates. Saves the coordinates as tuples in a class parameter array
+        "probePositions" with the probe names as keys. 
+        """
+        self.probePositions = {}
+
+        # Read probe name and R and z coordinates of each probe
+        with open(self.posFile) as f:
+            lines = f.readlines()
+            for line in lines:
+                probeName = line.split()[0][1:]                 # Probe name
+                R = float(line.split()[1].replace(",","."))     # R
+                z = float(line.split()[2].replace(",","."))     # z
+                 
+                self.probePositions[probeName] = (R,z)
+
+
+    def rztods(self):
+        """ Converts probe positions from (R,z) coordinates to delta-s
+        coordinate based on current strikeline position. This enables plots in
+        units of delta-s along the x-axis. It is implicitly assumed that the
+        divertor tile is flat."""
+        self.plotPositions = {}
+        print "Realtime array:", self.realtime_arr
+        
+        for probe in self.data.keys():
+            self.plotPositions[probe] = []
+
+            # Get R and z coordinates of probe
+            R_p = self.probePositions[probe[2:]][0]
+            z_p = self.probePositions[probe[2:]][1]
+
+            for time in self.realtime_arr[probe]:
+                # Get R and z coordinates of strikeline at this point in time
+                # Finding the index of the time value closest to the current
+                # time is less prone to errors than trying to find the exact
+                # value
+                ind_R = np.abs((self.Rsl['time'] - time)).argmin()
+                R_sl = self.Rsl['data'][ind_R]
+                ind_z = np.abs((self.zsl['time'] - time)).argmin()
+                z_sl = self.zsl['data'][ind_z]
+
+                # Throw error if timestamps don't match
+                if self.zsl['time'][ind_z] != self.Rsl['time'][ind_R]:
+                    print('++++CRITICAL++++\n\nTried to find timestamps of\
+                            strikeline R and z measurements at times closest\
+                            to {} in the respective shot file data but the\
+                            found values for R and z don\'t match! Data\
+                            evaluation will not be reliable.')
+
+                # Calculate delta-s
+                # Assumption: divertor tile is flat
+                ds = np.sqrt( (R_sl-R_p)**2 + (z_sl-z_p)**2 ) 
+                # If the z coordinate of the probe is smaller than that of the
+                # strikeline, 
+                # then the delta-s associated with this probe at this time is
+                # negative
+                if z_p < z_sl: ds = -ds
+
+                #print('Position of strikeline at time {}: R = {}, z = {} resulting in ds = {}'.format(self.zsl['time'][ind_z],R_sl,z_sl,ds))
+                self.plotPositions[probe].append(ds)
+        print "Plot positions:", self.plotPositions
+
+
+    def initPlot(self, ):
+        """ Populates canvas with initial plot. Creates PathCollection objects that will be updated when plot has to change based on GUI interaction."""
+        print("Populating canvas with spatial plot")
+        for probe in self.avgData.keys():
+            x = []
+            y = []
+            for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
+                x.append(position)
+                y.append(value)
+
+            # Use different color for each probe if wished
+            if self.coloring:
+                color = self.gui.probeColors[probe.split('-')[1]]
+            else:
+                color = self.defaultColor
+
+            # Plot
+            self.scatters[probe.split('-')[1]] = self.axes.scatter(x, y, color=color)
+
+        # Add text box showing the current time
+        #self.updateText()
+        
+        self.updateAxesLabels()
+        
+        self.fig.tight_layout()
 
 
 class CurrentPlot(TemporalPlot):
