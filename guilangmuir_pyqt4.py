@@ -51,6 +51,19 @@
 #           + original: ELMs are plotted with their original length
 #       * Set slider range to [0,ELM lenght] if mode=original
 #         Set slider range to [0,1] if mode=stretch
+#
+#
+#
+# - Make slider snap to ELM phases. onValueChange:
+#       * Convert slider position to realtime
+#       * Look for index i of ELM beginning closest to realtime
+#       * Calculate points of interest:
+#           1) tbeg_ELM[i] - dt_ELM[i-1]*.1
+#           2) tgeb_ELM[i] + dt_ELM[i]*.3
+#           3) tbeg_ELM[i] + dt_ELM[i]*.9
+#       * Determine POI closest to realtime
+#       * Get index of time in time array closest to POI
+#       * Set slider to this index
 #         
 ##############################################################################
 
@@ -203,11 +216,20 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.defaultExtension = config['defaultExtension'] 
         self.defaultFilter = '{} (*.{})'.format(self.defaultExtension[1:].upper(),
                                                 self.defaultExtension[1:].lower())
-        
+
         # Set up UI
         self.setupUi(self)
         self.xTimeSlider.setTickPosition(QtGui.QSlider.NoTicks)
         #self.btnELMplot.hide()
+
+        self.POIs = [0]
+        self.POI_current_ind = 0
+        self.POIsPlots = []
+        self.ELMstart_current_ind = 0
+        
+        self.editPOIbefore.setText('10')
+        self.editPOIafter.setText('30')
+        self.editPOIfarafter.setText('50')
 
         # Set GUI options to what was read from config.ini
         self.menuFixxPlotyLim.setChecked(self.config['Plots']['Spatial']['fixyLim'])
@@ -234,6 +256,98 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.shotNumberEdit.setMaxLength(5)
         self.shotNumberEdit.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 
+
+    def moveToNextPOI(self, ):
+        print "Moving to next POI"
+        self.POI_current_ind = min(self.POI_current_ind + 1, len(self.POIs) - 1)
+        print "That's number", self.POI_current_ind
+        POI = self.POIs[self.POI_current_ind]
+        POI_realtime_ind = Conversion.valtoind(POI, self.dtime)
+        print "Realtime index:", POI_realtime_ind
+        self.xTimeSlider.setValue(POI_realtime_ind)
+        
+        self.updatexPlotText()
+
+
+    def moveToPrevPOI(self, ):
+        print "Moving to previous POI"
+        self.POI_current_ind = max(self.POI_current_ind - 1, 0)
+        print "That's number", self.POI_current_ind
+        POI = self.POIs[self.POI_current_ind]
+        POI_realtime_ind = Conversion.valtoind(POI, self.dtime)
+        print "Realtime index:", POI_realtime_ind
+        self.xTimeSlider.setValue(POI_realtime_ind)
+        
+        self.updatexPlotText()
+
+
+    def moveToNextELM(self, ):
+        print "Moving to next ELM"
+        self.ELMstart_current_ind = min(self.ELMstart_current_ind + 1, len(self.ELMonsets) - 1)
+        self.snapSlider(self.ELMstart_current_ind)
+        
+
+    def moveToPrevELM(self, ):
+        print "Moving to previous ELM"
+        self.ELMstart_current_ind = max(self.ELMstart_current_ind - 1, 0)
+        self.snapSlider(self.ELMstart_current_ind)
+
+
+    def snapSlider(self, ELMind=None):
+        """ Makes Slider snap to ELM-related points of interest. """
+        # - Make slider snap to ELM phases. onValueChange:
+        #       * Convert slider position to realtime
+        #       * Look for index i of ELM beginning closest to realtime
+        #       * Calculate points of interest:
+        #           1) tbeg_ELM[i] - dt_ELM[i-1]*.1
+        #           2) tgeb_ELM[i] + dt_ELM[i]*.3
+        #           3) tbeg_ELM[i] + dt_ELM[i]*.9
+        #       * Determine POI closest to realtime
+        #       * Get index of time in time array closest to POI
+        #       * Set slider to this index
+        if ELMind == None:
+            pos = self.xTimeSlider.value()
+            print "Slider position:", pos
+            realtime = self.dtime[pos]
+            print "Realtime:", realtime
+            self.ELMstart_current_ind = Conversion.valtoind(realtime, self.ELMonsets)
+        else:
+            self.ELMstart_current_ind = ELMind
+            realtime = self.ELMonsets[self.ELMstart_current_ind]
+            print "Realtime:", realtime
+        print "ELM starts at:", self.ELMstart_current_ind
+        print "That's at:", self.ELMonsets[self.ELMstart_current_ind]
+        for plot in self.POIsPlots:
+            try: plot.remove()
+            except: pass
+        self.POIsPlots.append(self.jPlot.axes.axvline(self.ELMonsets[self.ELMstart_current_ind], color='g', lw=3,
+                alpha=0.3))
+        self.POIs= self.elmPhases(self.ELMstart_current_ind)
+        for t in self.POIs:
+            self.POIsPlots.append(self.jPlot.axes.axvline(t, color='g', lw=3,
+                    ls='--', alpha=0.3))
+        print "Points of interest:", self.POIs
+        self.POI_current_ind = np.abs((self.POIs - realtime)).argmin()
+        POI = self.POIs[self.POI_current_ind]
+        print "Closest point of interest:", POI
+        POI_realtime_ind = Conversion.valtoind(POI, self.dtime)
+        print "Index of POI in dtime:", POI_realtime_ind
+        print "That's at:", self.dtime[POI_realtime_ind]
+        self.xTimeSlider.setValue(POI_realtime_ind)
+    
+        self.updatexPlotText()
+        
+
+    def elmPhases(self, i):
+        justBefore = float(self.editPOIbefore.text())/100.
+        justAfter  = float(self.editPOIafter.text())/100.
+        farAfter   = float(self.editPOIfarafter.text())/100.
+        t1 = self.ELMonsets[i] - self.ELMtotalDurations[i-1] * justBefore
+        t2 = self.ELMonsets[i] + self.ELMtotalDurations[i] * justAfter
+        t3 = self.ELMonsets[i] + self.ELMtotalDurations[i] * farAfter
+    
+        return t1, t2, t3
+        
 
     def loadConfig(self, f, specf=None):
         self.config = ConfigObj(f, configspec=specf)
@@ -284,11 +398,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.nToolbar = NavigationToolbar(self.nPlot.canvas, self)
             self.TToolbar = NavigationToolbar(self.TPlot.canvas, self)
             self.jToolbar = NavigationToolbar(self.jPlot.canvas, self)
-            self.xToolbar = NavigationToolbar(self.xPlot.canvas, self)
             self.nToolbar.hide()
             self.TToolbar.hide()
             self.jToolbar.hide()
-            self.xToolbar.hide()
 
             # Synchronize temporal plots
             Sync.sync(self.nPlot, self.TPlot, self.jPlot)
@@ -319,6 +431,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.xTimeSlider.valueChanged.connect(self.updateIndicators)
             self.xTimeSlider.sliderReleased.connect(self.updatexPlotText)
             self.xTimeSlider.valueChanged.connect(self.updatexFit)
+            self.xTimeSlider.sliderReleased.connect(self.snapSlider)
         
             self.spinTWidth.editingFinished.connect(self.updateTWindow)
 
@@ -329,9 +442,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.btnPan.clicked.connect(self.jToolbar.pan)
             self.btnZoom.clicked.connect(self.jToolbar.zoom)
             self.btnReset.clicked.connect(self.resettPlots)
-            self.btnPan.clicked.connect(self.xToolbar.pan)
-            self.btnZoom.clicked.connect(self.xToolbar.zoom)
-            self.btnReset.clicked.connect(self.xToolbar.home)
             
             self.btnAddToMatrices.clicked.connect(self.addToMatrices)
 
@@ -344,6 +454,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.menuSaveCurrentPlot.triggered.connect(self.savejPlot)
             self.menuShowGaps.toggled.connect(self.updatetPlots)
             self.menuSaveSpatialData.triggered.connect(self.saveSpatialData)
+
+            self.btnNextPOI.clicked.connect(self.moveToNextPOI)
+            self.btnPrevPOI.clicked.connect(self.moveToPrevPOI)
+            self.btnNextELM.clicked.connect(self.moveToNextELM)
+            self.btnPrevELM.clicked.connect(self.moveToPrevELM)
 
         # If shot data was not loaded successfully, unbind actions
         else:
@@ -701,6 +816,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.xPlotLayout.addWidget(self.xPlotCanvas)
         self.dtime = self.xPlot.dtime
 
+        self.xToolbar = NavigationToolbar(self.xPlot.canvas, self)
+        self.xToolbar.hide()
+
+        self.btnPan.clicked.connect(self.xToolbar.pan)
+        self.btnZoom.clicked.connect(self.xToolbar.zoom)
+        self.btnReset.clicked.connect(self.xToolbar.home)
+
 
     def createTPlot(self):
         try:
@@ -877,7 +999,16 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.ELMonsets = shot('t_begELM')
         self.ELMends   = shot('t_endELM').data
         self.ELMmaxima = shot('t_maxELM').data
-
+        ELMtotalDurations = []
+        i=0
+        while i < self.ELMonsets.size:
+            if i+1 < self.ELMonsets.size:
+                dt = self.ELMonsets[i+1] - self.ELMonsets[i]
+            else:
+                dt = 0
+            ELMtotalDurations.append(dt) 
+            i += 1
+        self.ELMtotalDurations = np.array(ELMtotalDurations)
 
         # Flag denoting successful shotfile load
         self.succeeded = 1
@@ -910,7 +1041,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def savexPlot(self):
         """ Saves spatial plot figure. """
         t  = self.xPlot.realtime
-        dt = self.lblRealTWidth.text().split()[1]
+        dt = str(self.lblRealTWidth.text()).split()[1]
         defaultName = 'Spatial_{}_{:.7f}s_{}{}'.format(self.xPlot.quantity, t,
                                                         dt, self.defaultExtension)
 
@@ -922,7 +1053,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                                         directory='./' + defaultName,
                                         caption = "Save figure as",
                                         filter="PNG (*.png);;EPS (*.eps);;SVG (*.svg)",
-                                        initialFilter=self.defaultFilter)
+                                        selectedFilter=self.defaultFilter)
         if ok:
             if len(fileName.split('.')) < 2:
                 print "Extension missing. Figure not saved"
@@ -945,7 +1076,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                                         directory='./' + defaultName,
                                         caption = "Save figure as",
                                         filter="PNG (*.png);;EPS (*.eps);;SVG (*.svg)",
-                                        initialFilter=self.defaultFilter)
+                                        selectedFilter=self.defaultFilter)
         if ok:
             if len(fileName.split('.')) < 2:
                 print "Extension missing. Figure not saved"
@@ -2987,7 +3118,7 @@ class MatrixWindow(QtGui.QWidget):
                                         directory='./' + defaultName,
                                         caption = "Save figure as",
                                         filter="PNG (*.png);;EPS (*.eps);;SVG (*.svg)",
-                                        initialFilter=self.defaultFilter)
+                                        selectedFilter=self.defaultFilter)
         if ok:
             if len(fileName.split('.')) < 2:
                 print "Extension missing. Figure not saved"
