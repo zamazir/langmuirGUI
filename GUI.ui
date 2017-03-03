@@ -448,7 +448,14 @@
      <addaction name="menuSaveSpatialPlot"/>
      <addaction name="menuSaveCurrentPlot"/>
     </widget>
+    <widget class="QMenu" name="menuSave_data">
+     <property name="title">
+      <string>Save data</string>
+     </property>
+     <addaction name="menuSaveSpatialData"/>
+    </widget>
     <addaction name="menuSaveFigure"/>
+    <addaction name="menuSave_data"/>
     <addaction name="actionExport"/>
     <addaction name="actionImport"/>
     <addaction name="separator"/>
@@ -693,6 +700,11 @@
    </property>
    <property name="text">
     <string>Show NaNs as gaps</string>
+   </property>
+  </action>
+  <action name="menuSaveSpatialData">
+   <property name="text">
+    <string>Save spatial data</string>
    </property>
   </action>
  </widget>

@@ -28,7 +28,6 @@
 #       * SpatialPlot.region
 #       * SpatialPlot.ignoreNans
 #       * TemporalPlot.axTitles
-#       * TemporalPlot.showgaps
 #       * Plot.region
 #       * Plot.domain
 #       * CurrentPlot.mapDir
@@ -72,6 +71,8 @@ from PyQt4.QtGui import (QWidget, QMessageBox)
 from PyQt4.QtGui import (QPainter, QColor)
 from PyQt4.uic import loadUiType
 
+from fitting import FitFunctions
+
 # Either use network libraries or local ones depending on internet access
 # Local ones might be outdated but don't require internet access
 #import dd
@@ -80,6 +81,7 @@ import numpy as np
 import sys
 import os
 from copy import copy
+import pickle
 
 # This is needed for passing arguments to callback functions
 import functools
@@ -316,7 +318,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.xTimeSlider.valueChanged.connect(self.updateTimeText)
             self.xTimeSlider.valueChanged.connect(self.updateIndicators)
             self.xTimeSlider.sliderReleased.connect(self.updatexPlotText)
-            self.xTimeSlider.sliderReleased.connect(self.updatexPlotText)
+            self.xTimeSlider.valueChanged.connect(self.updatexFit)
         
             self.spinTWidth.editingFinished.connect(self.updateTWindow)
 
@@ -341,6 +343,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.menuSaveSpatialPlot.triggered.connect(self.savexPlot)
             self.menuSaveCurrentPlot.triggered.connect(self.savejPlot)
             self.menuShowGaps.toggled.connect(self.updatetPlots)
+            self.menuSaveSpatialData.triggered.connect(self.saveSpatialData)
 
         # If shot data was not loaded successfully, unbind actions
         else:
@@ -351,6 +354,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.xTimeEdit.disconnect()
             except Exception: pass
             print("No valid shot number has been entered yet.")
+
+    
+    def saveSpatialData(self):
+        self.xPlot.saveData()
 
 
     def addToMatrices(self):
@@ -568,6 +575,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.xPlot.fixyLim = self.menuFixxPlotyLim.isChecked()
         self.xPlot.ignoreNans = self.menuIgnoreNaNsSpatial.isChecked()
         self.xPlot.update()
+
+
+    def updatexFit(self):
+        pass
+        #self.xPlot.plotFit()
 
 
     def updateSlider(self):
@@ -1099,7 +1111,7 @@ class SpatialPlot(Plot):
         self.axLabels = {
                 'Temperature': 'T$_{e,t}$ [eV]',
                 'Density': 'n$_{e,t}$ [1/m$^3$]',
-                'Saturation current density': 'j$_sat$ [A/m$^2$]'
+                'Saturation current density': 'j$_{sat}$ [kA/m$^2$]'
                 }
 
         # Number of timesteps around the current time to include in the plot (see getShotData())
@@ -1128,6 +1140,45 @@ class SpatialPlot(Plot):
         self.getProbePositions()
         self.rztods()
         self.initPlot()
+        #self.plotFit()
+
+
+    def plotFit(self):
+        """ Plots a fit function to the shown data based on the Eich function
+        """
+        # Get currently visible data
+        offsets = []
+        for scatter in self.scatters.values():
+            if scatter.get_visible():
+                offsets.extend(scatter.get_offsets())
+        locs = np.array([el[0] for el in offsets])
+        data = np.array([el[1] for el in offsets])
+
+        if data.size == 0:
+            return
+        
+        # Sort data from "left to right"
+        data = data[locs.argsort()]
+        locs = locs[locs.argsort()]
+        
+        # Normalize y values so curve_fit will not break because of too
+        # large/small values
+        scal = np.max(data)
+        y = data/scal
+        x = np.arange(np.min(locs), np.max(locs), 0.001)
+        
+        ft = FitFunctions.fit(locs, y)
+        yft= FitFunctions.eich_model(x, *ft)
+       
+        if hasattr(self, 'fit'):
+            self.fit.remove()
+        #    self.fit.set_xdata(x)
+        #    self.fit.set_ydata(yft*scal)
+        #    self.axes.draw_artist(self.fit)
+        #    self.canvas.update()
+        #else:
+        self.fit, = self.axes.plot(x, yft*scal)
+        self.canvas.draw()
 
 
     def getShotData(self):
@@ -1335,6 +1386,16 @@ class SpatialPlot(Plot):
         self.updateAxesLabels()
         
         self.fig.tight_layout()
+
+    
+    def saveData(self):
+        data = []
+        for s in self.scatters.values():
+            data.extend(s.get_offsets())
+
+        print "Saving spatial data"
+        with open('spatialData.p','wb') as f:
+            pickle.dump(data, f)
 
 
     def updateText(self):
@@ -1758,7 +1819,7 @@ class SpatialCurrentPlot(SpatialPlot):
         self.axLabels = {
                 'Temperature': 'T$_{e,t}$ [eV]',
                 'Density': 'n$_{e,t}$ [1/m$^3$]',
-                'Saturation current density': 'j$_sat$ [A/m$^2$]'
+                'Saturation current density': 'j$_{sat}$ [A/m$^2$]'
                 }
 
         # Number of timesteps around the current time to include in the plot (see getShotData())
@@ -1816,6 +1877,7 @@ class SpatialCurrentPlot(SpatialPlot):
         self.getProbePositions()
         self.rztods()
         self.initPlot()
+        #self.plotFit()
 
     def getShot(self, diag=None):
         #Copied from CurrentPlot
@@ -2444,7 +2506,7 @@ class MatrixWindow(QtGui.QWidget):
         self.axLabels = {
                 'Temperature': 'T$_{e,t}$ [eV]',
                 'Density': 'n$_{e,t}$ [1/m$^3$]',
-                'Saturation current density': 'j$_sat$ [A/m$^2$]'
+                'Saturation current density': 'j$_{sat}$ [A/m$^2$]'
                 }
 
         # Number of timesteps around the current time to include in the plot (see getShotData())
