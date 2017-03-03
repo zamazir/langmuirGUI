@@ -53,18 +53,6 @@
 #         Set slider range to [0,1] if mode=stretch
 #
 #
-#
-# - Make slider snap to ELM phases. onValueChange:
-#       * Convert slider position to realtime
-#       * Look for index i of ELM beginning closest to realtime
-#       * Calculate points of interest:
-#           1) tbeg_ELM[i] - dt_ELM[i-1]*.1
-#           2) tgeb_ELM[i] + dt_ELM[i]*.3
-#           3) tbeg_ELM[i] + dt_ELM[i]*.9
-#       * Determine POI closest to realtime
-#       * Get index of time in time array closest to POI
-#       * Set slider to this index
-#         
 ##############################################################################
 
 
@@ -106,7 +94,7 @@ from validate import Validator
 sys.setrecursionlimit(10000)
 
 # Don't cut off axes labels or ticks
-#mpl.rcParams.update({'figure.autolayout': True})
+mpl.rcParams.update({'figure.autolayout': True})
 
 # Load UI
 Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
@@ -397,10 +385,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             # Add matplotlib toolbar functionality
             self.nToolbar = NavigationToolbar(self.nPlot.canvas, self)
             self.TToolbar = NavigationToolbar(self.TPlot.canvas, self)
-            self.jToolbar = NavigationToolbar(self.jPlot.canvas, self)
             self.nToolbar.hide()
             self.TToolbar.hide()
-            self.jToolbar.hide()
 
             # Synchronize temporal plots
             Sync.sync(self.nPlot, self.TPlot, self.jPlot)
@@ -439,8 +425,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.btnZoom.clicked.connect(self.nToolbar.zoom)
             self.btnPan.clicked.connect(self.TToolbar.pan)
             self.btnZoom.clicked.connect(self.TToolbar.zoom)
-            self.btnPan.clicked.connect(self.jToolbar.pan)
-            self.btnZoom.clicked.connect(self.jToolbar.zoom)
             self.btnReset.clicked.connect(self.resettPlots)
             
             self.btnAddToMatrices.clicked.connect(self.addToMatrices)
@@ -816,6 +800,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.xPlotLayout.addWidget(self.xPlotCanvas)
         self.dtime = self.xPlot.dtime
 
+        self.xPlot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
+
         self.xToolbar = NavigationToolbar(self.xPlot.canvas, self)
         self.xToolbar.hide()
 
@@ -836,6 +822,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.TPlotLayout.addWidget(self.TPlotCanvas)
         self.TPlot.parent = self.TPlotLayout
 
+        self.TPlot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
+
 
     def createnPlot(self):
         try:
@@ -848,7 +836,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.nPlotCanvas = self.nPlot.canvas
         self.nPlotLayout.addWidget(self.nPlotCanvas)
         self.nPlot.parent = self.nPlotLayout
-    
+         
+        self.nPlot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
+
 
     def createjPlot(self):
         try:
@@ -861,6 +851,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.jPlotCanvas = self.jPlot.canvas
         self.jPlotLayout.addWidget(self.jPlotCanvas)
         self.jPlot.parent = self.jPlotLayout
+            
+        self.jPlot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
+        
+        self.jToolbar = NavigationToolbar(self.jPlot.canvas, self)
+        self.jToolbar.hide()
+        self.btnPan.clicked.connect(self.jToolbar.pan)
+        self.btnZoom.clicked.connect(self.jToolbar.zoom)
         
 
     def onPanZoom(self,event):
@@ -1048,12 +1045,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         print "Default filter: ", self.defaultFilter
         dialog = QtGui.QFileDialog()
         dialog.setDefaultSuffix(self.defaultExtension)
-        fileName, ok = dialog\
+        fileName = dialog\
                         .getSaveFileName(self,
                                         directory='./' + defaultName,
                                         caption = "Save figure as",
                                         filter="PNG (*.png);;EPS (*.eps);;SVG (*.svg)",
                                         selectedFilter=self.defaultFilter)
+        fileName = str(fileName)
+        ok = True
         if ok:
             if len(fileName.split('.')) < 2:
                 print "Extension missing. Figure not saved"
@@ -1071,12 +1070,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                                                         self.defaultExtension)
         dialog = QtGui.QFileDialog()
         dialog.setDefaultSuffix(self.defaultExtension)
-        fileName, ok = dialog\
+        fileName = dialog\
                         .getSaveFileName(self,
                                         directory='./' + defaultName,
                                         caption = "Save figure as",
                                         filter="PNG (*.png);;EPS (*.eps);;SVG (*.svg)",
                                         selectedFilter=self.defaultFilter)
+        fileName = str(fileName)
+        ok = True
         if ok:
             if len(fileName.split('.')) < 2:
                 print "Extension missing. Figure not saved"
@@ -3113,12 +3114,14 @@ class MatrixWindow(QtGui.QWidget):
         defaultName = "Matrix" 
         dialog = QtGui.QFileDialog()
         dialog.setDefaultSuffix(self.defaultExtension)
-        fileName, ok = dialog\
+        fileName = dialog\
                         .getSaveFileName(self,
                                         directory='./' + defaultName,
                                         caption = "Save figure as",
                                         filter="PNG (*.png);;EPS (*.eps);;SVG (*.svg)",
                                         selectedFilter=self.defaultFilter)
+        fileName = str(fileName)
+        ok = True
         if ok:
             if len(fileName.split('.')) < 2:
                 print "Extension missing. Figure not saved"
