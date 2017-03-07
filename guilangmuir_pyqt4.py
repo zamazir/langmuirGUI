@@ -25,7 +25,6 @@
 #       * Indicator.color
 #       * SpatialPlot.coloring = 1
 #       * SpatialPlot.defaultColor = 'b'
-#       * SpatialPlot.region
 #       * SpatialPlot.ignoreNans
 #       * TemporalPlot.axTitles
 #       * Plot.region
@@ -35,7 +34,6 @@
 #       * CurrentPlot.diag
 #       * Path to calibrations
 #       * Path to probe positions
-#       * Path to mappings
 #   from within the GUI and store them in a config file
 #
 # - Implement getting mappings for CurrentPlot from LSC
@@ -77,7 +75,7 @@ from fitting import FitFunctions
 # Either use network libraries or local ones depending on internet access
 # Local ones might be outdated but don't require internet access
 #import dd
-import ddlocal
+import ddlocal as dd
 import numpy as np
 import sys
 import os
@@ -98,9 +96,6 @@ mpl.rcParams.update({'figure.autolayout': True})
 
 # Load UI
 Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
-
-# Uncomment the following line if using ddlocal
-dd = ddlocal
 
 
 class Sync():
@@ -218,6 +213,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.editPOIbefore.setText('10')
         self.editPOIafter.setText('30')
         self.editPOIfarafter.setText('50')
+        self.ELMexp = 'zamaz'
 
         # Set GUI options to what was read from config.ini
         self.menuFixxPlotyLim.setChecked(self.config['Plots']['Spatial']['fixyLim'])
@@ -975,7 +971,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.ssl = {}
         self.Rsl = {}
         self.zsl = {}
-
+        
         try:
             self.ssl['data'] = self.slShot('Suna2b').data
             self.ssl['time'] = self.slShot('Suna2b').time
@@ -989,10 +985,18 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             return
         else:
             print "Successfully read strikeline positions"
-
-
+        
         # Get ELM times
-        shot = dd.shotfile(self.ELMdiag,self.shotnr)
+        try:
+            shot = dd.shotfile(self.ELMdiag,self.shotnr,experiment=self.ELMexp)
+        except:
+            print "WARNING: ELM shotfile from {} could not be found. Using AUGD version"
+            try:
+                shot = dd.shotfile(self.ELMdiag,self.shotnr)
+            except:
+                self.hideProgress()
+                return
+    
         self.ELMonsets = shot('t_begELM')
         self.ELMends   = shot('t_endELM').data
         self.ELMmaxima = shot('t_maxELM').data
@@ -1199,6 +1203,7 @@ class Plot(object):
 
         self.ELMonsets = gui.ELMonsets
         self.ELMends   = gui.ELMends
+        self.ELMtotalDurations   = gui.ELMtotalDurations
 
 
         self.parents = {
@@ -1452,15 +1457,18 @@ class SpatialPlot(Plot):
         coordinate based on current strikeline position. This enables plots in
         units of delta-s along the x-axis. It is implicitly assumed that the
         divertor tile is flat."""
+        print "Updating probe positions"
         self.plotPositions = {}
-        print "Realtime array:", self.realtime_arr
         
         for probe in self.data.keys():
             self.plotPositions[probe] = []
+            #print "\n", probe
 
             # Get R and z coordinates of probe
             R_p = self.probePositions[probe[3:]][0]
             z_p = self.probePositions[probe[3:]][1]
+
+            #print "Position: R={}, z={}".format(R_p,z_p)
 
             for time in self.realtime_arr[probe]:
                 # Get R and z coordinates of strikeline at this point in time
@@ -1585,9 +1593,11 @@ class SpatialPlot(Plot):
         a succeding call of ax.update() which considerably improves
         performance. If the y-axis is not fixed, the whole canvas is
         re-drawn."""
+        print "Updating spatial current plot"
         self.avgNum = self.gui.avgNum
         self.getShotData()
         self.averageData()
+        self.rztods()
 
         xtot = []
         ytot = []
@@ -2006,6 +2016,7 @@ class SpatialCurrentPlot(SpatialPlot):
         self.getShot()
         self.getShotData()
         self.averageData()
+        self.calibrateData()
         self.getProbePositions()
         self.rztods()
         self.initPlot()
@@ -2042,8 +2053,67 @@ class SpatialCurrentPlot(SpatialPlot):
                 for probe, (channel, ind) in self.map.iteritems():
                     if channel == objName:
                         #print "Getting data for probe {} from channel {}-{}".format(probe,channel,ind)
-                        self.rawdata[probe] = shot.getObjectData(channel)[ind]
-                        self.rawtime[probe] = shot.getTimeBase(channel)
+                        self.rawdata[probe] = shot(channel).data[ind]
+                        self.rawtime[probe] = shot(channel).time
+
+
+    def update(self, ):
+        """ Updates scatter plots based on the current time. If y-axis is
+        fixed, only the background and the scatter plots are updated with
+        a succeding call of ax.update() which considerably improves
+        performance. If the y-axis is not fixed, the whole canvas is
+        re-drawn."""
+        self.avgNum = self.gui.avgNum
+        self.getShotData()
+        self.averageData()
+        self.calibrateData()
+        self.rztods()
+
+        xtot = []
+        ytot = []
+        for probe in self.data.keys():
+            scatter = self.scatters[probe.split('-')[1]]
+            x = []
+            y = []
+            for value,position in zip(self.data[probe], self.plotPositions[probe]):
+                x.append(position)
+                y.append(value)
+                xtot.append(position)
+                ytot.append(value)
+             
+            newdata = [list(t) for t in zip(x,y)]
+            scatter.set_offsets(newdata)
+
+        # Only update changing artists if axes are fixed
+        if self.fixyLim:
+            # Background
+            self.axes.draw_artist(self.axes.patch)
+            # Scatter plots
+            for scatter in self.scatters.values():
+                self.axes.draw_artist(scatter)
+            # Spines
+            #for spine in self.axes.spines.values():
+            #    self.axes.draw_artist(spine)
+            self.canvas.update()
+            self.canvas.flush_events()
+
+        # Re-draw everything if axes are not fixed
+        else:
+            plot, = self.axes.plot(xtot,ytot)
+            self.axes.relim()
+            self.axes.autoscale()
+            plot.remove()
+            #if min(ytot) > 0:
+            #    self.axes.set_ylim(min(ytot)*0.9, max(ytot)*1.2)
+            #if min(ytot) == 0:
+            #    self.axes.set_ylim(-1, max(ytot)*1.2)
+            #else:
+            #    self.axes.set_ylim(min(ytot)*1.2, max(ytot)*1.2)
+            ## This creates too much space on the right
+            ##self.axes.set_xlim(min(xtot)*0.9, max(xtot)*1.1)
+            #self.axes.set_xlim(-0.1, 0.35)
+            self.updateAxesLabels()
+            self.canvas.draw()
 
 
     def getShotData(self, diag=None):
@@ -2065,20 +2135,15 @@ class SpatialCurrentPlot(SpatialPlot):
 
         # Get current time index from GUI slider
         self.time = self.gui.xTimeSlider.value()
-        print "time index:", self.time
 
         # Time range expressed by indices in shotfile
         self.dt = (self.gui.Dt - 1)/2 
-        print "DT:", self.dt
 
         # Min and max time expressed by indices in shotfile
         # Prevent tmin to take negative values so getting value by index
         # won't cause problems
         tmin = max(self.time - self.dt, 0)
         tmax = self.time + self.dt
-        print "TMAX/TMIN INDICES:"
-        print tmin
-        print tmax
 
         probeNamePrefix = self.quantity + '-' + self.region
 
@@ -2093,13 +2158,11 @@ class SpatialCurrentPlot(SpatialPlot):
                 # Time converted to actual time values
                 # If there is an index error, take the global minimum or maximum
                 self.realtmin = dtime[tmin]
-                print "REALTMIN:", self.realtmin
                 try:
                     self.realtmax = dtime[tmax]
                 except Exception:
                     self.realtmax = dtime[-1]
                     print("Maximum value of time range to evaluate is out of range. Using maximum of available time range.")
-                print "REALTMAX:", self.realtmax
                 try:
                     self.realtime = dtime[self.time]
                 except Exception:
@@ -2107,14 +2170,12 @@ class SpatialCurrentPlot(SpatialPlot):
                     if self.time >= dtime.size: self.realtime = dtime[-1]
                     elif self.time < dtime.size: self.realtime = dtime[0]
                     else: print("FATAL: Realtime could not be determined.")
-                print "REALTIME:", self.realtime
                 
                 # Filter for time range. 
                 ##### SAVE DATA TO ARRAY #####
                 ind = np.ma.where((dtime >= self.realtmin) & (dtime <= self.realtmax))
                 self.data[probe] = data[ind]
                 self.realtime_arr[probe] = dtime[ind]
-                print "REALTIME WINDOW:", self.realtime_arr
 
                 # Save the time data of the last probe as the global time data. This assumes that all time arrays of the probes are identical
                 self.dtime  = dtime
@@ -2217,24 +2278,19 @@ class SpatialCurrentPlot(SpatialPlot):
 
     def averageData(self):
         """ Averages data points over specified number of points. """
-        self.avgData = {}
-
         # If no averaging wished, use the data as received from shotfile
         if self.avgNum == 0:
-            self.avgData = self.data 
             return
 
         # Averaging
-        for probe in self.data.keys():
-            data = self.data[probe]
-            self.avgData[probe] = []
-           
+        for probe, data in self.data.iteritems():
             # If this probe didn't record any values at this point in time, continue with the next one
             if data.size == 0: continue
 
             i=0
             # Take values in the range 0 to avgNum-1 and average them
             # valcount is used to calculate average value because of the possibility of nans
+            avgs = []
             while True:
                 xsum=0
                 valcount=0
@@ -2257,12 +2313,12 @@ class SpatialCurrentPlot(SpatialPlot):
                     avg = xsum/float(valcount)
 
                 # Save averages to new array
-                self.avgData[probe].append(avg)
+                avgs.append(avg)
 
                 # End loop if end of data array will be reached next time
                 if i + self.avgNum > data.size: break
             
-            self.avgData[probe] = np.array(self.avgData[probe])
+            self.data[probe] = np.array(avgs)
 
 
     def getProbePositions(self):
@@ -2328,16 +2384,15 @@ class SpatialCurrentPlot(SpatialPlot):
 
                 #print('Position of strikeline at time {}: R = {}, z = {} resulting in ds = {}'.format(self.zsl['time'][ind_z],R_sl,z_sl,ds))
                 self.plotPositions[probe].append(ds)
-        print "Plot positions:", self.plotPositions
 
 
     def initPlot(self, ):
         """ Populates canvas with initial plot. Creates PathCollection objects that will be updated when plot has to change based on GUI interaction."""
         print("Populating canvas with spatial plot")
-        for probe in self.avgData.keys():
+        for probe in self.data.keys():
             x = []
             y = []
-            for value,position in zip(self.avgData[probe], self.plotPositions[probe]):
+            for value,position in zip(self.data[probe], self.plotPositions[probe]):
                 x.append(position)
                 y.append(value)
 
@@ -2406,7 +2461,7 @@ class CurrentPlot(TemporalPlot):
         self.axes.callbacks.connect('xlim_changed', self.rescaleyAxis)
 
         self.getShotData()
-        #self.calibrateData()
+        self.calibrateData()
         self.averageData()
         self.update()
 
@@ -2442,8 +2497,8 @@ class CurrentPlot(TemporalPlot):
                 for probe, (channel, ind) in self.map.iteritems():
                     if channel == objName:
                         #print "Getting data for probe {} from channel {}-{}".format(probe,channel,ind)
-                        self.data[probe] = shot.getObjectData(channel)[ind]
-                        self.time[probe] = shot.getTimeBase(channel)
+                        self.data[probe] = shot(channel).data[ind]
+                        self.time[probe] = shot(channel).time
 
 
     def getMapping(self):
@@ -2540,29 +2595,41 @@ class CurrentPlot(TemporalPlot):
 
     def coherentELMaveraging(self):
         self.axes.clear()
-        probe = 'j-ua3'
-        time = self.time[probe]
-        data = self.data[probe]
+        self.CELMAprobe = 'j-ua3'
+        self.CELMAcolor = 'b'
+        self.CELMAmode  = 'normalize'
+        self.CELMAELMnum = 5
+        time = self.time[self.CELMAprobe]
+        data = self.data[self.CELMAprobe]
 
-        self.phaseOn  = 5.8
-        self.phaseEnd = 6.5
+        self.CELMAphaseOn  = 6.0
+        self.CELMAphaseEnd = 6.2
         ttot = []
         ytot = []
-        for ton, tend in zip(self.ELMonsets, self.ELMends):
-            if ton >= self.phaseOn and tend <= self.phaseEnd:
-                tonInd  = Conversion.valtoind(ton, time)
-                tendInd = Conversion.valtoind(tend, time)
-                t = time[tonInd:tendInd] - ton
-                y = data[tonInd:tendInd]
-                ttot.extend(t)
-                ytot.extend(y)
-
-                if self.ignoreNans:
-                    t = Conversion.removeNans(t,y)
-                    y = Conversion.removeNans(y)
-
-                self.axes.plot(t,y,color='b') 
-
+        j = 0
+        for i, (ton, dt) in enumerate(zip(self.ELMonsets,
+                self.ELMtotalDurations)):
+            if j < self.CELMAELMnum:
+                if ton >= self.CELMAphaseOn and ton+dt <= self.CELMAphaseEnd:
+                    tonInd  = Conversion.valtoind(ton, time)
+                    tendInd = Conversion.valtoind(ton + dt, time)
+                    if self.CELMAmode == 'default':
+                        t = time[tonInd:tendInd] - ton
+                    elif self.CELMAmode == 'normalize':
+                        t = (time[tonInd:tendInd] - ton) / dt 
+                    y = data[tonInd:tendInd]
+                    ttot.extend(t)
+                    ytot.extend(y)
+                    
+                    if self.ignoreNans:
+                        t = Conversion.removeNans(t,y)
+                        y = Conversion.removeNans(y)
+                    
+                    self.axes.plot(t,y,color=self.CELMAcolor) 
+                    j += 1
+            else:
+                break
+        
         self.axes.set_xlim(min(ttot), max(ttot))
         self.axes.set_ylim(min(ytot), max(ytot))
         self.canvas.draw()
