@@ -99,25 +99,6 @@
                  </property>
                 </widget>
                </item>
-               <item>
-                <widget class="QPushButton" name="btnCohELMavg">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                 <property name="text">
-                  <string>Coherent ELM Averaging</string>
-                 </property>
-                </widget>
-               </item>
               </layout>
              </widget>
             </item>
@@ -304,11 +285,48 @@
             <item>
              <layout class="QVBoxLayout" name="verticalLayout_4">
               <item>
-               <widget class="QLabel" name="label">
-                <property name="text">
-                 <string>Points of interest positions relative to ELM (in %):</string>
-                </property>
-               </widget>
+               <layout class="QHBoxLayout" name="horizontalLayout_7">
+                <item>
+                 <widget class="QLabel" name="label">
+                  <property name="maximumSize">
+                   <size>
+                    <width>250</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>Points of interest positions relative to ELM in</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="comboBox">
+                  <property name="maximumSize">
+                   <size>
+                    <width>50</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>%</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>ms</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_2">
+                  <property name="text">
+                   <string>:</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </item>
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_6">
@@ -379,13 +397,14 @@
            <zorder>xPlotControls</zorder>
            <zorder>shotDetailBar</zorder>
            <zorder>probeTable</zorder>
-           <zorder>horizontalLayoutWidget</zorder>
-           <zorder>verticalLayoutWidget</zorder>
           </widget>
          </item>
          <item>
           <widget class="QWidget" name="tPlotContainer" native="true">
            <layout class="QVBoxLayout" name="tPlotContainerLayout">
+            <property name="bottomMargin">
+             <number>9</number>
+            </property>
             <item>
              <widget class="QWidget" name="TPlot" native="true">
               <property name="sizePolicy">
@@ -416,7 +435,7 @@
             <item>
              <widget class="QWidget" name="nPlot" native="true">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -484,13 +503,13 @@
               <property name="minimumSize">
                <size>
                 <width>0</width>
-                <height>60</height>
+                <height>120</height>
                </size>
               </property>
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
-                <height>100</height>
+                <height>140</height>
                </size>
               </property>
               <layout class="QVBoxLayout" name="tPlotCtrlLayout">
@@ -503,6 +522,125 @@
                <property name="bottomMargin">
                 <number>0</number>
                </property>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_8">
+                 <item>
+                  <widget class="QComboBox" name="comboCELMAmode">
+                   <item>
+                    <property name="text">
+                     <string>Default</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Normalize</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="cbCELMAbinning">
+                   <property name="maximumSize">
+                    <size>
+                     <width>70</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Binning</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="editCELMAbins">
+                   <property name="maximumSize">
+                    <size>
+                     <width>50</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Enter number of bins</string>
+                   </property>
+                   <property name="placeholderText">
+                    <string>#Bins</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="comboCELMAprobe">
+                   <property name="toolTip">
+                    <string>Probe to use for averaging</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_9">
+                 <item>
+                  <widget class="QLineEdit" name="editCELMAELMnum">
+                   <property name="minimumSize">
+                    <size>
+                     <width>50</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>50</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Enter number of ELMs to average about</string>
+                   </property>
+                   <property name="placeholderText">
+                    <string>#ELMs</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="editCELMAstartTime">
+                   <property name="toolTip">
+                    <string>Enter start of intervall in which to average ELMs</string>
+                   </property>
+                   <property name="placeholderText">
+                    <string>Start time</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="editCELMAendTime">
+                   <property name="toolTip">
+                    <string>Enter end of intervall in which to average ELMs</string>
+                   </property>
+                   <property name="placeholderText">
+                    <string>End time</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="btnCELMA">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Average</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
                <item>
                 <widget class="QWidget" name="buttonContainer" native="true">
                  <property name="minimumSize">
@@ -690,7 +828,14 @@
    <addaction name="menuShot"/>
    <addaction name="menuStatistis"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>20</height>
+    </size>
+   </property>
+  </widget>
   <action name="actionExport">
    <property name="text">
     <string>Export</string>

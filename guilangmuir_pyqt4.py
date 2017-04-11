@@ -92,7 +92,8 @@ from validate import Validator
 sys.setrecursionlimit(10000)
 
 # Don't cut off axes labels or ticks
-mpl.rcParams.update({'figure.autolayout': True})
+#mpl.rcParams.update({'figure.autolayout': True})
+mpl.rcParams['svg.fonttype'] = 'none'
 
 # Load UI
 Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
@@ -242,37 +243,29 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def moveToNextPOI(self, ):
-        print "Moving to next POI"
         self.POI_current_ind = min(self.POI_current_ind + 1, len(self.POIs) - 1)
-        print "That's number", self.POI_current_ind
         POI = self.POIs[self.POI_current_ind]
         POI_realtime_ind = Conversion.valtoind(POI, self.dtime)
-        print "Realtime index:", POI_realtime_ind
         self.xTimeSlider.setValue(POI_realtime_ind)
         
         self.updatexPlotText()
 
 
     def moveToPrevPOI(self, ):
-        print "Moving to previous POI"
         self.POI_current_ind = max(self.POI_current_ind - 1, 0)
-        print "That's number", self.POI_current_ind
         POI = self.POIs[self.POI_current_ind]
         POI_realtime_ind = Conversion.valtoind(POI, self.dtime)
-        print "Realtime index:", POI_realtime_ind
         self.xTimeSlider.setValue(POI_realtime_ind)
         
         self.updatexPlotText()
 
 
     def moveToNextELM(self, ):
-        print "Moving to next ELM"
         self.ELMstart_current_ind = min(self.ELMstart_current_ind + 1, len(self.ELMonsets) - 1)
         self.snapSlider(self.ELMstart_current_ind)
         
 
     def moveToPrevELM(self, ):
-        print "Moving to previous ELM"
         self.ELMstart_current_ind = max(self.ELMstart_current_ind - 1, 0)
         self.snapSlider(self.ELMstart_current_ind)
 
@@ -291,16 +284,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         #       * Set slider to this index
         if ELMind == None:
             pos = self.xTimeSlider.value()
-            print "Slider position:", pos
             realtime = self.dtime[pos]
-            print "Realtime:", realtime
             self.ELMstart_current_ind = Conversion.valtoind(realtime, self.ELMonsets)
         else:
             self.ELMstart_current_ind = ELMind
             realtime = self.ELMonsets[self.ELMstart_current_ind]
-            print "Realtime:", realtime
-        print "ELM starts at:", self.ELMstart_current_ind
-        print "That's at:", self.ELMonsets[self.ELMstart_current_ind]
         for plot in self.POIsPlots:
             try: plot.remove()
             except: pass
@@ -310,13 +298,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         for t in self.POIs:
             self.POIsPlots.append(self.jPlot.axes.axvline(t, color='g', lw=3,
                     ls='--', alpha=0.3))
-        print "Points of interest:", self.POIs
         self.POI_current_ind = np.abs((self.POIs - realtime)).argmin()
         POI = self.POIs[self.POI_current_ind]
-        print "Closest point of interest:", POI
         POI_realtime_ind = Conversion.valtoind(POI, self.dtime)
-        print "Index of POI in dtime:", POI_realtime_ind
-        print "That's at:", self.dtime[POI_realtime_ind]
         self.xTimeSlider.setValue(POI_realtime_ind)
     
         self.updatexPlotText()
@@ -368,8 +352,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             
             self.getPlotOption()
             self.populateProbeList()
+            self.populateCELMAprobeCombo()
             self.selectedProbes = {'x': [], 't': ['te-ua1','ne-ua1','j-ua1']}
             self.ELMphase = (0,0)
+            self.CELMAactive = False
+            self.CELMAexists = False
 
             # Update plots
             self.createxPlot()
@@ -425,7 +412,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             
             self.btnAddToMatrices.clicked.connect(self.addToMatrices)
 
-            self.btnCohELMavg.clicked.connect(self.createCohELMPlot)
+            self.btnCELMA.clicked.connect(self.toggleCELMAs)
+            self.comboCELMAmode.currentIndexChanged.connect(self.clearCELMAs)
+            self.comboCELMAprobe.currentIndexChanged.connect(self.clearCELMAs)
+            self.cbCELMAbinning.stateChanged.connect(self.clearCELMAs)
+            self.editCELMAbins.textChanged.connect(self.clearCELMAs)
+            self.editCELMAELMnum.textChanged.connect(self.clearCELMAs)
+            self.editCELMAstartTime.textChanged.connect(self.clearCELMAs)
+            self.editCELMAendTime.textChanged.connect(self.clearCELMAs)
 
             self.menuAvgSpatial.triggered.connect(self.setAvgNum)
             self.menuFixxPlotyLim.toggled.connect(self.updatexPlot)
@@ -550,7 +544,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.selectedProbes[axType].remove(pnq)
                 print("Removing {} from selectedProbes".format(pnq))
 
-        #print "Selected probes after the update:", self.selectedProbes
         if axType == 't':
             if quantity == 'ne':
                 self.nPlot.averageData()
@@ -565,7 +558,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.jPlot.update()
                 self.jPlot.canvas.draw()
         if axType == 'x':
-            print "axType is x"
             self.xPlot.toggleProbe(probe, cb.checkState())
             self.xPlot.canvas.draw()
         
@@ -662,6 +654,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.probeTable.resizeColumnsToContents()
 
 
+    def populateCELMAprobeCombo(self):
+        combo = self.comboCELMAprobe
+
+        for probe in self.uniqueProbes:
+            combo.addItem(QtCore.QString(probe))
+
+
     def changeColor(self, row, col):
         print "Cell was clicked! Row {}, Col {}".format(row,col)
 
@@ -704,12 +703,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         # If Dt is divisible by 3 but not by 2, accept it
         if remAvg == 0 and rem2 != 0:
-            print "Dt is divisible by avgNum but not by 2, accepting it"
             Dt = Dt
 
         # If Dt is divisible by 3 and by 2, add 3
         if remAvg == 0 and rem2 == 0:
-            print "Dt is divisible by avgNum and 2, adding avgNum"
             Dt = Dt + avgNum
 
         # If Dt is not divisible by 3, subtract remainder and 
@@ -717,25 +714,18 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         # user input. Then check if that value is divisible by two. If so,
         # choose the other value anyway
         if remAvg != 0:
-            print "Dt is not divisible by avgNum"
             if remAvg >= avgNum/2.:
-                print "Dt is closer to the next higher multiple of avgNum"
                 tempDt = Dt - remAvg + avgNum
                 if tempDt % 2 == 0:
-                    print "That value is divisible by 2, though, so choosing the lower multiple of avgNum anyway"
                     Dt = tempDt - avgNum
                 else:
                     Dt = tempDt
             else:
-                print "Dt is closer to the next lower multiple of avgNum"
                 tempDt = Dt - remAvg
                 if tempDt % 2 == 0:
-                    print "That value is divisible by 2, though, so choosing the higher multiple of avgNum anyway"
                     Dt = tempDt + avgNum
                 else:
                     Dt = tempDt
-
-        print "Found best Dt:", Dt
         return Dt
         
 
@@ -774,7 +764,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def clearxPlot(self):
         try:
-            print("Deleting old canvas")
             self.xPlotLayout.removeWidget(self.xPlotCanvas)
             self.xPlotCanvas.close()
         except:
@@ -843,7 +832,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         except:
             pass
 
-        self.jPlot = CurrentPlot(self)
+        self.jPlot = TemporalCurrentPlot(self)
         self.jPlotCanvas = self.jPlot.canvas
         self.jPlotLayout.addWidget(self.jPlotCanvas)
         self.jPlot.parent = self.jPlotLayout
@@ -986,6 +975,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         else:
             print "Successfully read strikeline positions"
         
+        self.statusbar.showMessage('Fetching ELM times...')
         # Get ELM times
         try:
             shot = dd.shotfile(self.ELMdiag,self.shotnr,experiment=self.ELMexp)
@@ -1014,6 +1004,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         # Flag denoting successful shotfile load
         self.succeeded = 1
 
+        # Reset status messages and progress bar
+        self.statusbar.showMessage('')
         self.progBar.setValue(100)
         self.hideProgress()
 
@@ -1090,9 +1082,19 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             plot.fig.savefig(fileName, format=fmt)
 
 
-    def createCohELMPlot(self):
-        self.jPlot.coherentELMaveraging()
+    def toggleCELMAs(self):
+        self.jPlot.toggleCELMA()
+        self.TPlot.toggleCELMA()
+        self.nPlot.toggleCELMA()
 
+
+    def clearCELMAs(self):
+        self.jPlot.clearCELMA()
+        self.TPlot.clearCELMA()
+        self.nPlot.clearCELMA()
+        self.jPlotCanvas.draw()
+        self.TPlotCanvas.draw()
+        self.nPlotCanvas.draw()
 
 
 class ColorPatch(QtGui.QWidget):
@@ -1180,13 +1182,23 @@ class Conversion():
 
     @staticmethod
     def removeNans(array, refarray=None):
-        """ Removes values from array based on the indices of NaN values in refarray. If refarray is not specified, NaN values are removed from array. Expects numpy arrays """ 
+        """ Removes values from array based on the indices of NaN values in
+        refarray. If refarray is not specified, NaN values are removed from
+        array. Returns a numpy array. """ 
         # If refarray was passed, comparing it to None would be deprecated
         if type(refarray).__name__ == 'NoneType':
             refarray = array
 
+        # Convert to numpy arrays
         array = np.array(array)
         refarray = np.array(refarray)
+
+        # Arrays must have same dimensions
+        if array.size != refarray.size:
+            raise ValueError('Arrays must be the same size. Array with size {}'
+            'cannot be filtered based on array with size {}'.format(array.size,
+            refarray.size))
+            return array
 
         return array[~np.isnan(refarray)]
 
@@ -1269,9 +1281,9 @@ class SpatialPlot(Plot):
         self.axes.set_xlabel("$\Delta$s [m]")
 
         # Hide axes offsets
-        self.axes.yaxis.get_offset_text().set_visible(False)
-        self.axes.xaxis.get_offset_text().set_visible(False)
-        
+        #self.axes.yaxis.get_offset_text().set_visible(False)
+        #self.axes.xaxis.get_offset_text().set_visible(False)
+        #
         self.getShotData()
         self.averageData()
         self.getProbePositions()
@@ -1525,7 +1537,7 @@ class SpatialPlot(Plot):
         
         self.updateAxesLabels()
         
-        self.fig.tight_layout()
+        self.axes.set_xlim(-0.07,0.3)
 
     
     def saveData(self):
@@ -1593,7 +1605,6 @@ class SpatialPlot(Plot):
         a succeding call of ax.update() which considerably improves
         performance. If the y-axis is not fixed, the whole canvas is
         re-drawn."""
-        print "Updating spatial current plot"
         self.avgNum = self.gui.avgNum
         self.getShotData()
         self.averageData()
@@ -1632,6 +1643,7 @@ class SpatialPlot(Plot):
             plot, = self.axes.plot(xtot,ytot)
             self.axes.relim()
             self.axes.autoscale()
+            self.axes.set_xlim(-0.07,0.3)
             plot.remove()
             #if min(ytot) > 0:
             #    self.axes.set_ylim(min(ytot)*0.9, max(ytot)*1.2)
@@ -1643,6 +1655,7 @@ class SpatialPlot(Plot):
             ##self.axes.set_xlim(min(xtot)*0.9, max(xtot)*1.1)
             #self.axes.set_xlim(-0.1, 0.35)
             self.updateAxesLabels()
+            self.axes.set_xlim(-0.07,0.3)
             self.canvas.draw()
             
 
@@ -1723,6 +1736,10 @@ class TemporalPlot(Plot):
         self.xlim_orig = [9999999999999, -999999999999]
         self.ylim_orig = [9999999999999, -999999999999]
 
+        self.CELMAs = []
+        self.CELMAactive = False
+        self.CELMAexists = False
+
         # Enable span selector for ELM evaluation
         self.spanSelector = SpanSelector(self.axes, self.onSpanSelect,
                                         'horizontal', span_stays=True,
@@ -1742,6 +1759,46 @@ class TemporalPlot(Plot):
 
         self.axes.callbacks.connect('xlim_changed', self.setSliderRange)
         self.axes.callbacks.connect('xlim_changed', self.rescaleyAxis)
+
+
+    def clearCELMA(self):
+        self.gui.btnCELMA.setText('Average')
+        for scat in self.CELMAs:
+            try: scat.remove()
+            except ValueError: pass
+        self.CELMAactive = False
+        self.CELMAexists = False
+        for line in self.axes.lines:
+            line.set_visible(True)
+
+
+    def toggleCELMA(self):
+        self.CELMAmode = str(self.gui.comboCELMAmode.currentText())
+        self.CELMAprobe = self.quantity + \
+                            '-' + \
+                            str(self.gui.comboCELMAprobe.currentText())
+
+        if self.CELMAactive:
+            self.gui.btnCELMA.setText('Average')
+            for CELMA in self.CELMAs:
+                CELMA.set_visible(False)
+            for line in self.axes.lines:
+                line.set_visible(True)
+            self.CELMAactive = False
+
+        else:
+            self.gui.btnCELMA.setText('Temporal plots')
+            for line in self.axes.lines:
+                line.set_visible(False)
+            if not self.CELMAexists:
+                self.coherentELMaveraging()
+                self.CELMAexists = True
+            else:
+                for CELMA in self.CELMAs:
+                    CELMA.set_visible(True)
+            self.CELMAactive = True
+        self.axes.relim()
+        self.canvas.draw()
 
 
     def onSpanSelect(self, xmin, xmax):
@@ -1783,28 +1840,6 @@ class TemporalPlot(Plot):
             if probe.startswith(self.probeNamePrefix):
                 self.time[probe] = self.gui.langData[probe]['time']
                 self.data[probe] = self.gui.langData[probe]['data']
-
-
-    #def coherentELMaveraging(self):
-    #    self.axes.clear()
-
-    #    self.phaseOn  = 6.0
-    #    self.phaseEnd = 6.5
-    #    ttot = []
-    #    ytot = []
-    #    for ton, tend in zip(self.ELMonsets, self.ELMends):
-    #        if ton >= self.phaseOn and tend <= self.phaseEnd:
-    #            tonInd  = Conversion.valtoind(ton, self.time)
-    #            tendInd = Conversion.valtoind(tend, self.time)
-    #            t = self.time[tonInd:tendInd]
-    #            y = self.data[tonInd:tendInd]
-    #            ttot.append(t)
-    #            ytot.append(y)
-    #            self.axes.plot(t,y,color='b') 
-
-    #    self.axes.set_xlim(min(ttot), max(ttot))
-    #    self.axes.set_ylim(min(ytot), max(ytot))
-    #    self.canvas.draw()
 
 
     def averageData(self):
@@ -1916,30 +1951,317 @@ class TemporalPlot(Plot):
         self.gui.xTimeSlider.setMaximum(Conversion.valtoind(maxTime, self.gui.dtime))
 
 
+    def coherentELMaveraging(self):
+        time = self.time[self.CELMAprobe]
+        data = self.data[self.CELMAprobe]
 
-class SpatialCurrentPlot(SpatialPlot):
+        self.CELMAbinning = self.gui.cbCELMAbinning.checkState()
+        self.CELMAcolor = 'b'
+        try:
+            self.CELMAELMnum = int(self.gui.editCELMAELMnum.text())
+        except ValueError:
+            print "Invalid number of ELMs while averaging"
+            self.CELMAELMnum = 10
+
+        try:
+            self.CELMAphaseOn = float(self.gui.editCELMAstartTime.text())
+        except ValueError:
+            print "Invalid starting time for ELM averaging"
+            self.CELMAphaseOn = 6.0
+        try:
+            self.CELMAphaseEnd = self.gui.editCELMAendTime.text()
+        except ValueError:
+            print "Invalid end time for ELM averaging"
+            self.CELMAphaseOn = 6.2
+
+        ttot = []
+        ytot = []
+        j = 0
+        for ton, dt in zip(self.ELMonsets, self.ELMtotalDurations):
+            if j < self.CELMAELMnum:
+                if ton >= self.CELMAphaseOn and ton+dt <= self.CELMAphaseEnd:
+                    tonInd  = Conversion.valtoind(ton, time)
+                    tendInd = Conversion.valtoind(ton + dt, time)
+
+                    if self.CELMAmode == 'Default':
+                        t = time[tonInd:tendInd] - ton
+                        y = data[tonInd:tendInd]
+                    elif self.CELMAmode == 'Normalize':
+                        t = (time[tonInd:tendInd] - ton) / dt 
+                        y = data[tonInd:tendInd]
+
+                    if self.ignoreNans:
+                        t = Conversion.removeNans(t,y)
+                        y = Conversion.removeNans(y)
+                    
+                    ttot.extend(t)
+                    ytot.extend(y)
+                    
+                    if not self.CELMAbinning:
+                        self.CELMAs.append( self.axes.scatter(t,y,color=self.CELMAcolor) )
+                    j += 1
+            else:
+                    #bins = np.linspace(min(ttot),max(ttot),n)
+                    #a = np.histogram(ytot, bins, weights=ytot)[0] 
+                    #b = np.histogram(ytot, bins)[0]
+                    #bins = bins[:-1]
+
+                    #print "SIZES:"
+                    #print "bins:", bins.size
+                    #print "ytot:", ytot.size
+                    #print "a:", a.size
+                    #print "b:", b.size
+
+                    #y = []
+                    #for e,d in zip(a,b):
+                    #    if d != 0:
+                    #        y.append(e/d)
+                    #    elif e == 0:
+                    #        y.append(0)
+                    #    else:
+                    #        y.append(np.nan)
+
+                    #if self.ignoreNans:
+                    #    t = Conversion.removeNans(bins,y)
+                    #    y = Conversion.removeNans(y)
+
+                    #t = []
+                    #y = []
+                    #n = int(self.gui.editCELMAbins.text())
+                    #_i = 0
+                    #b = 0
+                    #
+                    #while True:
+                    #    if _i+valsPerBin > len(ytot):
+                    #        print "End of data reached"
+                    #        if _i < len(ytot):
+                    #            t.append(np.nanmean(ttot[_i:len(ytot)]))
+                    #            y.append(np.nanmean(ytot[_i:len(ytot)]))
+                    #        break
+                    #    print "Processing bin", b 
+                    #    t.append(np.nanmean(ttot[_i:_i+valsPerBin]))
+                    #    y.append(np.nanmean(ytot[_i:_i+valsPerBin]))
+                    #    _i += valsPerBin
+                    #    b+=1
+                break
+        
+        if self.CELMAbinning:
+            print "Binning CELMA"
+            ytot = Conversion.removeNans(ytot)
+            t    = []
+            avgs = []
+
+            try:
+                n = int(self.gui.editCELMAbins.text())
+            except ValueError:
+                print("Bin number input not valid. Using default value.")
+                n = 100
+
+            bins = np.linspace(min(ttot),max(ttot),n)
+
+            for left, right in zip(bins[:-1],bins[1:]):
+                t.append((left + right)/2)
+                to_avg = []
+                for val, _t in zip(ytot,ttot):
+                    if left <= _t < right:
+                        to_avg.append(val)
+                avgs.append(np.mean(to_avg))
+
+            t, avgs = zip(*sorted(zip(t,avgs)))
+            self.CELMAs.append(
+                    self.axes.plot(t,avgs,color=self.CELMAcolor)[0])
+
+        self.axes.set_xlim(min(ttot), max(ttot))
+        self.axes.set_ylim(min(ytot), max(ytot))
+
+
+
+class CurrentPlot(Plot):
+    """ Temporal current density plot """
+    # Get mapping between probes and channels from files at
+    # /afs/ipp/home/d/dacar/divertor/ If no file present, try to get the
+    # mapping from LSC Calibrate the measurements with probe surfaces to obtain
+    # current densities Plot results
     def __init__(self, gui):
-        # config from Plot
-        self.gui = gui
-        config = gui.config['Plots']
-        self.region = config['region']
-        self.domain = config['domain']
-        self.dpi    = config['dpi']
-        self.ignoreNans    = config['ignoreNans']
+        Plot.__init__(self, gui)
 
-        self.ELMonsets = gui.ELMonsets
-        self.ELMends   = gui.ELMends
+        # Configuration
+        config = gui.config['Plots']['Temporal']['Current']
+        self.mapDir      = config['mapDir']
+        self.mapDiag     = config['mapDiag']
+        self.diag        = config['diag']
+        self.calibFile   = config['calibFile']
+        self.mapFilePath = config['mapFile']
+        self.showGaps    = gui.config['Plots']['Temporal']['showGaps']
+        self.rescaling   = gui.config['Plots']['Temporal']['rescale-y']
 
-        self.parents = {
-                'te': 'TPlotLayout',
-                'ne': 'nPlotLayout',
-                'j': 'jPlotLayout',
-                }
+        # Attributes
+        self.quantity    = 'j'
+        self.shotnr      = gui.shotnr
+        self.probeNamePrefix = self.quantity + '-' + self.region
+        self.selectedProbes  = self.gui.selectedProbes['t']
+        self.hasMapping  = False
+        self.calib       = {}
+        self.map         = {}
+        self.data        = {}
+        self.avgData     = {}
+        self.avgTime     = {}
+        self.time        = {}
+        self.plots       = {}
+        self.xlim_orig   = [9999999999999, -999999999999]
+        self.ylim_orig   = [9999999999999, -999999999999]
+        self.parent      = getattr(gui, self.parents[self.quantity])
 
-        self.fig = Figure(dpi=self.dpi)
-        self.axes = self.fig.add_subplot(111)
-        self.canvas = FigureCanvas(self.fig)
+        self.axes.set_ylabel('Current density [A/m$^2$]')
+        self.axes.set_xlabel('Time [s]')
+        self.axes.autoscale()
+        self.fig.tight_layout()
 
+        self.indicator = Indicator(self)
+
+        self.axes.callbacks.connect('xlim_changed', self.setSliderRange)
+        self.axes.callbacks.connect('xlim_changed', self.rescaleyAxis)
+
+        self.getShotData()
+        #self.calibrateData()
+        self.averageData()
+        self.update()
+
+
+    def getShotData(self, diag=None):
+        """ Loads jsat data from shotfile (default: LSF). """
+        # If no mapping available yet, get it
+        if len(self.map) < 1:
+            hasMapping = self.getMapping()
+        
+        if not hasMapping:
+            return
+
+        if diag != None:
+            self.diag = diag
+        self.gui.statusbar.showMessage("Fetching jsat signals...")
+        try:
+            shot = dd.shotfile(self.diag, self.shotnr)
+        except Exception:
+            print "Shotfile not found"
+            self.gui.statusbar.showMessage("Shotfile could not be loaded")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("No jsat shotfile could be found at {} for this shot.".format(self.diag))
+            msg.setWindowTitle("Shotfile not found")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setDefaultButton(QMessageBox.Ok)
+            msg.setEscapeButton(QMessageBox.Ok)
+            msg.exec_()
+            return
+        
+        for key, objName in shot.getObjectNames().iteritems():
+            if objName.startswith('CH'):
+                for probe, (channel, ind) in self.map.iteritems():
+                    if channel == objName:
+                        #print "Getting data for probe {} from channel {}-{}".format(probe,channel,ind)
+                        self.data[probe] = shot(channel).data[ind]
+                        self.time[probe] = shot(channel).time
+        
+        self.gui.statusbar.showMessage("")
+
+
+    def getMapping(self):
+        """ Loads probe-channel mapping from file. Tries to load from LSC if file not available. """
+        ok = True
+        # File load dialog if mapFilePath was set to None during runtime
+        if self.mapFilePath == None:
+            self.mapFilePath, ok = \
+                    QtGui.QFileDialog.getOpenFileName(
+                        self.gui,
+                        directory=self.mapDir,
+                        caption='Load mapping file'
+                    )
+        if not ok:
+            return False
+        else:
+            with open(self.mapFilePath) as f:
+                lines = f.readlines()
+                for line in lines:
+                    try:
+                        probe, quantity, channel, ind = line.split()
+                    except:
+                        print "Failed to read probe-channel mapping file", filePath
+                        break
+
+                    # If channel doesn't start with "CH", add the prefix so LSF shotfile can be read with it
+                    if not channel.startswith('CH'): channel = 'CH' + channel
+
+                    # ind is saved as str from 1-6 but must serve as an index from 0-5
+                    ind = int(ind) - 1
+
+                    # Only care about probes in this domain and region and the saturation current
+                    if probe.startswith(self.domain + self.region) and quantity == 'Isat':
+                        # Cut off probe domain and add quantity identifier
+                        # Identifier is needed for using the TemporalPlot.update() method
+                        probe = 'j-' + probe[1:].lower()
+                        print "Found Isat for probe {} on channel {}-{}".format(probe,channel, ind)
+                        self.map[probe] = (channel, ind)
+
+            # Exit if this worked
+            if len(self.map) > 0:
+                "+++++++++++++Found mappings :)"
+                return True
+
+        # If that failed, try to get mapping from LSC
+        self.statusbar.showMessage("Trying to get probe-channel mapping from LSC")
+        try:
+            shot = dd.getshot(self.mapDiag, self.shotnr)
+        except Exception:
+            print "LSC not available"
+            self.statusbar.showMessage("LSC not available for this shot")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("No LSC shotfile could be found for this shot. jsat will not be plotted.")
+            msg.setWindowTitle("LSC shotfile not found")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setDefaultButton(QMessageBox.Ok)
+            msg.setEscapeButton(QMessageBox.Ok)
+            msg.exec_()
+            return False
+        print 'LSC not impemented yet. Aborting'
+        return False
+
+
+        # If that failed, abort plotting current
+        print "Failed to get probe-channel mapping. jsat will not be plotted"
+        return False
+
+
+    def calibrateData(self, cal=None):
+        """ Converts current to current density. """
+        print "Calibrating data"
+        if cal != None:
+            self.calib = cal
+        else:
+            self.getCalibrations()
+
+        for probe in self.data.keys():
+            l, w = self.calib[probe[2:]]
+            self.data[probe] = np.array([val/(l*w)/10000 for val in self.data[probe]])
+
+
+    def getCalibrations(self, path=None):
+        """ Loads probe dimensions from file so current can be converted to current density. """
+        if path == None:
+            path = self.calibFile
+
+        with open(path) as f:
+            lines = f.readlines()[1:]
+            for line in lines:
+                probe, l, w = line.split()
+                self.calib[probe] = (float(l), float(w))
+
+
+
+class SpatialCurrentPlot(CurrentPlot, SpatialPlot):
+    def __init__(self, gui):
+        Plot.__init__(self, gui)
 
         # config from SpatialPlot
         config = gui.config['Plots']['Spatial']
@@ -2016,7 +2338,7 @@ class SpatialCurrentPlot(SpatialPlot):
         self.getShot()
         self.getShotData()
         self.averageData()
-        self.calibrateData()
+        #self.calibrateData()
         self.getProbePositions()
         self.rztods()
         self.initPlot()
@@ -2066,7 +2388,7 @@ class SpatialCurrentPlot(SpatialPlot):
         self.avgNum = self.gui.avgNum
         self.getShotData()
         self.averageData()
-        self.calibrateData()
+        #self.calibrateData()
         self.rztods()
 
         xtot = []
@@ -2113,6 +2435,7 @@ class SpatialCurrentPlot(SpatialPlot):
             ##self.axes.set_xlim(min(xtot)*0.9, max(xtot)*1.1)
             #self.axes.set_xlim(-0.1, 0.35)
             self.updateAxesLabels()
+            self.axes.set_xlim(-0.07,0.3)
             self.canvas.draw()
 
 
@@ -2261,7 +2584,7 @@ class SpatialCurrentPlot(SpatialPlot):
 
         for probe in self.data.keys():
             l, w = self.calib[probe[2:]]
-            self.data[probe] = np.array([val/(l*w) for val in self.data[probe]])
+            self.data[probe] = np.array([val/(l*w)/10000 for val in self.data[probe]])
 
 
     def getCalibrations(self, path=None):
@@ -2410,229 +2733,17 @@ class SpatialCurrentPlot(SpatialPlot):
         
         self.updateAxesLabels()
         
+        self.axes.set_xlim(-0.07,0.3)
         self.fig.tight_layout()
 
 
 
-class CurrentPlot(TemporalPlot):
-    """ Temporal current density plot """
-    # Get mapping between probes and channels from files at
-    # /afs/ipp/home/d/dacar/divertor/ If no file present, try to get the
-    # mapping from LSC Calibrate the measurements with probe surfaces to obtain
-    # current densities Plot results
+class TemporalCurrentPlot(CurrentPlot, TemporalPlot):
     def __init__(self, gui):
-        Plot.__init__(self, gui)
-
-        # Configuration
-        config = gui.config['Plots']['Temporal']['Current']
-        self.mapDir      = config['mapDir']
-        self.mapDiag     = config['mapDiag']
-        self.diag        = config['diag']
-        self.calibFile   = config['calibFile']
-        self.mapFilePath = config['mapFile']
-        self.showGaps    = gui.config['Plots']['Temporal']['showGaps']
-        self.rescaling   = gui.config['Plots']['Temporal']['rescale-y']
-
-        # Attributes
-        self.quantity    = 'j'
-        self.shotnr      = gui.shotnr
-        self.probeNamePrefix = self.quantity + '-' + self.region
-        self.selectedProbes  = self.gui.selectedProbes['t']
-        self.hasMapping  = False
-        self.calib       = {}
-        self.map         = {}
-        self.data        = {}
-        self.avgData     = {}
-        self.avgTime     = {}
-        self.time        = {}
-        self.plots       = {}
-        self.xlim_orig   = [9999999999999, -999999999999]
-        self.ylim_orig   = [9999999999999, -999999999999]
-        self.parent      = getattr(gui, self.parents[self.quantity])
-
-        self.axes.set_ylabel('Current density [A/m$^2$]')
-        self.axes.set_xlabel('Time [s]')
-        self.axes.autoscale()
-        self.fig.tight_layout()
-
-        self.indicator = Indicator(self)
-
-        self.axes.callbacks.connect('xlim_changed', self.setSliderRange)
-        self.axes.callbacks.connect('xlim_changed', self.rescaleyAxis)
-
-        self.getShotData()
-        self.calibrateData()
-        self.averageData()
-        self.update()
-
-
-    def getShotData(self, diag=None):
-        """ Loads jsat data from shotfile (default: LSF). """
-        # If no mapping available yet, get it
-        if len(self.map) < 1:
-            hasMapping = self.getMapping()
-        
-        if not hasMapping:
-            return
-
-        if diag != None:
-            self.diag = diag
-        try:
-            shot = dd.shotfile(self.diag, self.shotnr)
-        except Exception:
-            print "Shotfile not found"
-            self.statusbar.showMessage("Shotfile could not be loaded")
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Warning)
-            msg.setText("No jsat shotfile could be found at {} for this shot.".format(self.diag))
-            msg.setWindowTitle("Shotfile not found")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.setDefaultButton(QMessageBox.Ok)
-            msg.setEscapeButton(QMessageBox.Ok)
-            msg.exec_()
-            return
-        
-        for key, objName in shot.getObjectNames().iteritems():
-            if objName.startswith('CH'):
-                for probe, (channel, ind) in self.map.iteritems():
-                    if channel == objName:
-                        #print "Getting data for probe {} from channel {}-{}".format(probe,channel,ind)
-                        self.data[probe] = shot(channel).data[ind]
-                        self.time[probe] = shot(channel).time
-
-
-    def getMapping(self):
-        """ Loads probe-channel mapping from file. Tries to load from LSC if file not available. """
-        ok = True
-        # File load dialog if mapFilePath was set to None during runtime
-        if self.mapFilePath == None:
-            self.mapFilePath, ok = \
-                    QtGui.QFileDialog.getOpenFileName(
-                        self.gui,
-                        directory=self.mapDir,
-                        caption='Load mapping file'
-                    )
-        if not ok:
-            return False
-        else:
-            with open(self.mapFilePath) as f:
-                lines = f.readlines()
-                for line in lines:
-                    try:
-                        probe, quantity, channel, ind = line.split()
-                    except:
-                        print "Failed to read probe-channel mapping file", filePath
-                        break
-
-                    # If channel doesn't start with "CH", add the prefix so LSF shotfile can be read with it
-                    if not channel.startswith('CH'): channel = 'CH' + channel
-
-                    # ind is saved as str from 1-6 but must serve as an index from 0-5
-                    ind = int(ind) - 1
-
-                    # Only care about probes in this domain and region and the saturation current
-                    if probe.startswith(self.domain + self.region) and quantity == 'Isat':
-                        # Cut off probe domain and add quantity identifier
-                        # Identifier is needed for using the TemporalPlot.update() method
-                        probe = 'j-' + probe[1:].lower()
-                        print "Found Isat for probe {} on channel {}-{}".format(probe,channel, ind)
-                        self.map[probe] = (channel, ind)
-
-            # Exit if this worked
-            if len(self.map) > 0:
-                "+++++++++++++Found mappings :)"
-                return True
-
-        # If that failed, try to get mapping from LSC
-        self.statusbar.showMessage("Trying to get probe-channel mapping from LSC")
-        try:
-            shot = dd.getshot(self.mapDiag, self.shotnr)
-        except Exception:
-            print "LSC not available"
-            self.statusbar.showMessage("LSC not available for this shot")
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Warning)
-            msg.setText("No LSC shotfile could be found for this shot. jsat will not be plotted.")
-            msg.setWindowTitle("LSC shotfile not found")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.setDefaultButton(QMessageBox.Ok)
-            msg.setEscapeButton(QMessageBox.Ok)
-            msg.exec_()
-            return False
-        print 'LSC not impemented yet. Aborting'
-        return False
-
-
-        # If that failed, abort plotting current
-        print "Failed to get probe-channel mapping. jsat will not be plotted"
-        return False
-
-
-    def calibrateData(self, cal=None):
-        """ Converts current to current density. """
-        print "Calibrating data"
-        if cal != None:
-            self.calib = cal
-        else:
-            self.getCalibrations()
-
-        for probe in self.data.keys():
-            l, w = self.calib[probe[2:]]
-            self.data[probe] = np.array([val/(l*w) for val in self.data[probe]])
-
-
-    def getCalibrations(self, path=None):
-        """ Loads probe dimensions from file so current can be converted to current density. """
-        if path == None:
-            path = self.calibFile
-
-        with open(path) as f:
-            lines = f.readlines()[1:]
-            for line in lines:
-                probe, l, w = line.split()
-                self.calib[probe] = (float(l), float(w))
-
-
-    def coherentELMaveraging(self):
-        self.axes.clear()
-        self.CELMAprobe = 'j-ua3'
-        self.CELMAcolor = 'b'
-        self.CELMAmode  = 'normalize'
-        self.CELMAELMnum = 5
-        time = self.time[self.CELMAprobe]
-        data = self.data[self.CELMAprobe]
-
-        self.CELMAphaseOn  = 6.0
-        self.CELMAphaseEnd = 6.2
-        ttot = []
-        ytot = []
-        j = 0
-        for i, (ton, dt) in enumerate(zip(self.ELMonsets,
-                self.ELMtotalDurations)):
-            if j < self.CELMAELMnum:
-                if ton >= self.CELMAphaseOn and ton+dt <= self.CELMAphaseEnd:
-                    tonInd  = Conversion.valtoind(ton, time)
-                    tendInd = Conversion.valtoind(ton + dt, time)
-                    if self.CELMAmode == 'default':
-                        t = time[tonInd:tendInd] - ton
-                    elif self.CELMAmode == 'normalize':
-                        t = (time[tonInd:tendInd] - ton) / dt 
-                    y = data[tonInd:tendInd]
-                    ttot.extend(t)
-                    ytot.extend(y)
-                    
-                    if self.ignoreNans:
-                        t = Conversion.removeNans(t,y)
-                        y = Conversion.removeNans(y)
-                    
-                    self.axes.plot(t,y,color=self.CELMAcolor) 
-                    j += 1
-            else:
-                break
-        
-        self.axes.set_xlim(min(ttot), max(ttot))
-        self.axes.set_ylim(min(ytot), max(ytot))
-        self.canvas.draw()
+        super(TemporalCurrentPlot, self).__init__(gui)
+        self.CELMAactive = False
+        self.CELMAexists = False
+        self.CELMAs = []
 
 
 
@@ -2644,8 +2755,6 @@ class MatrixWindow(QtGui.QWidget):
         # Initialize figure
         self.fig = Figure()
         self.canvas = FigureCanvas(self.fig)
-
-        print "Canvas:", type(self.canvas)
 
         self.rows = 1
         self.cols = 1
@@ -2721,14 +2830,14 @@ class MatrixWindow(QtGui.QWidget):
         self.quantity = self.quantities[self.option]
 
         # Hide axes offsets
-        if hasattr(self, 'axes'):
-            self.axes.yaxis.get_offset_text().set_visible(False)
-            self.axes.xaxis.get_offset_text().set_visible(False)
+        #if hasattr(self, 'axes'):
+            #self.axes.yaxis.get_offset_text().set_visible(False)
+            #self.axes.xaxis.get_offset_text().set_visible(False)
 
 
     def addRow(self):
         """ Adds another row to the figure and selects it. """
-        print "Adding row"
+        ##print "Adding row"
         self.newRow  = True
         self.prevRow = self.currentRow
         self.prevCol = self.currentCol
@@ -2743,12 +2852,12 @@ class MatrixWindow(QtGui.QWidget):
         #axesInRow = [ax for ax in self.fig.axes 
         #                          if ax.get_geometry()[0] == self.currentRow]
         #n = len(axesInRow)
-        print "\nAdding axes"
-        print "Current row:", self.currentRow
-        print "Total rows:", self.rows
-        print "Current col:", self.currentCol
-        print "Total cols:", self.cols
-        print "Current axNum:", self.axNum
+        #print "\nAdding axes"
+        #print "Current row:", self.currentRow
+        #print "Total rows:", self.rows
+        #print "Current col:", self.currentCol
+        #print "Total cols:", self.cols
+        #print "Current axNum:", self.axNum
 
 
         n = self.axNum
@@ -2758,7 +2867,7 @@ class MatrixWindow(QtGui.QWidget):
         hasNeighborAbove = False
         for ax in self.fig.axes:
             k, l, m = ax.get_geometry()
-            print "Changing geometry from ({},{},{}) to ({},{},{})".format(k,l,m,self.rows,self.cols,m)
+            #print "Changing geometry from ({},{},{}) to ({},{},{})".format(k,l,m,self.rows,self.cols,m)
             ax.change_geometry(self.rows, self.cols , m)
 
             # Find neighbor to share axes with
@@ -2783,7 +2892,7 @@ class MatrixWindow(QtGui.QWidget):
                     for lbl in ax.get_xticklabels():
                         lbl.set_visible(False)
 
-        print "Inserting axes at ({},{},{})".format(self.rows,self.cols,n)
+        #print "Inserting axes at ({},{},{})".format(self.rows,self.cols,n)
         if neighbor != None:
             print "Neighbor at", neighbor.get_geometry()
         else:
