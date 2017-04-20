@@ -468,6 +468,13 @@
                  </widget>
                 </item>
                 <item>
+                 <widget class="QPushButton" name="btnCELMAspatial">
+                  <property name="text">
+                   <string>Average right after ELM</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QLabel" name="label_2">
                   <property name="text">
                    <string>:</string>

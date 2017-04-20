@@ -242,6 +242,30 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.shotNumberEdit.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 
 
+    def getTimeArray(self, shot):
+        timeArrays = []
+        for obj in shot.getSignalNames():
+            isRightQuantity = obj.startswith(('te','ne'))
+            isRightRegime = obj.split('-')[1][:2]=='ua'
+
+            if isRightQuantity and isRightRegime:
+                try:
+                    timeArrays.append(shot.getTimeBase(obj))
+                except:
+                    print "Failed to retrieve time base for signal", obj
+
+        equal = (np.diff(
+                    np.vstack(timeArrays).reshape(len(timeArrays),-1),axis=0)\
+                    ==0).all()
+
+        print "EQUAL:", equal
+
+        if not equal:
+            print """Warning: time base arrays fetched from shotfile are not
+            equal! Proceed with caution."""
+        return timeArrays[0]
+
+
     def moveToNextPOI(self, ):
         self.POI_current_ind = min(self.POI_current_ind + 1, len(self.POIs) - 1)
         POI = self.POIs[self.POI_current_ind]
@@ -434,6 +458,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.btnNextELM.clicked.connect(self.moveToNextELM)
             self.btnPrevELM.clicked.connect(self.moveToPrevELM)
 
+            self.btnCELMAspatial.clicked.connect(self.createSpatialCELMA)
+
         # If shot data was not loaded successfully, unbind actions
         else:
             try: 
@@ -444,7 +470,16 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             except Exception: pass
             print("No valid shot number has been entered yet.")
 
+
+    def createSpatialCELMA(self):
+        try:
+            POI = float(self.editPOIafter.text())/100
+        except:
+            print "POI not valid. Using 20%"
+            POI = .2
+        self.xPlot.coherentELMaveraging(POI)
     
+
     def saveSpatialData(self):
         self.xPlot.saveData()
 
@@ -903,6 +938,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.hideProgress()
             return
             
+        self.timeArray = self.getTimeArray(self.langShot)
         self.progBar.setValue(20)
         self.signalNames = self.langShot.getSignalNames()
 
@@ -1109,6 +1145,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.nPlotCanvas.draw()
 
 
+
 class ColorPatch(QtGui.QWidget):
     def __init__(self, color):
         super(ColorPatch, self).__init__()
@@ -1297,15 +1334,83 @@ class SpatialPlot(Plot):
         #self.axes.xaxis.get_offset_text().set_visible(False)
         #
         self.getShotData()
-        self.averageData()
         self.getProbePositions()
         self.rztods()
+        self.averageData()
         self.initPlot()
         #self.plotFit()
 
+    
+    def coherentELMaveraging(self, POI):
+        """
+        Performs an average over a specified amount of ELMs at a point of
+        interest (POI) relative to the ELM beginning
 
-    def celma(self):
-        pass
+        - Within certain time range OR for certain amount of ELMs
+        - Iterate over ELMs
+        - Take data at ELM times (within intervall, as previously)
+        - Plot all points OR average them for each probe
+        """
+        # Get ELM range from GUI
+        try:
+            self.CELMAELMnum = int(self.gui.editCELMAELMnum.text())
+        except ValueError:
+            print "Invalid number of ELMs while averaging"
+            self.CELMAELMnum = 10
+        try:
+            self.CELMAphaseOn = float(self.gui.editCELMAstartTime.text())
+        except ValueError:
+            print "Invalid starting time for ELM averaging"
+            self.CELMAphaseOn = 6.0
+        try:
+            self.CELMAphaseEnd = self.gui.editCELMAendTime.text()
+        except ValueError:
+            print "Invalid end time for ELM averaging"
+            self.CELMAphaseOn = 6.2
+
+        self.CELMAs = []
+        data_tot = {}
+        positions_tot = {}
+
+        # Get data
+        j = 0
+        for ton,dt in zip(self.gui.ELMonsets, self.gui.ELMtotalDurations):
+            if j < self.CELMAELMnum:
+                if ton >= self.CELMAphaseOn and ton+dt <= self.CELMAphaseEnd:
+                    print "\nELM", j
+                    # POI in realtime
+                    POI = ton + dt * POI
+                    print "Position:", POI
+
+                    # Data retrieval
+                    data = self.getShotData(POI)
+                    positions = self.getProbePositions()
+                    positions = self.rztods(positions)
+                    data, positions = self.averageData(data, positions)
+
+                    for (probe,vals), poss in zip(data.iteritems(), positions.values()):
+                        if probe not in data_tot.keys():
+                            data_tot[probe] = list(vals)
+                        else:
+                            data_tot[probe].extend(list(vals))
+                        if probe not in positions_tot.keys():
+                            positions_tot[probe] = list(poss)
+                        else:
+                            positions_tot[probe].extend(list(poss))
+                    j += 1
+
+        self.axes.clear()
+        for vals, poss in zip(data_tot.values(), positions_tot.values()):
+            self.CELMAs.append( self.axes.scatter(poss, vals) )
+
+        if not self.fixyLim:
+            minimum = min(data_tot[ min(data_tot, key=lambda i: data_tot[i]) ])
+            maximum = max(data_tot[ max(data_tot, key=lambda i: data_tot[i]) ])
+            self.axes.set_ylim(minimum, maximum)
+            self.axes.set_xlim(-0.07,0.3)
+
+        self.canvas.draw()
+
 
     def plotFit(self):
         """ Plots a fit function to the shown data based on the Eich function
@@ -1345,7 +1450,7 @@ class SpatialPlot(Plot):
         self.canvas.draw()
 
 
-    def getShotData(self, atTimes=None):
+    def getShotData(self, time=None):
         """ Gets data specified by class variables "quantity" and "region" from shotfile for times in range dt. Saves this data and associated timestamps in class arrays "data" and "realtime_arr", respectively """
         ##############
         # Let the number of data points to be averaged to one value be n and the number of averaged values to show per probe be m.
@@ -1359,65 +1464,72 @@ class SpatialPlot(Plot):
         # The time offset corresponding to n and m is then dt = k(n*m-1)/2, where k is a natural number.
         # Since Dt will always be an odd number and n and m are natural numbers, n and m both have to be odd too.
 
-        if atTimes == None or not hasattr(atTimes, '__iter__'):
+        if time == None:
             # Get current time index from GUI slider
-            atTimes = [self.gui.xTimeSlider.value()]
+            time = self.gui.xTimeSlider.value()
         else:
             # Convert supplied times to indices
-            atTimes = [Conversion.valtoind(t, timeArray) for t in atTimes]
+            time = Conversion.valtoind(time, self.gui.timeArray)
 
-        for time in atTimes:
-            # Time range expressed by indices in shotfile
-            self.dt = (self.gui.Dt - 1)/2 
+        # Time range expressed by indices in shotfile
+        self.dt = (self.gui.Dt - 1)/2 
 
-            # Min and max time expressed by indices in shotfile
-            # Prevent tmin to take negative values so getting value by index
-            # won't cause problems
-            tmin = max(time - self.dt, 0)
-            tmax = time + self.dt
+        # Min and max time expressed by indices in shotfile
+        # Prevent tmin to take negative values so getting value by index
+        # won't cause problems
+        tmin = max(time - self.dt, 0)
+        tmax = time + self.dt
 
-            probeNamePrefix = self.quantity + '-' + self.region
+        probeNamePrefix = self.quantity + '-' + self.region
 
-            self.data = {}
-            self.realtime_arr = {}
-            for probe in self.gui.langData.keys():
-                # filter for specified probes
-                if probe.startswith(probeNamePrefix):
-                    dtime = self.gui.langData[probe]['time']
-                    data = self.gui.langData[probe]['data']
+        self.data = {}
+        self.realtime_arr = {}
+        for probe in self.gui.langData.keys():
+            # filter for specified probes
+            if probe.startswith(probeNamePrefix):
+                dtime = self.gui.langData[probe]['time']
+                data = self.gui.langData[probe]['data']
 
-                    # Time converted to actual time values
-                    # If there is an index error, take the global minimum or maximum
-                    self.realtmin = dtime[tmin]
-                    try:
-                        self.realtmax = dtime[tmax]
-                    except Exception:
-                        self.realtmax = dtime[-1]
-                        print("Maximum value of time range to evaluate is out of range. Using maximum of available time range.")
-                    try:
-                        self.realtime = dtime[time]
-                    except Exception:
-                        print "Could not determine realtime from time array"
-                        if time >= dtime.size: self.realtime = dtime[-1]
-                        elif time < dtime.size: self.realtime = dtime[0]
-                        else: print("FATAL: Realtime could not be determined.")
-                    
-                    # Filter for time range. 
-                    ##### SAVE DATA TO ARRAY #####
-                    ind = np.ma.where((dtime >= self.realtmin) & (dtime <= self.realtmax))
-                    self.data[probe] = data[ind]
-                    self.realtime_arr[probe] = dtime[ind]
+                # Time converted to actual time values
+                # If there is an index error, take the global minimum or maximum
+                self.realtmin = dtime[tmin]
+                try:
+                    self.realtmax = dtime[tmax]
+                except Exception:
+                    self.realtmax = dtime[-1]
+                    print("Maximum value of time range to evaluate is out of range. Using maximum of available time range.")
+                try:
+                    self.realtime = dtime[time]
+                except Exception:
+                    print "Could not determine realtime from time array"
+                    if time >= dtime.size: self.realtime = dtime[-1]
+                    elif time < dtime.size: self.realtime = dtime[0]
+                    else: print("FATAL: Realtime could not be determined.")
+                
+                # Filter for time range. 
+                ##### SAVE DATA TO ARRAY #####
+                ind = np.ma.where((dtime >= self.realtmin) & (dtime <= self.realtmax))
+                self.data[probe] = data[ind]
+                self.realtime_arr[probe] = dtime[ind]
 
-                    # Save the time data of the last probe as the global time data. This assumes that all time arrays of the probes are identical
-                    self.dtime  = dtime
-                    realdtminus = abs(self.realtime - self.realtmin)
-                    realdtplus  = abs(self.realtime - self.realtmax)
-                    self.realdtrange = (realdtminus, realdtplus)
+                # Save the time data of the last probe as the global time data. This assumes that all time arrays of the probes are identical
+                self.dtime  = dtime
+                realdtminus = abs(self.realtime - self.realtmin)
+                realdtplus  = abs(self.realtime - self.realtmax)
+                self.realdtrange = (realdtminus, realdtplus)
+
+        return self.data
 
 
-    def averageData(self):
+    def averageData(self, data=None, locs=None):
         """ Averages data points over specified number of points. """
+        if data is not None:
+            self.data = data
+        if locs is not None:
+            self.plotPositions = locs
+
         self.avgData = {}
+        self.avgPlotPositions = {}
 
         # If no averaging wished, use the data as received from shotfile
         if self.avgNum == 0:
@@ -1427,7 +1539,9 @@ class SpatialPlot(Plot):
         # Averaging
         for probe in self.data.keys():
             data = self.data[probe]
+            locs = self.plotPositions[probe]
             self.avgData[probe] = []
+            self.avgPlotPositions[probe] = []
            
             # If this probe didn't record any values at this point in time, continue with the next one
             if data.size == 0: continue
@@ -1437,6 +1551,7 @@ class SpatialPlot(Plot):
             # valcount is used to calculate average value because of the possibility of nans
             while True:
                 xsum=0
+                locsum=0
                 valcount=0
 
                 for x in np.arange(self.avgNum):
@@ -1447,22 +1562,29 @@ class SpatialPlot(Plot):
                         pass
                     else:
                         xsum += data[i]
+                        locsum += locs[i]
                         valcount += 1 
                     i += 1
 
                 # If all values were nans, ignore the result no matter what the value of ignoreNans is
                 if valcount == 0:
                     avg = np.NAN
+                    locavg = np.NAN
                 else:
                     avg = xsum/float(valcount)
+                    locavg = locsum/float(valcount)
 
                 # Save averages to new array
                 self.avgData[probe].append(avg)
+                self.avgPlotPositions[probe].append(locavg)
 
                 # End loop if end of data array will be reached next time
                 if i + self.avgNum > data.size: break
             
             self.avgData[probe] = np.array(self.avgData[probe])
+            self.avgPlotPositions[probe] = np.array(self.avgPlotPositions[probe])
+        self.plotPositions = self.avgPlotPositions
+        return self.avgData, self.avgPlotPositions
 
 
     def getProbePositions(self):
@@ -1482,14 +1604,42 @@ class SpatialPlot(Plot):
                 z = float(line.split()[2].replace(",","."))     # z
                  
                 self.probePositions[probeName] = (R,z)
+        return self.probePositions
 
 
-    def rztods(self):
+    def getTimeArray(self, shot):
+        timeArrays = []
+        for obj in shot.getSignalNames():
+            isRightQuantity = obj.startswith(('te','ne'))
+            isRightRegime = obj.split('-')[1][:2]=='ua'
+
+            if isRightQuantity and isRightRegime:
+                try:
+                    timeArrays.append(shot.getTimeBase(obj))
+                except:
+                    print "Failed to retrieve time base for signal", obj
+
+        equal = (np.diff(
+                    np.vstack(timeArrays).reshape(len(timeArrays),-1),axis=0)\
+                    ==0).all()
+
+        print "EQUAL:", equal
+
+        if not equal:
+            print """Warning: time base arrays fetched from shotfile are not
+            equal! Proceed with caution."""
+        return timeArrays[0]
+
+
+    def rztods(self, positions=None):
         """ Converts probe positions from (R,z) coordinates to delta-s
         coordinate based on current strikeline position. This enables plots in
         units of delta-s along the x-axis. It is implicitly assumed that the
         divertor tile is flat."""
         print "Updating probe positions"
+        if positions is not None:
+            self.probePositions = positions
+
         self.plotPositions = {}
         
         for probe in self.data.keys():
@@ -1531,6 +1681,7 @@ class SpatialPlot(Plot):
 
                 #print('Position of strikeline at time {}: R = {}, z = {} resulting in ds = {}'.format(self.zsl['time'][ind_z],R_sl,z_sl,ds))
                 self.plotPositions[probe].append(ds)
+        return self.plotPositions
 
 
     def initPlot(self, ):
@@ -1627,8 +1778,8 @@ class SpatialPlot(Plot):
         re-drawn."""
         self.avgNum = self.gui.avgNum
         self.getShotData()
-        self.averageData()
         self.rztods()
+        self.averageData()
 
         xtot = []
         ytot = []
@@ -2415,9 +2566,9 @@ class SpatialCurrentPlot(CurrentPlot, SpatialPlot):
         re-drawn."""
         self.avgNum = self.gui.avgNum
         self.getShotData()
+        self.rztods()
         self.averageData()
         #self.calibrateData()
-        self.rztods()
 
         xtot = []
         ytot = []
