@@ -477,8 +477,32 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def createSpatialCELMA(self):
-        POI = float(self.slideCELMAPOI.value())/100.
-        print "Relative POI on slider:", POI
+        self.xPlot.axes.clear()
+        # Remove existing legends
+        for legend in self.xPlot.fig.legends:
+            try:
+                legend.remove()
+            except ValueError: pass
+        # Remove existing markers
+        for marker in self.POImarkers:
+            try:
+                marker.remove()
+            except ValueError: pass
+
+
+        POIs = []
+        simultaneous = self.cbSimultaneousCELMAs.isChecked()
+        if simultaneous:
+            markers = ['D','o','^']
+            colors  = ['r','b','g']
+            POIs.append( float(self.editPOIbefore.text())/100.)
+            POIs.append( float(self.editPOIafter.text())/100.)
+            POIs.append( float(self.editPOIfarafter.text())/100.)
+        else:
+            markers = ['o']
+            colors = [None]
+            POIs.append(float(self.slideCELMAPOI.value())/100.)
+            print "Relative POI on slider:", POIs[0]
 
         # COPIED FROM SpatialPlot.coherentELMaveraging AND MODIFIED
         try:
@@ -493,49 +517,55 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.CELMAphaseOn = 6.2
         # END OF COPY
 
-        # THE FOLLOWING IS VERY SIMILAR TO WHAT HAPPENS IN
-        # SpatialPlot.coherentELMaveraging. Create function for it or so
-        ELMtotalDurationsHere = []
-        j = 0
-        try:
-            ELMnum = int(self.editCELMAELMnum.text())
-        except:
-            print "Invalid number of ELMs. Using 5 ELMs for ELM averaging"
-            ELMnum = 5
-        print "ELMnum:", ELMnum
-        if self.comboPOIunit.currentText() == 'ms':
-            for ton,dt in zip(self.ELMonsets, self.ELMtotalDurations):
-                if ton >= self.CELMAphaseOn and ton+dt <= self.CELMAphaseEnd:
-                    if j < ELMnum:
-                        print "ELM", j
-                        ELMtotalDurationsHere.append(dt)
-                        j += 1
-                    else: break
-            print "ELM durations:", ELMtotalDurationsHere
-            minimumELMduration = min(ELMtotalDurationsHere)
-            POI = POI*minimumELMduration
-            print "Relative POI in ms:", POI
+        for POI, marker, color in zip(POIs, markers, colors):
+            # THE FOLLOWING IS VERY SIMILAR TO WHAT HAPPENS IN
+            # SpatialPlot.coherentELMaveraging. Create function for it or so
+            ELMtotalDurationsHere = []
+            j = 0
+            try:
+                ELMnum = int(self.editCELMAELMnum.text())
+            except:
+                print "Invalid number of ELMs. Using 5 ELMs for ELM averaging"
+                ELMnum = 5
+            print "ELMnum:", ELMnum
+            if self.comboPOIunit.currentText() == 'ms' and not simultaneous:
+                # If a single POI is plotted, the shortest ELM-to-ELM duration
+                # determines the maximum offset in ms. POI therefore ranges
+                # between 0 and minimumELMduration
+                for ton,dt in zip(self.ELMonsets, self.ELMtotalDurations):
+                    if ton >= self.CELMAphaseOn and ton+dt <= self.CELMAphaseEnd:
+                        if j < ELMnum:
+                            print "ELM", j
+                            ELMtotalDurationsHere.append(dt)
+                            j += 1
+                        else: break
+                minimumELMduration = min(ELMtotalDurationsHere)
+                POI = POI*minimumELMduration
+                print "Relative POI in ms:", POI
+            if self.comboPOIunit.currentText() == 'ms' and simultaneous:
+                # If value was entered by user - as it is required for
+                # simultaneous plot - it is assumed that the values are
+                # sensible without any extra checking
+                POI = POI/10 # Convert to milliseconds
 
-        POIs = self.xPlot.coherentELMaveraging(POI)
+            POIs = self.xPlot.coherentELMaveraging(POI, marker=marker,
+                    color=color)
 
-        markPOIsInTemporal = self.menuMarkPOIsInTemporal.isChecked()
-        if markPOIsInTemporal:
-            # Remove existing markers
-            for marker in self.POImarkers:
-                try:
-                    marker.remove()
-                except ValueError: pass
-
-            # Plot new markers
-            unit = self.comboPOIunit.currentText()
-            if self.jPlot.CELMAactive and unit == 'ms':
-                self.POImarkers.append(self.jPlot.axes.axvline(POI, color='r',
-                    alpha=0.3))
-            elif not self.jPlot.CELMAactive:
-                for POI in POIs:
-                    self.POImarkers.append(self.jPlot.axes.axvline(POI, color='r',
-                        alpha=0.3))
-            self.jPlot.canvas.draw()
+            markPOIsInTemporal = self.menuMarkPOIsInTemporal.isChecked()
+            if markPOIsInTemporal:
+                # If not simultaneous, use color red for markers
+                if color is None:
+                    color = 'r'
+                # Plot new markers
+                unit = self.comboPOIunit.currentText()
+                if self.jPlot.CELMAactive and unit == 'ms':
+                    self.POImarkers.append(self.jPlot.axes.axvline(POI,
+                        color=color, alpha=0.5))
+                elif not self.jPlot.CELMAactive:
+                    for POI in POIs:
+                        self.POImarkers.append(self.jPlot.axes.axvline(POI,
+                            color=color, alpha=0.5))
+                self.jPlot.canvas.draw()
     
 
     def saveSpatialData(self):
@@ -1401,7 +1431,7 @@ class SpatialPlot(Plot):
         #self.plotFit()
 
     
-    def coherentELMaveraging(self, POIrelative):
+    def coherentELMaveraging(self, POIrelative, marker=None, color=None):
         """
         Performs an average over a specified amount of ELMs at a point of
         interest (POI) relative to the ELM beginning
@@ -1511,23 +1541,26 @@ class SpatialPlot(Plot):
 
 
         # Remove contents from canvas
-        self.axes.clear()
-        for legend in self.fig.legends:
-            legend.remove()
+        #self.axes.clear()
+        #for legend in self.fig.legends:
+        #    legend.remove()
 
         # PLOT PER ELM SO PLOTS CAN BE DISTIGUISHED IN LEGEND
-        colors = cm.rainbow(np.linspace(0,1,len(data_tot)))
+        if color is None:
+            colors = cm.rainbow(np.linspace(0,1,len(data_tot)))
+        else:
+            colors = [color]*len(data_tot)
         for color, POI in zip(colors, POIs):
             if POI == 'Averaged':
                 print "Plotting averages"
                 for probe in data_tot['Averaged'].keys():
                     x = positions_tot['Averaged'][probe]
                     y = data_tot['Averaged'][probe]
-                    self.CELMAs.append( self.axes.scatter(x,y, marker='D', color=color) )
+                    self.CELMAs.append( self.axes.scatter(x,y, marker='*', color=color) )
             for probe, vals in data_tot[POI].iteritems():
                 poss = positions_tot[POI][probe]
                 self.CELMAs.append( self.axes.scatter(poss, vals, color=color,
-                    alpha=alpha) )
+                    alpha=alpha, marker=marker) )
             # Use last plot of this ELM as legend handle
             handles.append(self.CELMAs[-1])
             labels.append(POI)
