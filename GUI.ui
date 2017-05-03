@@ -875,13 +875,6 @@
                     </property>
                    </widget>
                   </item>
-                  <item>
-                   <widget class="QPushButton" name="btnAddToMatrices">
-                    <property name="text">
-                     <string>Create Matrices</string>
-                    </property>
-                   </widget>
-                  </item>
                  </layout>
                 </widget>
                </item>
