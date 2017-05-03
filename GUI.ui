@@ -953,26 +953,19 @@
     </widget>
     <addaction name="menuSpatial_Plot"/>
     <addaction name="menuTemporal_Plot"/>
+    <addaction name="menuSliderSnapping"/>
    </widget>
    <widget class="QMenu" name="menuShot">
     <property name="title">
      <string>Shot</string>
     </property>
-    <widget class="QMenu" name="menuDiagnostic">
-     <property name="title">
-      <string>Diagnostic</string>
-     </property>
-     <addaction name="actionLSD"/>
-     <addaction name="actionLSF"/>
-    </widget>
     <widget class="QMenu" name="menuProbe_array">
      <property name="title">
       <string>Probe array</string>
      </property>
      <addaction name="actionLower_outer_array"/>
     </widget>
-    <addaction name="actionLoad_new_shot"/>
-    <addaction name="menuDiagnostic"/>
+    <addaction name="menuUseLSC"/>
     <addaction name="menuProbe_array"/>
    </widget>
    <widget class="QMenu" name="menuStatistis">
@@ -1001,8 +994,6 @@
      <addaction name="menuAvgSpatial"/>
      <addaction name="menuAvgTemporal"/>
     </widget>
-    <addaction name="actionRedo_Statistics"/>
-    <addaction name="separator"/>
     <addaction name="menuAvg"/>
     <addaction name="menuFiltering"/>
     <addaction name="menuCalibrateJsat"/>
@@ -1235,6 +1226,28 @@
    </property>
    <property name="text">
     <string>Calibrate current density</string>
+   </property>
+  </action>
+  <action name="menuUseLSC">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Use LSC shotfile</string>
+   </property>
+   <property name="toolTip">
+    <string>Use LSC shotfile to determine probe mappings and geometries</string>
+   </property>
+  </action>
+  <action name="menuSliderSnapping">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Snap slider to ELMs</string>
    </property>
   </action>
  </widget>

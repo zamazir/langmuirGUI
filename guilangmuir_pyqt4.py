@@ -14,7 +14,7 @@
 # Version: Feb. 2017
 #
 # Issues:
-# - Data evaluation will be unreliable if the time data arrays vary from probe to probe
+# - Data evaluation will fail if the time data arrays vary from probe to probe
 #
 # - At application start, jPlot is not synced with the others
 #
@@ -25,10 +25,9 @@
 #       * Indicator.color
 #       * SpatialPlot.coloring = 1
 #       * SpatialPlot.defaultColor = 'b'
-#       * SpatialPlot.ignoreNans
 #       * TemporalPlot.axTitles
 #       * Plot.region
-#       * Plot.domain
+#       * Plot.segment
 #       * CurrentPlot.mapDir
 #       * CurrentPlot.mapDiag
 #       * CurrentPlot.diag
@@ -36,20 +35,10 @@
 #       * Path to probe positions
 #   from within the GUI and store them in a config file
 #
-# - Implement getting mappings for CurrentPlot from LSC
-# 
 # - Make Indicator update time window when moving away from t=0
 #
 # - Implement option to automatically zoom temporal plots to their value limits
 # 
-# - Implement ELM synchronized plots
-#       * ELM length: maximum ELM length
-#       * modes:
-#           + stretch: all ELM durations are normalized wrt longest ELM
-#           + original: ELMs are plotted with their original length
-#       * Set slider range to [0,ELM lenght] if mode=original
-#         Set slider range to [0,1] if mode=stretch
-#
 #
 ##############################################################################
 
@@ -135,6 +124,23 @@ class Sync():
 
 
 
+class LoadingAllThread(QtCore.QThread):
+    def __init__(self,gui):
+        super(LoadingAllThread, self).__init__()
+        print "Thread is being instantiated"
+        self.gui = gui
+
+
+    def __del__(self):
+        self.wait()
+
+
+    def run(self):
+        print "Running thread"
+        self.gui.load()
+
+
+
 class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
         super(ApplicationWindow, self).__init__()
@@ -153,7 +159,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         }
         self.defaultConfig['Plots'] = {
                 'region': 'ua',
-                'domain': '8',
+                'segment': '8',
                 'dpi': 80,
         }
         self.defaultConfig['Plots']['Spatial'] = {
@@ -241,10 +247,17 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.slideCELMAPOI.setMaximum(100)
 
         # Set general behavior of GUI
+        #self.shotNumberEdit.returnPressed.connect(self.triggerThread)
         self.shotNumberEdit.returnPressed.connect(self.load)
         self.xTimeEdit.setMaxLength(7)
         self.shotNumberEdit.setMaxLength(5)
         self.shotNumberEdit.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+
+
+    def triggerThread(self):
+        print "triggered"
+        loadAll = LoadingAllThread(self)
+        loadAll.start()
 
 
     def getTimeArray(self, shot):
@@ -309,6 +322,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         #       * Determine POI closest to realtime
         #       * Get index of time in time array closest to POI
         #       * Set slider to this index
+        # 
+        # GUI setting of slider snapping will only affect behavior when
+        # dragging the slider. Clicking the ELM control buttons will still work
+        # as expected
+        snapping = self.menuSliderSnapping.isChecked()
         if ELMind == None:
             pos = self.xTimeSlider.value()
             realtime = self.dtime[pos]
@@ -316,21 +334,23 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         else:
             self.ELMstart_current_ind = ELMind
             realtime = self.ELMonsets[self.ELMstart_current_ind]
-        for plot in self.POIsPlots:
-            try: plot.remove()
-            except: pass
-        self.POIsPlots.append(self.jPlot.axes.axvline(self.ELMonsets[self.ELMstart_current_ind], color='g', lw=3,
-                alpha=0.3))
-        self.POIs= self.elmPhases(self.ELMstart_current_ind)
-        for t in self.POIs:
-            self.POIsPlots.append(self.jPlot.axes.axvline(t, color='g', lw=3,
-                    ls='--', alpha=0.3))
-        self.POI_current_ind = np.abs((self.POIs - realtime)).argmin()
-        POI = self.POIs[self.POI_current_ind]
-        POI_realtime_ind = Conversion.valtoind(POI, self.dtime)
-        self.xTimeSlider.setValue(POI_realtime_ind)
-        
-        self.updatexPlotText()
+
+        if snapping or ELMind is not None:
+            for plot in self.POIsPlots:
+                try: plot.remove()
+                except: pass
+            self.POIsPlots.append(self.jPlot.axes.axvline(self.ELMonsets[self.ELMstart_current_ind], color='g', lw=3,
+                    alpha=0.3))
+            self.POIs= self.elmPhases(self.ELMstart_current_ind)
+            for t in self.POIs:
+                self.POIsPlots.append(self.jPlot.axes.axvline(t, color='g', lw=3,
+                        ls='--', alpha=0.3))
+            self.POI_current_ind = np.abs((self.POIs - realtime)).argmin()
+            POI = self.POIs[self.POI_current_ind]
+            POI_realtime_ind = Conversion.valtoind(POI, self.dtime)
+            self.xTimeSlider.setValue(POI_realtime_ind)
+            
+            self.updatexPlotText()
         
 
     def elmPhases(self, i):
@@ -371,10 +391,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def load(self, ):
         """ Loads specified shot, updates all plots on the GUI and implements interactivity """
         # Try to load shotfiles
-        self.getShot()
+        success = self.getShot()
 
         # getShot sets the attribute succeeded at the very end of the function if all went well
-        if hasattr(self, "succeeded"):
+        if success:
             print("Data retrieval was successful")
             
             self.getPlotOption()
@@ -971,7 +991,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             msg.setDefaultButton(QMessageBox.Ok)
             msg.setEscapeButton(QMessageBox.Ok)
             msg.exec_()
-            return
+            return False
 
         if(len(str(self.shotnr)) != 5): self.shotnr = 32273
         self.shotNumberEdit.setText(str(self.shotnr))
@@ -1007,7 +1027,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             msg.setEscapeButton(QMessageBox.Ok)
             msg.exec_()
             self.hideProgress()
-            return
+            return False
             
         self.timeArray = self.getTimeArray(self.langShot)
         self.progBar.setValue(20)
@@ -1067,7 +1087,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             msg.setDefaultButton(QMessageBox.Ok)
             msg.setEscapeButton(QMessageBox.Ok)
             self.hideProgress()
-            return
+            return False
 
         self.progBar.setValue(90)
 
@@ -1086,25 +1106,28 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         except Exception:
             print "Strikeline positions could not be read!"
             self.hideProgress()
-            return
+            return False
         else:
             print "Successfully read strikeline positions"
         
         self.statusbar.showMessage('Fetching ELM times...')
         # Get ELM times
         exp = str(self.comboDiagELM.currentText())
+        print "ELM diag:", self.ELMdiag
+        print "Shotnr:", self.shotnr
         try:
             shot = dd.shotfile(
                         self.ELMdiag,
                         self.shotnr,
                         experiment=exp)
         except:
-            print "WARNING: ELM shotfile from {} could not be found. Using AUGD version"
+            print "WARNING: ELM shotfile from {} could not be found. Using AUGD version".format(exp)
             try:
                 shot = dd.shotfile(self.ELMdiag,self.shotnr)
             except:
+                print "No ELM shotfile could be found. Aborting..."
                 self.hideProgress()
-                return
+                return False
     
         self.ELMonsets = shot('t_begELM')
         self.ELMends   = shot('t_endELM').data
@@ -1120,13 +1143,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             i += 1
         self.ELMtotalDurations = np.array(ELMtotalDurations)
 
-        # Flag denoting successful shotfile load
-        self.succeeded = 1
-
         # Reset status messages and progress bar
         self.statusbar.showMessage('')
         self.progBar.setValue(100)
         self.hideProgress()
+
+        return True
 
 
     def hideProgress(self):
@@ -1329,7 +1351,7 @@ class Plot(object):
         self.gui = gui
         config = gui.config['Plots']
         self.region = config['region']
-        self.domain = config['domain']
+        self.segment = config['segment']
         self.dpi    = config['dpi']
         self.ignoreNans    = config['ignoreNans']
 
@@ -2463,8 +2485,55 @@ class CurrentPlot(Plot):
         self.gui.statusbar.showMessage("")
 
 
+    def getMappingFromShotfile(self):
+        self.gui.statusbar.showMessage("Trying to get probe-channel mapping from LSC")
+        try:
+            shot = dd.shotfile(self.mapDiag, self.shotnr)
+        except Exception, e:
+            print "LSC not available"
+            self.gui.statusbar.showMessage(
+                    "Probe mapping could not be read from LSC")
+            return False
+
+        signalName = 'ZSI' + self.segment
+        print """LSC shotfile found! Retrieving mapping for probes in segment
+                    {}...""".format(self.segment)
+
+        for obj in shot.getObjectNames().values():
+            probeInLSF = obj in self.gui.uniqueProbes
+            if obj.startswith(self.region) and probeInLSF:
+                probe = obj
+                data = shot(obj)[signalName].data 
+                info = ''.join([el for el in data if el.split() != []])
+                try:
+                    channel, ind = info.split('_')
+                except:
+                    print "Could not retrieve LSC data for probe", probe
+                    print "Aborting..."
+                    return False
+
+                self.map[probe] = (channel, ind)
+
+        return self.map
+
+
     def getMapping(self):
-        """ Loads probe-channel mapping from file. Tries to load from LSC if file not available. """
+        """ 
+        Loads probe-channel mapping from file. Tries to load from LSC if
+        file not available. 
+        """
+        print "\nGetting mappings"
+        success = False
+
+        # Try to get mapping from LSC shotfile
+        if self.gui.menuUseLSC.isChecked():
+            success = self.getMappingFromShotfile()
+
+        if success:
+            return True
+
+        # If that failed, get it from handwritten file
+        print "Trying to get mapping from alternative file"
         ok = True
         # File load dialog if mapFilePath was set to None during runtime
         if self.mapFilePath == None:
@@ -2479,51 +2548,37 @@ class CurrentPlot(Plot):
         else:
             with open(self.mapFilePath) as f:
                 lines = f.readlines()
-                for line in lines:
+                for i, line in enumerate(lines):
                     try:
                         probe, quantity, channel, ind = line.split()
                     except:
-                        print "Failed to read probe-channel mapping file", filePath
+                        print """Failed to read probe-channel mapping file {} at
+                        line {}""".format(i,filePath)
                         break
 
-                    # If channel doesn't start with "CH", add the prefix so LSF shotfile can be read with it
+                    # If channel doesn't start with "CH", add the prefix so LSF
+                    # shotfile can be read with it
                     if not channel.startswith('CH'): channel = 'CH' + channel
 
-                    # ind is saved as str from 1-6 but must serve as an index from 0-5
+                    # ind is saved as str from 1-6 but must serve as an index
+                    # from 0-5
                     ind = int(ind) - 1
 
-                    # Only care about probes in this domain and region and the saturation current
-                    if probe.startswith(self.domain + self.region) and quantity == 'Isat':
-                        # Cut off probe domain and add quantity identifier
-                        # Identifier is needed for using the TemporalPlot.update() method
+                    # Only care about probes in this segment and region and the
+                    # saturation current
+                    if probe.startswith(self.segment + self.region) and quantity == 'Isat':
+                        # Cut off probe segment and add quantity identifier
+                        # Identifier is needed for using the
+                        # TemporalPlot.update() method
                         probe = 'j-' + probe[1:].lower()
-                        print "Found Isat for probe {} on channel {}-{}".format(probe,channel, ind)
+                        print "Found Isat for probe {} on channel {}-{}"\
+                                .format(probe,channel, ind)
                         self.map[probe] = (channel, ind)
 
             # Exit if this worked
             if len(self.map) > 0:
                 "+++++++++++++Found mappings :)"
                 return True
-
-        # If that failed, try to get mapping from LSC
-        self.statusbar.showMessage("Trying to get probe-channel mapping from LSC")
-        try:
-            shot = dd.getshot(self.mapDiag, self.shotnr)
-        except Exception:
-            print "LSC not available"
-            self.statusbar.showMessage("LSC not available for this shot")
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Warning)
-            msg.setText("No LSC shotfile could be found for this shot. jsat will not be plotted.")
-            msg.setWindowTitle("LSC shotfile not found")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.setDefaultButton(QMessageBox.Ok)
-            msg.setEscapeButton(QMessageBox.Ok)
-            msg.exec_()
-            return False
-        print 'LSC not impemented yet. Aborting'
-        return False
-
 
         # If that failed, abort plotting current
         print "Failed to get probe-channel mapping. jsat will not be plotted"
@@ -2553,8 +2608,41 @@ class CurrentPlot(Plot):
         return self.data
 
 
+    def getCalibrationsFromShotfile(self):
+        try:
+            shot = dd.shotfile('LSC',self.shotnr)
+        except:
+            print "Could not load probe geometry from LSC. Proceeding to load "
+            "geometry from standard file. You should verify the sensibility of "
+            "the jsat data."
+            return False
+
+        for obj in shot.getObjectNames().values():
+            probeInLSF = obj in self.gui.uniqueProbes
+            if obj.startswith(self.region) and probeInLSF:
+                probe = obj
+                data = shot(obj)['Geom'].data 
+                try:
+                    l, w = data[:2]
+                except:
+                    print "Could not retrieve geometry of probe {} from LSC".format(probe)
+                    print "Aborting"
+                    return False
+
+                self.map[probe] = (float(l), float(w))
+        return self.calib
+    
+
     def getCalibrations(self, path=None):
         """ Loads probe dimensions from file so current can be converted to current density. """
+        result = False
+
+        if self.gui.menuUseLSC.isChecked():
+            result = self.getCalibrationsFromShotfile()
+
+        if result:
+            return result
+
         if path == None:
             path = self.calibFile
 
@@ -2563,6 +2651,7 @@ class CurrentPlot(Plot):
             for line in lines:
                 probe, l, w = line.split()
                 self.calib[probe] = (float(l), float(w))
+        return self.calib
 
 
 
