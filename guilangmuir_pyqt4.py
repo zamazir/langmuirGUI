@@ -53,7 +53,6 @@
 #
 ##############################################################################
 
-
 import matplotlib as mpl
 mpl.use('Qt4Agg')
 from matplotlib import cm
@@ -93,6 +92,8 @@ sys.setrecursionlimit(10000)
 
 # Don't cut off axes labels or ticks
 #mpl.rcParams.update({'figure.autolayout': True})
+
+# Render text as text so it can be changed by graphics programs
 mpl.rcParams['svg.fonttype'] = 'none'
 
 # Load UI
@@ -495,9 +496,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         if simultaneous:
             markers = ['D','o','^']
             colors  = ['r','b','g']
-            POIs.append( float(self.editPOIbefore.text())/100.)
-            POIs.append( float(self.editPOIafter.text())/100.)
-            POIs.append( float(self.editPOIfarafter.text())/100.)
+
+            # Make sure pre-ELM value is negative and post-ELM values are
+            # positive
+            POI_pre   = float(self.editPOIbefore.text())/100.
+            POI_post  = float(self.editPOIafter.text())/100.
+            POI_inter = float(self.editPOIfarafter.text())/100.
+            POIs.append( POI_pre if POI_pre <= 0 else -POI_pre )
+            POIs.append( POI_post if POI_post >= 0 else -POI_post )
+            POIs.append( POI_inter if POI_inter >= 0 else -POI_inter )
         else:
             markers = ['o']
             colors = [None]
@@ -1449,17 +1456,17 @@ class SpatialPlot(Plot):
             self.CELMAELMnum = int(self.gui.editCELMAELMnum.text())
         except ValueError:
             print "Invalid number of ELMs while averaging"
-            self.CELMAELMnum = 10
+            self.CELMAELMnum = 5
         try:
             self.CELMAphaseOn = float(self.gui.editCELMAstartTime.text())
         except ValueError:
             print "Invalid starting time for ELM averaging"
-            self.CELMAphaseOn = 6.0
+            self.CELMAphaseOn = 4.7
         try:
             self.CELMAphaseEnd = float(self.gui.editCELMAendTime.text())
         except ValueError:
             print "Invalid end time for ELM averaging"
-            self.CELMAphaseEnd = 6.2
+            self.CELMAphaseEnd = 5 
 
         self.CELMAs = []
         handles = []
@@ -1470,9 +1477,16 @@ class SpatialPlot(Plot):
 
         # Get data
         j = 0
-        for ton,dt in zip(self.gui.ELMonsets, self.gui.ELMtotalDurations):
+        for i, (ton,dt) in enumerate(zip(self.gui.ELMonsets, self.gui.ELMtotalDurations)):
             if j < self.CELMAELMnum:
                 if ton >= self.CELMAphaseOn and ton+dt <= self.CELMAphaseEnd:
+                    # Use duration of previous ELM to determine pre-ELM POI
+                    if POIrelative < 0:
+                        # If this is the very first ELM, pre-ELM POI is not
+                        # defined
+                        if i==0:
+                            return
+                        dt = self.gui.ELMtotalDurations[i-1]
                     print "\nELM", j
                     # POI in realtime
                     if unit == '%':
@@ -1539,11 +1553,6 @@ class SpatialPlot(Plot):
                 positions_tot['Averaged'][probe] = np.nanmean(poss)
             POIs.append('Averaged')
 
-
-        # Remove contents from canvas
-        #self.axes.clear()
-        #for legend in self.fig.legends:
-        #    legend.remove()
 
         # PLOT PER ELM SO PLOTS CAN BE DISTIGUISHED IN LEGEND
         if color is None:
@@ -2296,6 +2305,7 @@ class TemporalPlot(Plot):
 
 
     def coherentELMaveraging(self):
+        print "Temporal CELMA"
         time = self.time[self.CELMAprobe]
         data = self.data[self.CELMAprobe]
 
@@ -2324,6 +2334,7 @@ class TemporalPlot(Plot):
         for ton, dt in zip(self.ELMonsets, self.ELMtotalDurations):
             if j < self.CELMAELMnum:
                 if ton >= self.CELMAphaseOn and ton+dt <= self.CELMAphaseEnd:
+                    print "\nELM", j
                     tonInd  = Conversion.valtoind(ton, time)
                     tendInd = Conversion.valtoind(ton + dt, time)
 
@@ -2345,48 +2356,6 @@ class TemporalPlot(Plot):
                         self.CELMAs.append( self.axes.scatter(t,y,color=self.CELMAcolor) )
                     j += 1
             else:
-                    #bins = np.linspace(min(ttot),max(ttot),n)
-                    #a = np.histogram(ytot, bins, weights=ytot)[0] 
-                    #b = np.histogram(ytot, bins)[0]
-                    #bins = bins[:-1]
-
-                    #print "SIZES:"
-                    #print "bins:", bins.size
-                    #print "ytot:", ytot.size
-                    #print "a:", a.size
-                    #print "b:", b.size
-
-                    #y = []
-                    #for e,d in zip(a,b):
-                    #    if d != 0:
-                    #        y.append(e/d)
-                    #    elif e == 0:
-                    #        y.append(0)
-                    #    else:
-                    #        y.append(np.nan)
-
-                    #if self.ignoreNans:
-                    #    t = Conversion.removeNans(bins,y)
-                    #    y = Conversion.removeNans(y)
-
-                    #t = []
-                    #y = []
-                    #n = int(self.gui.editCELMAbins.text())
-                    #_i = 0
-                    #b = 0
-                    #
-                    #while True:
-                    #    if _i+valsPerBin > len(ytot):
-                    #        print "End of data reached"
-                    #        if _i < len(ytot):
-                    #            t.append(np.nanmean(ttot[_i:len(ytot)]))
-                    #            y.append(np.nanmean(ytot[_i:len(ytot)]))
-                    #        break
-                    #    print "Processing bin", b 
-                    #    t.append(np.nanmean(ttot[_i:_i+valsPerBin]))
-                    #    y.append(np.nanmean(ytot[_i:_i+valsPerBin]))
-                    #    _i += valsPerBin
-                    #    b+=1
                 break
         
         if self.CELMAbinning:
@@ -2415,8 +2384,11 @@ class TemporalPlot(Plot):
             self.CELMAs.append(
                     self.axes.plot(t,avgs,color=self.CELMAcolor)[0])
 
-        self.axes.set_xlim(min(ttot), max(ttot))
-        self.axes.set_ylim(min(ytot), max(ytot))
+        if len(ttot) > 0 and len(ytot) > 0:
+            self.axes.set_xlim(min(ttot), max(ttot))
+            self.axes.set_ylim(min(ytot), max(ytot))
+        else:
+            print "Warning: No data found for CELMA. Check start and end times"
 
 
 
