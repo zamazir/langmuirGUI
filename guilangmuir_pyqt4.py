@@ -51,37 +51,27 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.widgets import SpanSelector
-
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 from PyQt4.QtGui import (QWidget, QMessageBox)
 from PyQt4.QtGui import (QPainter, QColor)
 from PyQt4.uic import loadUiType
-
 from fitting import FitFunctions
-
-# Either use network libraries or local ones depending on internet access
-# Local ones might be outdated but don't require internet access
-#import dd
 import dd
 import numpy as np
 import sys
 import os
 from copy import copy
 import pickle
-
 # This is needed for passing arguments to callback functions
 import functools
-
 from configobj import ConfigObj
 from validate import Validator
 
 # Set recursion limit high so using the slider won't crash the app
 sys.setrecursionlimit(10000)
-
 # Don't cut off axes labels or ticks
 #mpl.rcParams.update({'figure.autolayout': True})
-
 # Render text as text so it can be changed by graphics programs
 mpl.rcParams['svg.fonttype'] = 'none'
 
@@ -207,6 +197,16 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.defaultExtension = config['defaultExtension'] 
         self.defaultFilter = '{} (*.{})'.format(self.defaultExtension[1:].upper(),
                                                 self.defaultExtension[1:].lower())
+        self.shots   = {'LSF':None,
+                        'LSD':None,
+                        'LSC':None,
+                        'ELM':None,
+                        'EQU':None}
+        self.LSFshot = self.shots['LSF']
+        self.LSDshot = self.shots['LSD']
+        self.LSCshot = self.shots['LSC']
+        self.ELMshot = self.shots['ELM']
+        self.EQUshot = self.shots['EQU']
 
         # Set up UI
         self.setupUi(self)
@@ -262,6 +262,33 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.xTimeEdit.setMaxLength(7)
         self.shotNumberEdit.setMaxLength(5)
         self.shotNumberEdit.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+
+
+    def saveShotsToPickle(self):
+        file, ok = QtGui.QFileDialog.getOpenFileName(self,
+                'Save shotfile dump',
+                filter = 'Pickle dumps (*.p *.pickle *.dump);; All files (*.*)') 
+        if ok:
+            self.shots['LSF'] = self.LSFshot
+            self.shots['LSC'] = self.LSCshot
+            self.shots['LSD'] = self.LSDshot
+            self.shots['EQU'] = self.EQUshot
+            self.shots['ELM'] = self.ELMshot
+            pickle.dump(self.shots, open('shots.dump', 'wb'))
+
+
+    def loadShotsFromPickle(self):
+        file, ok = QtGui.QFileDialog.getOpenFileName(self,
+                'Open shotfile dump',
+                filter = 'Pickle dumps (*.p *.pickle *.dump);; All files (*.*)') 
+        if ok:
+            self.shots = pickle.load(open(file, 'rb'))
+            self.LSFshot = self.shots['LSF']
+            self.LSDshot = self.shots['LSD']
+            self.LSCshot = self.shots['LSC']
+            self.ELMshot = self.shots['ELM']
+            self.EQUshot = self.shots['EQU']
+            self.load(self.shots)
 
 
     def triggerThread(self):
@@ -398,10 +425,17 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.config.write()
 
 
-    def load(self, ):
-        """ Loads specified shot, updates all plots on the GUI and implements interactivity """
+    def load(self, shots=None):
+        """ 
+            Loads specified shot, updates all plots on the GUI and implements
+            interactivity 
+        """
         # Try to load shotfiles
-        success = self.getShot()
+        if shots is None:
+            print "Shots weren't loaded from dump"
+            success = self.getShot()
+        else:
+            success = True
 
         # getShot sets the attribute succeeded at the very end of the function if all went well
         if success:
@@ -428,6 +462,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             # Add matplotlib toolbar functionality
             self.nToolbar = NavigationToolbar(self.nPlot.canvas, self)
             self.TToolbar = NavigationToolbar(self.TPlot.canvas, self)
+            self.xToolbar = NavigationToolbar(self.xPlot.canvas, self)
+            self.jToolbar = NavigationToolbar(self.jPlot.canvas, self)
+            self.jToolbar.hide()
+            self.xToolbar.hide()
             self.nToolbar.hide()
             self.TToolbar.hide()
 
@@ -438,7 +476,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.xPlot.setTimeText()
             self.xPlot.setDurationText()
             self.updateTWindowControls()
-        
 
             # Implement GUI logic
             # This has to be done after updating the plots because the plot objects are referenced
@@ -462,8 +499,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.btnZoom.clicked.connect(self.nToolbar.zoom)
             self.btnPan.clicked.connect(self.TToolbar.pan)
             self.btnZoom.clicked.connect(self.TToolbar.zoom)
+            self.btnPan.clicked.connect(self.jToolbar.pan)
+            self.btnZoom.clicked.connect(self.jToolbar.zoom)
             self.btnReset.clicked.connect(self.resettPlots)
-            
+        
             self.btnCELMA.clicked.connect(self.toggleCELMAs)
             self.comboCELMAmode.currentIndexChanged.connect(self.clearCELMAs)
             self.comboCELMAprobe.currentIndexChanged.connect(self.clearCELMAs)
@@ -921,9 +960,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         self.xPlot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
 
-        self.xToolbar = NavigationToolbar(self.xPlot.canvas, self)
-        self.xToolbar.hide()
-
         self.btnPan.clicked.connect(self.xToolbar.pan)
         self.btnZoom.clicked.connect(self.xToolbar.zoom)
         self.btnReset.clicked.connect(self.xToolbar.home)
@@ -941,8 +977,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.TPlotLayout.addWidget(self.TPlotCanvas)
         self.TPlot.parent = self.TPlotLayout
 
-        self.TPlot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
-
 
     def createnPlot(self):
         try:
@@ -955,8 +989,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.nPlotCanvas = self.nPlot.canvas
         self.nPlotLayout.addWidget(self.nPlotCanvas)
         self.nPlot.parent = self.nPlotLayout
-         
-        self.nPlot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
 
 
     def createjPlot(self):
@@ -970,13 +1002,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.jPlotCanvas = self.jPlot.canvas
         self.jPlotLayout.addWidget(self.jPlotCanvas)
         self.jPlot.parent = self.jPlotLayout
-            
-        self.jPlot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
-        
-        self.jToolbar = NavigationToolbar(self.jPlot.canvas, self)
-        self.jToolbar.hide()
-        self.btnPan.clicked.connect(self.jToolbar.pan)
-        self.btnZoom.clicked.connect(self.jToolbar.zoom)
         
 
     def onPanZoom(self,event):
@@ -986,29 +1011,33 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def getInterpretedLangmuirData(self):
         self.statusbar.showMessage('Fetching Langmuir data...')
         exp = str(self.comboDiagInt.currentText())
-        try:
-            self.shot = dd.shotfile(
-                                self.langdiag,
-                                self.shotnr,
-                                experiment=exp)
-        except:
+        if self.LSDshot is None:
             try:
-                print "Could not find {} shotfile for user {}. Trying AUGD...".format(self.langdiag,exp)
-                self.shot = dd.shotfile(self.langdiag, self.shotnr)
-            except Exception:
-                print "Shot number could not be read"
-                self.statusbar.showMessage("Shot number could not be read.")
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Warning)
-                msg.setText("The Langmuir probe data for this shot could not be loaded.")
-                msg.setInformativeText("Please make sure you entered an existing shot number. It could also be that your connection to the AFS is not set up correctly or your internet connection is not working.")
-                msg.setWindowTitle("Shot could not be loaded")
-                msg.setStandardButtons(QMessageBox.Ok)
-                msg.setDefaultButton(QMessageBox.Ok)
-                msg.setEscapeButton(QMessageBox.Ok)
-                msg.exec_()
-                self.hideProgress()
-                return False
+                self.shot = dd.shotfile(
+                                    self.langdiag,
+                                    self.shotnr,
+                                    experiment=exp)
+            except:
+                try:
+                    print "Could not find {} shotfile for user {}. Trying AUGD...".format(self.langdiag,exp)
+                    self.shot = dd.shotfile(self.langdiag, self.shotnr)
+                except Exception:
+                    print "Shot number could not be read"
+                    self.statusbar.showMessage("Shot number could not be read.")
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Warning)
+                    msg.setText("The Langmuir probe data for this shot could not be loaded.")
+                    msg.setInformativeText("Please make sure you entered an existing shot number. It could also be that your connection to the AFS is not set up correctly or your internet connection is not working.")
+                    msg.setWindowTitle("Shot could not be loaded")
+                    msg.setStandardButtons(QMessageBox.Ok)
+                    msg.setDefaultButton(QMessageBox.Ok)
+                    msg.setEscapeButton(QMessageBox.Ok)
+                    msg.exec_()
+                    self.hideProgress()
+                    return False
+            self.LSDshot = self.shot
+        else:
+            shot = self.LSDshot
             
         self.timeArray = self.getTimeArray(self.shot)
         self.progBar.setValue(20)
@@ -1051,24 +1080,28 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def getStrikelineData(self):
         self.statusbar.showMessage('Fetching strikeline data...')
         exp = str(self.comboDiagEqu.currentText())
-        try:
-            self.shot = dd.shotfile(
-                                self.sldiag,
-                                self.shotnr,
-                                experiment=exp)
-        except:
-            print "Could not find {} shotfile for user {}. Trying AUGD...".format(self.sldiag,exp)
+        if self.EQUshot is None:
             try:
-                self.shot = dd.shotfile(self.sldiag, self.shotnr)
-            except Exception:
-                msg = QMessageBox()
-                msg.setText("The Langmuir probe data for the shot with the specified number could not be loaded. Please make sure you entered an existing shot number. It could also be that your connection to the AFS is not set up correctly or your internet connection is not working.")
-                msg.setWindowTitle("Shot could not be loaded")
-                msg.setStandardButtons(QMessageBox.Ok)
-                msg.setDefaultButton(QMessageBox.Ok)
-                msg.setEscapeButton(QMessageBox.Ok)
-                self.hideProgress()
-                return False
+                self.shot = dd.shotfile(
+                                    self.sldiag,
+                                    self.shotnr,
+                                    experiment=exp)
+            except:
+                print "Could not find {} shotfile for user {}. Trying AUGD...".format(self.sldiag,exp)
+                try:
+                    self.shot = dd.shotfile(self.sldiag, self.shotnr)
+                except Exception:
+                    msg = QMessageBox()
+                    msg.setText("The Langmuir probe data for the shot with the specified number could not be loaded. Please make sure you entered an existing shot number. It could also be that your connection to the AFS is not set up correctly or your internet connection is not working.")
+                    msg.setWindowTitle("Shot could not be loaded")
+                    msg.setStandardButtons(QMessageBox.Ok)
+                    msg.setDefaultButton(QMessageBox.Ok)
+                    msg.setEscapeButton(QMessageBox.Ok)
+                    self.hideProgress()
+                    return False
+            self.EQUshot = self.shot
+        else:
+            shot = self.EQUshot
 
         self.progBar.setValue(90)
 
@@ -1095,20 +1128,24 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def getELMdata(self):
         self.statusbar.showMessage('Fetching ELM times...')
         exp = str(self.comboDiagELM.currentText())
-        try:
-            shot = dd.shotfile(
-                        self.ELMdiag,
-                        self.shotnr,
-                        experiment=exp)
-        except:
-            print "Could not find {} shotfile for user {}. Trying AUGD...".format(self.ELMdiag,exp)
+        if self.ELMshot is None:
             try:
-                shot = dd.shotfile(self.ELMdiag,self.shotnr)
+                shot = dd.shotfile(
+                            self.ELMdiag,
+                            self.shotnr,
+                            experiment=exp)
             except:
-                print "No ELM shotfile could be found. Aborting..."
-                self.hideProgress()
-                return False
-    
+                print "Could not find {} shotfile for user {}. Trying AUGD...".format(self.ELMdiag,exp)
+                try:
+                    shot = dd.shotfile(self.ELMdiag,self.shotnr)
+                except:
+                    print "No ELM shotfile could be found. Aborting..."
+                    self.hideProgress()
+                    return False
+            self.ELMshot = shot
+        else:
+            shot = self.ELMshot
+         
         self.ELMonsets = shot('t_begELM')
         self.ELMends   = shot('t_endELM').data
         self.ELMmaxima = shot('t_maxELM').data
@@ -1124,8 +1161,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.ELMtotalDurations = np.array(ELMtotalDurations)
 
 
-    def getShot(self):
-        """ Retrieves langmuir data and strikeline positions from AUG shotfiles. This is an expensive operation and should only be invoked when loading a new shotfile. """
+    def readShotNumber(self):
         # If shot number not valid, prompt user and abort
         try:
             self.shotnr = int(self.shotNumberEdit.text())
@@ -1146,21 +1182,36 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         if(len(str(self.shotnr)) != 5): 
             self.shotnr = 32273
             self.shotNumberEdit.setText(str(self.shotnr))
+        return True
+
+
+    def getShot(self):
+        """ Retrieves langmuir data and strikeline positions from AUG shotfiles. This is an expensive operation and should only be invoked when loading a new shotfile. """
+        if not self.readShotNumber():
+            return False
 
         # Get temperature and density data from langmuir diags
         self.getInterpretedLangmuirData()
 
-        # Set timeline scrollbar min and max values
-        # Here the absolute maximum value of all time data arrays is used. Data evaluation will be unreliable if the time data arrays vary from probe to probe
-        maxDataPoints = max(self.langData[key]['time'].size for key in self.langData.keys())
-        self.xTimeSlider.setRange(0, maxDataPoints-1)
-        
         # Get strikeline positions from diagnostic
         self.getStrikelineData()
         
         # Get ELM times
         self.getELMdata()
 
+        # Get raw langmuir data
+        #self.getRawLangmuirData()
+
+        # Get probe configuration data
+        #self.getConfigurationData()
+
+        # Set timeline scrollbar min and max values
+        # Here, the absolute maximum value of all time data arrays is used. Data
+        # evaluation will be unreliable if the time data arrays vary from probe
+        # to probe
+        maxDataPoints = max(self.langData[key]['time'].size for key in self.langData.keys())
+        self.xTimeSlider.setRange(0, maxDataPoints-1)
+        
         # Reset status messages and progress bar
         self.statusbar.showMessage('')
         self.progBar.setValue(100)
@@ -1274,6 +1325,7 @@ class ColorPatch(QtGui.QWidget):
         qp.drawRect(10, 10, 10, 10)
 
 
+
 class Tools():
     @staticmethod
     def find_between( s, first, last ):
@@ -1283,6 +1335,7 @@ class Tools():
             return s[start:end]
         except ValueError:
             return ""
+
 
 
 class Indicator():
@@ -1395,6 +1448,7 @@ class Plot(object):
         self.fig = Figure(dpi=self.dpi)
         self.axes = self.fig.add_subplot(111)
         self.canvas = FigureCanvas(self.fig)
+        self.axes.get_xaxis().get_major_formatter().set_useOffset(False)
 
 
     def getTimeArray(self, shot=None, timeArrays=None):
@@ -1428,13 +1482,17 @@ class Plot(object):
         return timeArrays[0]
 
 
+
 class SpatialPlot(Plot):
     """ Class for spatial temperature and density plots. Subclass of Plot. Needs the application object as an argument to be able to manipulate GUI elements. """
     ### TO DO
     #
     # - rztods depends on realtime_arr
-    # - rztods should save relative positions with timestamps to rule out mismatches when plotting
-    # - In update(), proper scaling of the scatter is achieved by adding a plot, rescaling, and removing that plot. A more elegant solution is desirable
+    # - rztods should save relative positions with timestamps to rule out
+    #   mismatches when plotting
+    # - In update(), proper scaling of the scatter is achieved by adding
+    #   a plot, rescaling, and removing that plot. A more elegant solution is
+    #   desirable
     #
     def __init__(self, gui):
         super(SpatialPlot, self).__init__(gui)
@@ -1444,8 +1502,8 @@ class SpatialPlot(Plot):
         self.defaultColor = config['defaultColor']
         self.posFile = config['positionsFile']
         self.fixyLim = config['fixyLim']
-        # If this value is 1 then averaged values are nohttp://thecodeship.com/patterns/guide-to-python-function-decorators/t nans if one or more
-        # of the values used to calculate it is a nan
+        # If this value is 1 then averaged values are
+        # no nans if one or more of the values used to calculate it is a nan
         # This setting is ignored if all values to be averaged over are nans
         self.ignoreNans = self.ignoreNans
 
@@ -1461,11 +1519,14 @@ class SpatialPlot(Plot):
                 'Saturation current density': 'j$_{sat}$ [kA/m$^2$]'
                 }
 
-        # Number of timesteps around the current time to include in the plot (see getShotData())
+        # Number of timesteps around the current time to include in the plot
+        # (see getShotData())
         self.Dt = gui.Dt
         # Number of data points over which to average
         self.avgNum = gui.avgNum
-        self.rawdata = gui.langData # Needed for method <coherentELMaveraging> shared with class <SpatialCurrentPlot>
+        # Needed for method <coherentELMaveraging> shared with class
+        # <SpatialCurrentPlot>
+        self.rawdata = gui.langData 
 
         self.Rsl = self.gui.Rsl
         self.ssl = self.gui.ssl
@@ -2411,7 +2472,7 @@ class CurrentPlot(Plot):
     # /afs/ipp/home/d/dacar/divertor/ If no file present, try to get the
     # mapping from LSC Calibrate the measurements with probe surfaces to obtain
     # current densities Plot results
-    def __init__(self, gui):
+    def __init__(self, gui, shot=None):
         Plot.__init__(self, gui)
 
         # Configuration
@@ -2441,6 +2502,8 @@ class CurrentPlot(Plot):
         self.xlim_orig   = [9999999999999, -999999999999]
         self.ylim_orig   = [9999999999999, -999999999999]
         self.parent      = getattr(gui, self.parents[self.quantity])
+        self.shot        = self.gui.LSFshot
+        self.LSCshot     = self.gui.LSCshot
 
         self.axes.set_ylabel('Current density [A/m$^2$]')
         self.axes.set_xlabel('Time [s]')
@@ -2467,32 +2530,36 @@ class CurrentPlot(Plot):
         if not hasMapping:
             return
 
-        if diag != None:
-            self.diag = diag
-        self.gui.statusbar.showMessage("Fetching jsat signals...")
-        print "\n+++++++++++++++++++++ Getting jsat signals +++++++++++++++++++++++++++"
-        exp = str(self.gui.comboDiagRaw.currentText())
-        try:
-            shot = dd.shotfile(
-                            self.diag, 
-                            self.shotnr,
-                            experiment=exp)
-        except:
-            print "Could not find {} shotfile for user {}. Trying AUGD...".format(self.diag,exp)
+        if self.shot is None:
+            if diag != None:
+                self.diag = diag
+            self.gui.statusbar.showMessage("Fetching jsat signals...")
+            print "\n+++++++++++++++++++++ Getting jsat signals +++++++++++++++++++++++++++"
+            exp = str(self.gui.comboDiagRaw.currentText())
             try:
-                shot = dd.shotfile(self.diag, self.shotnr)
-            except Exception:
-                print "Shotfile not found"
-                self.gui.statusbar.showMessage("Shotfile could not be loaded")
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Warning)
-                msg.setText("No jsat shotfile could be found at {} for this shot.".format(self.diag))
-                msg.setWindowTitle("Shotfile not found")
-                msg.setStandardButtons(QMessageBox.Ok)
-                msg.setDefaultButton(QMessageBox.Ok)
-                msg.setEscapeButton(QMessageBox.Ok)
-                msg.exec_()
-                return
+                shot = dd.shotfile(
+                                self.diag, 
+                                self.shotnr,
+                                experiment=exp)
+            except:
+                print "Could not find {} shotfile for user {}. Trying AUGD...".format(self.diag,exp)
+                try:
+                    shot = dd.shotfile(self.diag, self.shotnr)
+                except Exception:
+                    print "Shotfile not found"
+                    self.gui.statusbar.showMessage("Shotfile could not be loaded")
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Warning)
+                    msg.setText("No jsat shotfile could be found at {} for this shot.".format(self.diag))
+                    msg.setWindowTitle("Shotfile not found")
+                    msg.setStandardButtons(QMessageBox.Ok)
+                    msg.setDefaultButton(QMessageBox.Ok)
+                    msg.setEscapeButton(QMessageBox.Ok)
+                    msg.exec_()
+                    return
+            self.shot = shot
+        else:
+            shot = self.shot
 
         timeArrays = []
         for key, objName in shot.getObjectNames().iteritems():
@@ -2514,14 +2581,17 @@ class CurrentPlot(Plot):
 
     def getMappingFromShotfile(self):
         self.gui.statusbar.showMessage("Trying to get probe-channel mapping from LSC")
-        try:
-            shot = dd.shotfile(self.mapDiag, self.shotnr)
-        except Exception, e:
-            print "LSC not available"
-            self.gui.statusbar.showMessage(
-                    "Probe mapping could not be read from LSC")
-            return False
-
+        if self.LSCshot is None:
+            try:
+                shot = dd.shotfile(self.mapDiag, self.shotnr)
+            except Exception, e:
+                print "LSC not available"
+                self.gui.statusbar.showMessage(
+                        "Probe mapping could not be read from LSC")
+                return False
+            self.LSCshot = shot
+        else:
+            shot = self.LSCshot
         signalName = 'ZSI' + self.segment
         print """LSC shotfile found! Retrieving mapping for probes in segment
                     {}...""".format(self.segment)
@@ -2562,11 +2632,12 @@ class CurrentPlot(Plot):
         # If that failed, get it from handwritten file
         print "Trying to get mapping from alternative file"
         # File load dialog if mapFilePath was set to None during runtime
+        print self.mapFilePath
         specified = self.mapFilePath != ''
         exists = os.path.isfile(self.mapFilePath)
         if self.mapFilePath is None or not specified or not exists:
             while True:
-                self.mapFilePath = \
+                self.mapFilePath, ok = \
                     QtGui.QFileDialog.getOpenFileName(
                         self.gui,
                         directory=self.mapDir,
@@ -2588,7 +2659,7 @@ class CurrentPlot(Plot):
         	    probe, quantity, channel, ind = line.split()
         	except:
         	    print """Failed to read probe-channel mapping file {} at
-        	    line {}""".format(i,filePath)
+        	    line {}""".format(i,self.mapFilePath)
         	    break
         
         	# If channel doesn't start with "CH", add the prefix so LSF
@@ -2644,14 +2715,18 @@ class CurrentPlot(Plot):
 
 
     def getCalibrationsFromShotfile(self):
-        print "Getting calibrations from LSC"
-        try:
-            shot = dd.shotfile(self.mapDiag,self.shotnr)
-        except:
-            print "Could not load probe geometry from LSC. Proceeding to load "
-            "geometry from standard file. You should verify the sensibility of "
-            "the jsat data."
-            return False
+        if self.LSCshot is None:
+            print "Getting calibrations from LSC"
+            try:
+                shot = dd.shotfile(self.mapDiag,self.shotnr)
+            except:
+                print "Could not load probe geometry from LSC. Proceeding to load "
+                "geometry from standard file. You should verify the sensibility of "
+                "the jsat data."
+                return False
+            self.LSCshot = shot
+        else:
+            shot = self.LSCshot
 
         for obj in shot.getObjectNames().values():
             probeInLSF = obj in self.gui.uniqueProbes
@@ -2767,6 +2842,7 @@ class SpatialCurrentPlot(SpatialPlot, CurrentPlot):
         self.plots       = {}
         self.xlim_orig   = [9999999999999, -999999999999]
         self.ylim_orig   = [9999999999999, -999999999999]
+        self.shot        = self.gui.LSFshot
          
         self.probeNamePrefix = self.quantity + '-' + self.region
          
