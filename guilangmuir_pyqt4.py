@@ -63,7 +63,7 @@ from fitting import FitFunctions
 # Either use network libraries or local ones depending on internet access
 # Local ones might be outdated but don't require internet access
 #import dd
-import ddlocal as dd
+import dd
 import numpy as np
 import sys
 import os
