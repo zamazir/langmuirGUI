@@ -259,17 +259,17 @@
                 </property>
                 <item>
                  <property name="text">
+                  <string>Saturation current density</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
                   <string>Density</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
                   <string>Temperature</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Saturation current density</string>
                  </property>
                 </item>
                </widget>
