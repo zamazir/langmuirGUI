@@ -11,13 +11,14 @@ class FitFunctions():
         return 0.5*p2*exp(z*z-(x)/p3)*erfc(z-(x)/p4) + p5
     
     @staticmethod
-    def fit(x, y):
-        p0 = [
-                1, 
-                10.0e-3, 
-                5.0e-3, 
-                y.mean()
-             ]
+    def fit(x, y, p0=None):
+        if p0 is None:
+            p0 = [
+                    1, 
+                    10.0e-3, 
+                    5.0e-3, 
+                    y.mean()
+                 ]
         
         print "Initial guess:", p0
 
