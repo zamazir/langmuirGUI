@@ -13,6 +13,10 @@
 #
 # Version: Feb. 2017
 #
+#
+# Changes since last commit:
+#   - Fixed re-enabling spatial fit not working
+#
 # Issues:
 # - Data evaluation will fail if the time data arrays vary from probe to probe
 #
@@ -57,6 +61,15 @@ from scipy import interpolate
 from configobj import ConfigObj
 from validate import Validator
 from slider import SchizoSlider
+import logging
+
+logging.basicConfig(
+                filename='langmuirAnalyzer.log', 
+                filemode='a', 
+                format='%(asctime)s [%(levelname)s]: %(message)s', 
+                datefmt='%d/%m/%Y %I:%M:%S %p', 
+                level=logging.ERROR)
+logging.info('\n++++++++++++++ Program started +++++++++++++++++')
 
 # Set recursion limit high so using the slider won't crash the app
 sys.setrecursionlimit(10000)
@@ -426,11 +439,22 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.fitNum = 1000
         self.POIpositions = sorted(['-20','20','50'])
         self.CELMAexists = False
+        self.plots = []
         self._stop = False
         self._playing = False
+        self._record = False
 
         # Set up UI
         self.setupUi(self)
+        #splitter = QtGui.QSplitter()
+        #splitter.addWidget(self.spatialDomain)
+        #splitter.addWidget(self.temporalDomain)
+        #layout = QtGui.QVBoxLayout()
+        #layout.addWidget(splitter)
+        #self.setLayout(layout)
+        
+        self.btnRecord.setVisible(False)
+        self.btnRecordCELMA.setVisible(False)
         self.xTimeSlider.setTickPosition(QtGui.QSlider.NoTicks)
         self.POISlider = SchizoSlider(Qt.Qt.Horizontal)
         self.CELMAnavigationLayout.addWidget(self.POISlider)
@@ -443,6 +467,35 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.btnShotUpdate.setVisible(False)
         self.radioDistancesNoAveraging.setChecked(True)
         self.setWindowTitle('Langmuir Data Analyzer')
+        self.insertLinks()
+
+        # Logger
+        logTextBox = QPlainTextEditLogger(self)
+        #logTextBox.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s]: %(message)s'))
+        logging.getLogger().addHandler(logTextBox)
+        self.setLoggerLevel()
+        self.logLayout.addWidget(logTextBox.widget)
+
+        # Shortcuts
+        shortcut = QtGui.QShortcut(self)
+        shortcut.setKey('Ctrl+P')
+        shortcut.activated.connect(self.activatePan)
+
+        shortcut = QtGui.QShortcut(self)
+        shortcut.setKey('Ctrl+Z')
+        shortcut.activated.connect(self.activateZoom)
+
+        shortcut = QtGui.QShortcut(self)
+        shortcut.setKey('Ctrl+R')
+        shortcut.activated.connect(self.resetPlots)
+
+        shortcut = QtGui.QShortcut(self)
+        shortcut.setKey('Ctrl+Y')
+        shortcut.activated.connect(self.toggleCELMAs)
+
+        shortcut = QtGui.QShortcut(self)
+        shortcut.setKey('Ctrl+U')
+        shortcut.activated.connect(self.updateCELMAs)
 
         self.actionToLabel('Temporal Plot')
         self.actionToLabel('Spatial Plot')
@@ -508,9 +561,58 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                         functools.partial(self.addUser, self.comboExpELM))
         self.comboExpEqu.activated.connect(
                         functools.partial(self.addUser, self.comboExpEqu))
+        self.comboLogLevel.currentIndexChanged.connect(self.setLoggerLevel)
 
         self.shotNumberEdit.setFocus()
 
+
+    def setLoggerLevel(self):
+        level = str(self.comboLogLevel.currentText())
+        
+        if level == 'Debug':
+            logging.getLogger().setLevel(logging.DEBUG)
+
+        elif level == 'Info':
+            logging.getLogger().setLevel(logging.INFO)
+
+        elif level == 'Warning':
+            logging.getLogger().setLevel(logging.WARN)
+
+        elif level == 'Error':
+            logging.getLogger().setLevel(logging.ERROR)
+
+        elif level == 'Critical':
+            logging.getLogger().setLevel(logging.CRITICAL)
+
+
+    def insertLinks(self):
+        """
+        Adds links to info menu
+        """
+        isis = QtGui.QAction(self.menuInfo)
+        isis.setText('ISIS')
+        isis.triggered.connect(
+                functools.partial(self.openLink,
+                    'https://www.aug.ipp.mpg.de/cgibin/sfread_only/isis'))
+        self.menuInfo.insertAction(self.menuAbout,isis)
+
+        shotf = QtGui.QAction(self.menuInfo)
+        shotf.setText( 'Shotfile system documentation')
+        shotf.triggered.connect(
+                functools.partial(self.openLink,
+                    'https://www.aug.ipp.mpg.de/wwwaug/guidelines/shotfiles.shtml'))
+        self.menuInfo.insertAction(self.menuAbout,shotf)
+
+        libddww = QtGui.QAction(self.menuInfo)
+        libddww.setText( 'libddww documentation')
+        libddww.triggered.connect(
+                functools.partial(self.openLink,
+                    'https://www.aug.ipp.mpg.de/aug/manuals/pylibs/'))
+        self.menuInfo.insertAction(self.menuAbout,libddww)
+
+
+    def openLink(self, link):
+        QtGui.QDesktopServices.openUrl(QtCore.QUrl(link))
 
     def changePlayIncrement(self):
         incr, ok = QtGui.QInputDialog.getInt(self,
@@ -525,6 +627,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         action = self.findActionByText(text)
         if action is None:
             print "Could not find action {}".format(text)
+            logging.warn("Could not find action {}".format(text))
             return
         action.setEnabled(False)
         font = QtGui.QFont()
@@ -560,6 +663,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def toggleFit(self, arg):
+        print "Toggling fit"
+        logging.info("Toggling fit")
         if self.menuFit.isChecked():
             self.insertFit()
         else:
@@ -574,8 +679,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     plot.fit.remove()
                 except:
                     pass
+                plot.fit = None
                 plot.fitting = False
-                plot.fitMethod = 'none'
         plot.canvas.draw()
 
 
@@ -594,6 +699,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             for plot in self.getSpatialPlots():
                 plot.fitMethod = method
                 
+        # This is necessary since insertFit gets called when slider is moved
         if not self.menuFit.isChecked():
             return
         
@@ -617,6 +723,19 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 plot.fitNum = int(n)
                 if self.menuFit.isChecked():
                     plot.plotFit()
+
+
+    def changeAvgMethod(self):
+        currMethod = next((p.avgMethod for p in self.getTemporalPlots()), None)
+        
+        method, ok = QtGui.QDialog.getText(self, 
+                "Change averaging method",
+                "Insert numpy method to be used for the temporal CELMA fit",
+                value = currMethod)
+        if ok:
+            for plot in self.getTemporalPlots():
+                plot.avgMethod = str(method)
+            self.showCELMAupdateButton()
 
 
     def setFitColor(self):
@@ -643,39 +762,42 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 print "Could not set fit color to existing fit because "+\
                         "it probably doesn't exist:\n" + str(e) +\
                         "\nIt was saved for future fits though"
+                logging.warn("Could not set fit color to existing fit because "+\
+                        "it probably doesn't exist:\n" + str(e) +\
+                        "\nIt was saved for future fits though")
             else:
                 plot.canvas.draw()
 
 
     def changeMarker(self):
+        currMarker = next((p.marker for p in self.getTemporalPlots()),None)
         marker, ok = CheckAndEditDialog.getValue(
                 self,
                 'Change data point marker',
                 'Specify matplotlib marker (e.g. *, +, ^, ...):',
                 'Show markers',
-                self.marker
+                currMarker
                 )
         if ok:
-            self.updatetPlots(str(marker))
+            for plot in self.getTemporalPlots():
+                plot.marker = marker
+            self.updatetPlots()
 
 
     def changeBinNumber(self):
-        currBinNumber = next((p.binNumber for p in self.getTemporalPlots()),None)
+        currBinNumber = next((p.CELMAbinNumber for p in self.getTemporalPlots()),None)
         
         bins, ok = QtGui.QInputDialog.getInt(
                 self,
                 'Change alpha value',
                 'Transparency of CELMA data points:',
-                value = currbinNumber,
+                value = currBinNumber,
                 min = 2, max = 10000
                 )
         if ok:
-            try:
-                self.binNumber = int(bins)
-            except:
-                self.statusbar.showMessage(
-                        'Bin number must be an integer between 2 and 10000')
-        self.showCELMAupdateButton()
+            for plot in self.getTemporalPlots():
+                plot.CELMAbinNumber = int(bins)
+            self.showCELMAupdateButton()
 
 
     def changeProbeColor(self, patch, probeName):
@@ -733,16 +855,21 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     timeArrays.append(shot.getTimeBase(obj))
                 except:
                     print "Failed to retrieve time base for signal", obj
+                    logging.error("Failed to retrieve time base for signal {}"\
+                                    .format(obj))
         if len(timeArrays) == 0:
             print "Failed to find time array"
+            logging.error( "Failed to find time array")
 
         equal = (np.diff(
                     np.vstack(timeArrays).reshape(len(timeArrays),-1),axis=0)\
                     ==0).all()
 
         if not equal:
-            print """Warning: time base arrays fetched from shotfile are not
-            equal! Proceed with caution."""
+            print "Warning: time base arrays fetched from shotfile are not"+\
+            " equal! Proceed with caution."
+            logging.error("Time base arrays fetched from shotfile are not"+\
+            " equal! Proceed with caution.")
         return timeArrays[0]
 
 
@@ -826,12 +953,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                         self.POI_current_ind = int(POI)
                     except IndexError:
                         print "Error: No POI number {} available. Using first POI instead".format(POI)
+                        logging.warn("No POI number {} available. Using first POI instead".format(POI))
                         self.POI_current_ind = 0
                     except ValueError:
                         print "Error: POI {} seems to be invalid".format(POI)
+                        logging.warn("POI {} seems to be invalid".format(POI))
                         return
                     except:
                         print "Error: Cannot snap to unknown POI", POI
+                        logging.warn("Cannot snap to unknown POI {}".format(POI))
                         return
             else:
                 self.POI_current_ind = np.abs((self.POIs - realtime)).argmin()
@@ -860,12 +990,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 color = 'g'
                 
                 # Draw marker fill at ELM position
-                span = plot.axes.axvspan( ELMstart, ELMstop, alpha=0.6, color=color)
+                span = plot.axes.axvspan( ELMstart, ELMstop, alpha=0.6,
+                        color=color, label='ELM')
                 plot.ELMmarkers['spans'].append(span)
                         
                 # Draw marker line at every POI
-                for t in self.POIs:
-                    line = plot.axes.axvline( t, color=color, lw=3, ls='--', alpha=0.6)
+                for i, t in enumerate(self.POIs):
+                    line = plot.axes.axvline( t, color=color, lw=3, ls='--',
+                                            alpha=0.6, label='POI {}'.format(i))
                     plot.ELMmarkers['lines'].append(line)
 
                 plot.canvas.draw()
@@ -993,6 +1125,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         
         if not succeeded:
             print "Warning: Config file validation failed. Using default values"
+            logging.warning("Config file validation failed. Using default values")
             self.config = self.defaultConfig
 
 
@@ -1074,6 +1207,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def attributeColorsToProbes(self):
         # Attribute colors to probes
+        logging.info("\nAttributing colors to probes")
         probeNames = []
         for plot in self.plots:
             probeNames.extend([p.name for p in plot.probes 
@@ -1083,20 +1217,28 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         colors = cm(np.linspace(0, 1, len(probeNames)))
 
         for plot in self.plots:
-            print "\n{} {} plot".format(plot.type,plot.quantity)
             for probeName, color in zip(probeNames, colors):
                 probe = next((p for p in plot.probes 
                                 if p.name == probeName), None)
                 if probe is None:
                     #print "Probe {} does not exist in ".format(probeName)+\
                     #        "{} {} plot.".format(plot.type, plot.quantity)
+                    logging.info("Probe {} does not exist in ".format(probeName)+\
+                                 "{} {} plot.".format(plot.type, plot.quantity))
                     continue
-                #print "Color for probe {} is {}"\
-                #        .format(probe.name, color)
                 color       = tuple(color)[:-1]
                 probe.color = color
-            
             plot.updateColors()
+                
+        for probeName, color in zip(probeNames,colors):
+            self.probeColors[probeName] = color
+
+
+    def clearPlots(self):
+        """ Removes all plots from their containers and deletes them """
+        for plot in self.plots:
+            self.clearPlotContainer(plot.container)
+            del plot
 
 
     def load(self, reload=False):
@@ -1104,13 +1246,22 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             Loads specified shot, updates all plots on the GUI and implements
             interactivity 
         """
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         self.btnShotUpdate.setVisible(False)
+        self.clearCELMAs()
+        self.CELMAexists = False
+        self.patches = {}
+        self.probeColors = {}
+        self.ignoreELMs = []
+        self.clearPlots()
+
         self.progBar.setVisible(True)
         self.region = str(self.comboRegion.currentText())
 
         success = self.getShot()
 
         if success:
+            logging.info("+++++++++Data retrieval was successful+++++++++")
             print("Data retrieval was successful")
             self.plots = []
 
@@ -1119,13 +1270,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if not ok:
                 return
             self.progBar.setValue(60)
-            ok = self.createPlot(self.PlotContainer21,'temporal','te')
-            if not ok:
-                return
-            self.progBar.setValue(70)
-            ok = self.createPlot(self.PlotContainer22,'temporal','ne')
-            if not ok:
-                return
+            #ok = self.createPlot(self.PlotContainer21,'temporal','te')
+            #if not ok:
+            #    return
+            #self.progBar.setValue(70)
+            #ok = self.createPlot(self.PlotContainer22,'temporal','ne')
+            #if not ok:
+            #    return
             self.progBar.setValue(80)
             ok = self.createPlot(self.PlotContainer23,'temporal','jsat')
             if not ok:
@@ -1145,7 +1296,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             #Implement GUI logic
             if not reload:
                 self.activateXtimeSlider()
-                self.comboSwitchxPlot.activated.connect(self.switchxPlot)
+                self.comboSwitchxPlot.currentIndexChanged.connect(self.switchxPlot)
                 self.xTimeEdit.returnPressed.connect(self.setxTimeSlider)
                 self.xTimeEdit.returnPressed.connect(self.updatexPlot)
                 self.xTimeEdit.returnPressed.connect(self.updatexPlotText)
@@ -1160,7 +1311,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.comboPOIunit.currentIndexChanged.connect(self.showCELMAupdateButton)
                 self.cbTemporalCELMAs.stateChanged.connect(self.showCELMAupdateButton)
                 self.comboELMcompare.currentIndexChanged.connect(self.showCELMAupdateButton)
-                self.comboCELMAmode.currentIndexChanged.connect(self.showCELMAupdateButton)
+                #self.comboCELMAmode.currentIndexChanged.connect(self.showCELMAupdateButton)
+                self.cbCELMAnormalize.stateChanged.connect(self.showCELMAupdateButton)
                 self.comboCELMAprobe.currentIndexChanged.connect(self.showCELMAupdateButton)
                 self.editCELMAELMnum.textChanged.connect(self.showCELMAupdateButton)
                 self.editCELMAstartTime.textChanged.connect(self.showCELMAupdateButton)
@@ -1182,9 +1334,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.menuSpatialAvgNum.triggered.connect(self.setSpatialAvgNum)
                 self.menuTemporalAvgNum.triggered.connect(self.setTemporalAvgNum)
                 self.menuWindowWidth.triggered.connect(self.setWindowWidth)
-                self.menuFixxPlotyLim.toggled.connect(self.updatexPlot)
-                self.menuIgnoreNaNsSpatial.toggled.connect(self.updatexPlot)
+                self.menuFixxPlotyLim.toggled.connect(self.changeFixxPlotyLim)
+                self.menuIgnoreNaNsSpatial.toggled.connect(self.changeIgnoreSpatialNaNs)
                 self.menuShowGaps.triggered.connect(self.updatetPlots)
+                self.menuSetAvgMethod.triggered.connect(self.changeAvgMethod)
 
                 self.menuSaveSpatialFigures.triggered.connect(self.savexPlot)
                 self.menuSaveTemporalFigures.triggered.connect(
@@ -1224,6 +1377,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 
                 self.btnPlayCELMA.clicked.connect(self.playCELMA)
                 self.btnPlay.clicked.connect(self.play)
+                self.btnRecord.clicked.connect(self.record)
+                self.btnRecordCELMA.clicked.connect(self.record)
                 self.menuPlayStart.triggered.connect(self.play)
                 self.menuStop.triggered.connect(self.stop)
                 self.menuSetIncrement.triggered.connect(self.changePlayIncrement)
@@ -1238,13 +1393,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.btnPan.clicked.connect(self.activatePan)
                 self.btnZoom.clicked.connect(self.activateZoom)
 
-
                 self.btnFindMaximaDistances.clicked.connect(self.plotMaximaDistances)
+                self.btnTdivNbar.clicked.connect(self.createTNplot)
 
             self.statusbar.showMessage('Shot was fully loaded', 5000)
+            logging.info( "\n\n+++++++++++++++++ ALL DONE! ++++++++++++++++++\n\n")
             print "\n\n+++++++++++++++++ ALL DONE! ++++++++++++++++++\n\n"
 
             self.toggleMainSettings()
+            self.activateZoom()
 
         # If shot data was not loaded successfully, unbind actions
         else:
@@ -1253,10 +1410,20 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.xTimeSlider.disconnect()
                 self.xTimeEdit.disconnect()
             except Exception: pass
-            print("One or more shotfiles could not be loaded.")
-        
+
+        QtGui.QApplication.restoreOverrideCursor()
         self.hideProgress()
 
+
+    def createTNplot(self):
+        popout = FigureWindow()
+
+
+    def changeFixxPlotyLim(self):
+        fix = self.menuFixxPlotyLim.isChecked()
+        for plot in self.getSpatialPlots():
+            plot.fixyLim = fix
+            
 
     def changeCELMAsetting(self, type, attr, cb):
         """
@@ -1272,18 +1439,46 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def reload(self):
+        #_colors = self.probeColors
+        _tmin = self.editCELMAstartTime.text()
+        _tmax = self.editCELMAendTime.text()
+        _celma= self.CELMAexists
+
         self.load(reload=True)
 
+        #self.updateColors(_colors)
 
-    def updateCELMAs(self):
-        for plot in self.getTemporalPlots():
-            plot.clearPOImarkers()
-        self.btnCELMAupdate.setVisible(False)
-        self.createSpatialCELMA()
-        for plot in self.getTemporalPlots():
-            self.createTemporalCELMA(plot)
+        self.editCELMAstartTime.setText(_tmin)
+        self.editCELMAendTime.setText(_tmax)
+        
+        try:
+            _tmin = float(_tmin)
+            _tmax = float(_tmax)
+        except ValueError:
+            pass
+        else:
+            for plot in self.getTemporalPlots():
+                plot.axes.set_xlim((_tmin,_tmax), emit=False)
 
- 
+        if _celma:
+            self.toggleCELMAs()
+
+
+    # Extremely slow and does not work nor fail
+    #def updateColors(self, colors):
+    #    print "Reinstating probe colors"
+    #    for plot in self.plots:
+    #        for probe in plot.probes:
+    #            if probe.name in colors:
+    #                print "Color for probe {}: {}"\
+    #                        .format(probe.name, colors[probe.name])
+    #                color = colors[probe.name]
+    #                probe.color = color
+    #                self.patches[probe.name].setColor(color,'mpl')
+    #        
+    #            plot.updateColors()
+
+
     def showShotUpdateButton(self):
         self.btnShotUpdate.setVisible(True)
 
@@ -1304,8 +1499,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def deactivateXtimeSlider(self):
-        self.xTimeSlider.valueChanged.disconnect()
-        self.xTimeSlider.sliderReleased.disconnect()
+        try:
+            self.xTimeSlider.valueChanged.disconnect()
+            self.xTimeSlider.sliderReleased.disconnect()
+        except TypeError:
+            logging.error("Time slider could not be disconnected from slots")
+            pass
 
 
     def getSpatialPlotQuantity(self):
@@ -1321,10 +1520,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         container = next((p.container for p in self.getSpatialPlots()),None)
         quantity  = self.getSpatialPlotQuantity()
 
-        for i, plot in enumerate(self.plots):
-            if plot.type == 'spatial':
-                plot.reset()
-                del plot
+        for plot in self.getSpatialPlots():
+            #plot.reset()
+            plot.clearCELMA()
+            del plot
 
         self.createPlot(container, 'spatial', quantity)
         self.attributeColorsToProbes()
@@ -1336,7 +1535,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if isinstance(plot, CurrentPlot):
                 plot.calib = {}
                 plot.map   = {}
-                plot.reset()
+                #plot.reset()
 
                 pos      = self.xTimeSlider.value()
                 realtime = self.dtime[pos]
@@ -1351,6 +1550,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def createSpatialCELMA(self):
         settings = self.getCELMAsettings()
         if settings is None:
+            logging.warn("Error getting CELMA settings")
             print "Error getting CELMA settings"
             return
 
@@ -1358,7 +1558,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         createtCELMAs      = self.cbTemporalCELMAs.isChecked()
         markPOIsInTemporal = self.menuMarkPOIsInTemporal.isChecked()
         unit               = str(self.comboPOIunit.currentText())
-        mode               = str(self.comboCELMAmode.currentText())
+        #mode               = str(self.comboCELMAmode.currentText())
+        normalize          = self.cbCELMAnormalize.isChecked()
         fitting            = self.menuFit.isChecked()
 
         markers = ['d','o','^']
@@ -1371,32 +1572,148 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         handles = []
         labels = []
         for plot in self.getSpatialPlots():
-            plot.clearCELMA()
             plot.hideArtists()
+            i=0
             for POIrelative, marker, color in zip(POIsRel, markers, colors):
-                h, l, POIs, POIsShifted = plot.coherentELMaveraging(
-                                             *settings,
-                                             POIrelative = POIrelative,
-                                             range   = self.Dt,
-                                             multiplePOIs = multiplePOIs,
-                                             unit    = unit,
-                                             marker  = marker,
-                                             fitting = fitting,
-                                             color   = color)
+                result = plot.coherentELMaveraging(
+                                 *settings,
+                                 POIrelative = POIrelative,
+                                 range   = self.Dt,
+                                 multiplePOIs = multiplePOIs,
+                                 unit    = unit,
+                                 marker  = marker,
+                                 fitting = fitting,
+                                 color   = color,
+                                 ignore = self.ignoreELMs)
+                if result is None:
+                    continue
+                h, l, POIs, POIsShifted = result
                 handles.append(h)
                 labels.append(l)
                 if markPOIsInTemporal:
                     if createtCELMAs:
-                        if mode == 'Default':
-                            self.markPOIsInTemporalPlots(POIsShifted,color)
-                        else:
+                        if normalize:
                             self.markPOIsInTemporalPlots([POIrelative],color)
+                        else:
+                            self.markPOIsInTemporalPlots(POIsShifted,color)
                     else:
                         self.markPOIsInTemporalPlots(POIs,color)
+                i+=1
 
-            #if multiplePOIs:
-            #    plot.axes.legend(handles, labels)
+            if i > 0:
+                plot.CELMAexists = True
+            else:
+                print "WARNING: Could not create any CELMAs for spatial plot"
+                logging.error("Could not create any CELMAs for spatial plot")
+
+
+    def toggleIgnoreELM(self, time, cb):
+        if cb.isChecked():
+            self.removeIgnoreELM(time)
+        else:
+            self.addIgnoreELM(time)
+        self.btnCELMAupdate.setVisible(True)
+
+
+    def removeIgnoreELM(self, time):
+        try:
+            ind = self.ignoreELMs.index(time)
+        except ValueError:
+            return
+        del self.ignoreELMs[ind]
             
+
+    def addIgnoreELM(self, time):
+        self.ignoreELMs.append(time)
+
+
+    def populateELMtable(self):
+        table = self.tblELMs
+        table.setRowCount(0)
+        table.setColumnCount(4)
+
+        table.setHorizontalHeaderLabels(('Show','Start','Duration [ms]',
+                                        'Frequency (wrt previous ELM) [kHz]'))
+        table.horizontalHeader().setStretchLastSection(True)
+
+        settings = self.getCELMAsettings()
+        if settings is None:
+            logging.warn("CELMA settings could not be read")
+            print "Error: CELMA settings could not be read"
+            return
+        start, end, ELMnum = settings
+        ind      = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end))
+        if len(ind[0]) == 0:
+            print "ERROR: No ELMs in specified range {}s-{}s".format(start,end)
+            logging.critical("No ELMs in specified range {}s-{}s".format(start,end))
+            return
+        ind_select = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end))
+        ELMstarts= self.ELMonsets[ind][:ELMnum]
+        ELMends  = self.ELMends[ind][:ELMnum]
+        ELMtoELM = self.ELMtoELM[ind][:ELMnum]
+        ELMfreqs = self.ELMfreqs[ind][:ELMnum]
+
+        for i, (ton, dt, f) in enumerate(zip(ELMstarts,ELMtoELM,ELMfreqs)):
+            rowPos = table.rowCount()
+            table.insertRow(rowPos)
+            item = QtGui.QTableWidgetItem('ELM {}'.format(i+1))
+            table.setVerticalHeaderItem(rowPos, item)
+
+            cb = QtGui.QCheckBox()
+            cb.setTristate(False)
+            if ton not in self.ignoreELMs:
+                cb.setChecked(True)
+            cb.stateChanged.connect(
+                    functools.partial(self.toggleIgnoreELM, ton, cb))
+            cb.stateChanged.connect(self.showELMstatistics)
+            table.setCellWidget(rowPos,0,cb)
+
+            item = QtGui.QTableWidgetItem('{:.5f}'.format(ton))
+            item.setTextAlignment(QtCore.Qt.AlignHCenter)
+            table.setItem(rowPos,1,item)
+            
+            item = QtGui.QTableWidgetItem('{:.2f}'.format(dt*1000))
+            table.setItem(rowPos,2,item)
+
+            item = QtGui.QTableWidgetItem('{:.2f}'.format(f))
+            table.setItem(rowPos,3,item)
+
+            self.showELMstatistics()
+
+
+    def showELMstatistics(self, dummy=None):
+        settings = self.getCELMAsettings()
+        if settings is None:
+            logging.warn("CELMA settings could not be read")
+            print "Error: CELMA settings could not be read"
+            return
+        start, end, ELMnum = settings
+        
+        ind          = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end))
+        ind_selected = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end)
+                                            & ~np.in1d(self.ELMonsets,self.ignoreELMs))
+        if len(ind[0]) == 0:
+            logging.debug("No ELMs in range")
+            self.lblELMsInRange.setText('N/A')
+            
+        if len(ind_selected[0]) == 0:
+            logging.debug("No ELMs selected")
+            self.lblELMnum.setText('N/A')
+            self.lblELMfreq.setText('N/A')
+            self.lblELMdur.setText('N/A')
+            self.lblELMmin.setText('N/A')
+            self.lblELMmax.setText('N/A')
+            return
+        ELMstarts= self.ELMonsets[ind_selected][:ELMnum]
+        ELMends  = self.ELMends[ind_selected][:ELMnum]
+        ELMtoELM = self.ELMtoELM[ind_selected][:ELMnum]
+        ELMfreqs = self.ELMfreqs[ind_selected][:ELMnum]
+        self.lblELMsInRange.setText(str(len(ind[0])))
+        self.lblELMnum.setText(str(len(ELMstarts)))
+        self.lblELMfreq.setText('{:.2f}'.format(np.mean(ELMfreqs)))
+        self.lblELMdur.setText('{:.2f}'.format(np.mean(ELMtoELM)*1000))
+        self.lblELMmin.setText('{:.2f}'.format(np.min(ELMtoELM)*1000))
+        self.lblELMmax.setText('{:.2f}'.format(np.max(ELMtoELM)*1000))
 
     
     def markPOIsInTemporalPlots(self, POIs, color=None):
@@ -1410,9 +1727,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         unit = self.comboPOIunit.currentText()
         
         for _plot in self.getTemporalPlots():
-            for POI in POIs:
+            for i, POI in enumerate(POIs):
+                j = i/3 + 1
                 line = _plot.axes.axvline( POI, color=color, alpha=0.5, lw=3,
-                        ls='-.')
+                        ls='-.', label='POI {} of ELM {}'.format(i,j),
+                        picker=True)
                 _plot.POImarkers.append(line)
             _plot.canvas.draw()
     
@@ -1465,13 +1784,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 p.saveData()
 
 
-    def updatetPlots(self, marker=None):
+    def updatetPlots(self):
         """ Updates all temporal plots """
         for plot in self.plots:
             if plot.type == 'temporal':
                 plot.showGaps = self.menuShowGaps.isChecked()
-                if marker is not None:
-                    plot.marker = marker
                 plot.update()
 
 
@@ -1549,7 +1866,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         else:
             msg = "avgNum must be an odd number. " +\
                   "Choosing {} instead.".format(avgNum+1)
-            print msg
+            logging.warning(msg)
             self.statusbar.showMessage(msg, 4000)
             avgNum += 1
 
@@ -1611,22 +1928,17 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         canvas = next((plt.canvas for plt in self.plots 
                         if plt.type == type and plt.quantity == quantity), None)
         if canvas is None:
-            print "Warning: could not find canvas for {} {}"\
-                    .format(type, quantity)
+            print "Warning: could not find canvas for {} {}".format(type, quantity)
+            logging.error("could not find canvas for {} {}".format(type, quantity))
 
         return canvas
     
     
     def togglePlots(self, cb, probe, type, quantity):
         """ Toggles temporal plots based on checkbox selection. """
-        #print "Toggling probe {}, {}, {}".format(probe.name, type,
-        #        quantity)
         plot = next((p for p in self.plots
                     if p.quantity == quantity and p.type == type), None)
         
-        #print "Setting probe {} to selected = {} in {} {} plot"\
-        #        .format(probe.name, cb.isChecked(), type, quantity)
-
         probe.setSelected(plot.canvas, cb.isChecked())
 
         if type == 'temporal':
@@ -1681,6 +1993,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         table.setVerticalHeaderItem(rowPos, item)
 
         print "\n\n++++++++++++++POPULATING PROBE TABLE++++++++++"
+        logging.info("\n\n++++++++++++++POPULATING PROBE TABLE++++++++++")
 
         # Add available probes for each plot
         for i, plot in enumerate(self.plots):
@@ -1718,6 +2031,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     patch.clicked.connect(
                             functools.partial(self.changeProbeColor, patch, probeName))
                     table.setCellWidget(0, colPos, patch)
+                    self.patches[probeName] = patch
 
                 # Set header label
                 item = QtGui.QTableWidgetItem(probeName)
@@ -1760,8 +2074,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def updatexPlot(self):
         """
-        Updates spatial plots with current GUI settings. Updates
-        `indicator_range`. Removes CELMAs.
+        Updates spatial plots after changing GUI settings. Updates
+        `indicator_range`.
         """
         # Block indicator update when panning to greatly enhance
         # performance. If this is not done, indicator.slide() will call
@@ -1775,11 +2089,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         realtime = self.dtime[pos]
         for p in self.plots:
             if p.type == 'spatial':
-                p.fixyLim = self.menuFixxPlotyLim.isChecked()
-                p.ignoreNans = self.menuIgnoreNaNsSpatial.isChecked()
                 p.update(realtime)
                 self.indicator_range = p.realdtrange
-                #print "xPlot now has {} lines".format(len(p.axes.lines))
 
 
     def findTWindow(self, Dt, avgNum):
@@ -1791,6 +2102,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         if avgNum is None:
             print "ERROR: spatial avgNum is None!"+\
                     "Cannot find appropriate time window"
+            logging.warn("ERROR: spatial avgNum is None!"+\
+                    "Cannot find appropriate time window")
             return
 
         # Don't try anything fancy if no averaging is wanted anyway
@@ -1892,6 +2205,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             except:
                 print "Could not find PlotClass for '{} {}'"\
                         .format(_type, quantity)
+                logging.critical("Could not find PlotClass for '{} {}'"\
+                        .format(_type, quantity))
                 return False
 
             self.statusbar.showMessage(
@@ -1899,6 +2214,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         else:
             if plot is None:
                 print "ERROR: Either _type and quantity or plot have to be given"
+                logging.critical( "ERROR: Either _type and quantity or plot have to be given")
                 return False
             
 
@@ -1910,7 +2226,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         plot.container = container
 
         plot.fitting = self.menuFit.isChecked()
-        plot.init(0, self.Dt)
+        
+        currentTime = str(self.xTimeEdit.text())
+        if currentTime == '':
+            currentTime = 0
+        else:
+            currentTime = float(currentTime)
+        
+        plot.init(currentTime, self.Dt)
 
         container.addWidget(plot.canvas)
         
@@ -1924,6 +2247,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         elif plot.type == 'temporal':
             plot._timeUpdtID = plot.axes.callbacks.connect(
                                         'xlim_changed', self.updateRange)
+            plot._ELMUpdtID = plot.axes.callbacks.connect(
+                                        'xlim_changed', self.showELMstatistics)
 
         self.plots.append(plot)
 
@@ -1931,7 +2256,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         plot.canvas.popupRequested.connect(
                 functools.partial(self.createPopup, plot))
 
-        plot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
+        # This does not work with FuncFormatter
+        #plot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
 
         return True
 
@@ -2026,19 +2352,27 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     self.createTemporalCELMA(plot)
 
 
-    def getTemporalPlots(self):
-        return [p for p in self.plots if p.type=='temporal']
+    def getTemporalPlots(self, quantity=None):
+        if quantity is None:
+            return [p for p in self.plots if p.type=='temporal']
+        else:
+            return next((p for p in self.plots if p.type=='temporal' and
+                                                p.quantity==quantity), None)
 
 
-    def getSpatialPlots(self):
-        return [p for p in self.plots if p.type=='spatial']
+    def getSpatialPlots(self, quantity=None):
+        if quantity is None:
+            return [p for p in self.plots if p.type=='spatial']
+        else:
+            return next((p for p in self.plots if p.type=='spatial' and
+                                                p.quantity==quantity), None)
 
 
-    def getPlotsByType(self, type):
+    def getPlotsByType(self, type, quantity=None):
         if type == 'temporal':
-            return self.getTemporalPlots()
+            return self.getTemporalPlots(quantity)
         if type == 'spatial':
-            return self.getSpatialPlots()
+            return self.getSpatialPlots(quantity)
         return
 
 
@@ -2176,14 +2510,27 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         try:
             shotNumberLSC = dd.getLastShotNumber('LSC', shotNumber, exp)
         except:
-            print "Failed to get LSC shotfile corresponding to shot {}"\
-                    .format(shotNumber)
+            self.showShotWarning(
+                    "Shot could not be loaded",
+                    "Latest LSC shot file could not be found",
+                    "Please make sure you are connected to the internet"+\
+                    " and have a valid Kerberos token")
             return False
         
         self.statusbar.showMessage("Most recent shot with LSC data before"+\
                 "this shot: {}".format(shotNumberLSC), 3000)
 
         self.latestLSCshotnr = shotNumberLSC
+
+        if shotNumberLSC == 0:
+            self.showShotWarning(
+                    "Shot could not be loaded",
+                    "libddww method getLastShotNumber() returned 0 for the"+\
+                    " LSC shot file belonging to this shot.",
+                    "Please make sure you are connected to the internet"+\
+                    " and have a valid Kerberos token. You may have to "+\
+                    "restart the applictaion after obtaining a token")
+            return False
 
         return shotNumberLSC
         
@@ -2197,6 +2544,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         except:
             try:
                 print "Could not find {} shotfile for user {}. Trying AUGD...".format(diag,exp)
+                logging.critical("Could not find {} shotfile for user {}.  Trying AUGD...".format(diag,exp))
                 shot = dd.shotfile(diag, self.shotnr)
             except Exception:
                 self.showShotWarning(
@@ -2224,6 +2572,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             shot = dd.shotfile( diag, self.shotnr, exp)
         except:
             print "Could not find {} shotfile for user {}. Trying AUGD...".format(diag,exp)
+            logging.critical("Could not find {} shotfile for user {}.  Trying AUGD...".format(diag,exp))
             try:
                 shot = dd.shotfile(diag, self.shotnr)
             except Exception:
@@ -2253,6 +2602,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.zsl['time'] = shot('Zuna2b').time
         except Exception:
             print "Strikeline positions could not be read!"
+            logging.critical( "Strikeline positions could not be read!")
             self.hideProgress()
             return False
         return True
@@ -2266,6 +2616,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             shot = dd.shotfile( diag, self.shotnr, exp)
         except:
             print "Could not find {} shotfile for user {}. Trying AUGD...".format(diag,exp)
+            logging.critical("Could not find {} shotfile for user {}.  Trying AUGD...".format(diag,exp))
             try:
                 shot = dd.shotfile(diag,self.shotnr)
             except:
@@ -2280,22 +2631,24 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.ELMonsets = shot('t_begELM')
         self.ELMends   = shot('t_endELM').data
         self.ELMmaxima = shot('t_maxELM').data
+        self.ELMfreqs  = shot('freq_ELM').data
         self.ELMtoELM  = np.append(np.diff(self.ELMonsets),0)
         return True
 
 
     def showShotWarning(self, title, msg, text, details=''):
         print msg
+        logging.critical(msg)
         self.statusbar.showMessage(msg)
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Warning)
-        msg.setText(text)
-        msg.setDetailedText(details)
-        msg.setWindowTitle(title)
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.setDefaultButton(QMessageBox.Ok)
-        msg.setEscapeButton(QMessageBox.Ok)
-        msg.exec_()
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Warning)
+        msgBox.setText(msg +'\n\n' + text)
+        msgBox.setDetailedText(details)
+        msgBox.setWindowTitle(title)
+        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.setDefaultButton(QMessageBox.Ok)
+        msgBox.setEscapeButton(QMessageBox.Ok)
+        msgBox.exec_()
         self.hideProgress()
 
 
@@ -2314,6 +2667,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.shotnr = 32273
             self.shotNumberEdit.setText(str(self.shotnr))
         print "Read shot number {} from GUI".format(self.shotnr)
+        logging.info("Read shot number {} from GUI".format(self.shotnr))
         return True
 
 
@@ -2325,6 +2679,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             shot = dd.shotfile(diag, self.shotnr, exp)
         except:
             print "Could not find {} shotfile for user {}. Trying AUGD...".format(diag,exp)
+            logging.critical("Could not find {} shotfile for user {}.  Trying AUGD...".format(diag,exp))
             try:
                 shot = dd.shotfile(diag, self.shotnr)
             except Exception:
@@ -2342,6 +2697,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         diag = 'LSC'
         exp = str(self.comboExpLSC.currentText())
         print "Latest LSC shot number:", self.latestLSCshotnr
+        logging.info("Latest LSC shot number: {}".format(self.latestLSCshotnr))
         try:
             shot = dd.shotfile(diag, self.latestLSCshotnr, exp)
         except Exception:
@@ -2358,11 +2714,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         """ Retrieves langmuir data and strikeline positions from AUG shotfiles. This is an expensive operation and should only be invoked when loading a new shotfile. """
         if not self.readShotNumber():
             print "Could not read shotnumber"
+            logging.critical( "Could not read shotnumber")
             return False
 
         ok = self.getLatestLSC(self.shotnr)
         if not ok:
             print "Failed to get latest LSC. Returned {}".format(ok)
+            logging.critical( "Failed to get latest LSC. Returned {}".format(ok))
             return False
         self.progBar.setValue(5)
 
@@ -2370,12 +2728,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         ok = self.getInterpretedLangmuirData()
         if not ok:
             print "Failed to get interpreted langmuir data"
+            logging.critical( "Failed to get interpreted langmuir data")
             return False
 
         # Get strikeline positions from diagnostic
         ok = self.getStrikelineData()
         if not ok:
             print "Failed to get strikeline data"
+            logging.critical( "Failed to get strikeline data")
             return False
         self.progBar.setValue(25)
         
@@ -2383,6 +2743,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         ok = self.getELMdata()
         if not ok:
             print "Failed to get ELM data"
+            logging.critical( "Failed to get ELM data")
             return False
         self.progBar.setValue(30)
 
@@ -2390,6 +2751,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         ok = self.getRawLangmuirData()
         if not ok:
             print "Failed to get raw langmuir data"
+            logging.critical( "Failed to get raw langmuir data")
             return False
         self.progBar.setValue(40)
 
@@ -2397,6 +2759,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         ok = self.getConfigurationData()
         if not ok:
             print "Failed to get configuration data"
+            logging.critical( "Failed to get configuration data")
             return False
         self.progBar.setValue(50)
 
@@ -2451,6 +2814,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if ok:
                 if len(fileName.split('.')) < 2:
                     print "Extension missing. Figure not saved"
+                    logging.error("Extension missing. Figure not saved")
                     return
                 fmt = fileName.split('.')[-1]
                 p.fig.savefig(fileName, format=fmt)
@@ -2513,18 +2877,21 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         if ELMnum is None:
             if start is None and stop is None:
                 print "No values provided"
+                logging.error( "No values provided")
                 return
             elif start is None and stop is not None:
                 if self.dtime[0] < stop:
                     start = self.dtime[0]
                 else:
-                    print "Start time not provided and stop time smaller than smallest time value"
+                    print "Stop time smaller than smallest time value"
+                    logging.error( "Stop time smaller than smallest time value")
                     return
             elif start is not None and stop is None:
                 if self.dtime[-1] > start:
                     stop = self.dtime[-1]
                 else:
-                    print "Start and stop time not provided and start time bigger than greatest time value"
+                    print "Start time bigger than greatest time value"
+                    loggin.error( "Start time bigger than greatest time value")
                     return
             ELMnum = 10000#Show all ELMs in range
         else:
@@ -2533,11 +2900,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     stop = self.dtime[-1]
                 else:
                     print "Start value bigger than greatest time value"
+                    loggin.error( "Start time bigger than greatest time value")
                     return
             elif start is not None and stop is not None:
                 pass
             else:
                 print "Unknown error"
+                logging.error("Unknown error")
                 return
 
         return [start, stop, ELMnum]
@@ -2548,19 +2917,32 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             return
         self._playing = True
         self.btnPlayCELMA.setText('Stop')
+        self.btnRecordCELMA.setVisible(True)
         self.btnPlayCELMA.clicked.disconnect(self.playCELMA)
         self.btnPlayCELMA.clicked.connect(self.stop)
+        self.POISlider.valueChanged.connect(self.updateCELMAs)
+        self.record()
 
         slider = self.POISlider
-        minimum= slider.minimum()+1
-        maximum= slider.maximum()-1
+        minimum= slider.low()+1
+        maximum= slider.high()-1
         incr   = self.playIncrement
+        size = (maximum-minimum)/incr
         for i in range(minimum,maximum,incr):
+            print "Step {} of {}".format(i,size)
             slider.setMiddle(i)
+            if self._record:
+                time = self.dtime[slider.value()]
+                tFileName = os.path.join('recordings',self._recDir,'jsat_T_CELMA'+str(time)+'.png')
+                sFileName = os.path.join('recordings',self._recDir,'jsat_S_CELMA'+str(time)+'.png')
+                self._tSavePlot.fig.savefig(tFileName, format='png')
+                self._sSavePlot.fig.savefig(sFileName, format='png') 
             if self._stop or i == maximum-1:
                 self.btnPlayCELMA.setText('Play')
+                self.POISlider.valueChanged.disconnect(self.updateCELMAs)
                 self.btnPlayCELMA.clicked.disconnect(self.stop)
                 self.btnPlayCELMA.clicked.connect(self.playCELMA)
+                self.btnRecordCELMA.setVisible(False)
                 self._playing = False
                 self._stop = False
                 break
@@ -2570,11 +2952,43 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self._stop = True
 
 
+    def record(self):
+        import datetime
+        self._recDir = str(datetime.datetime.now()).split('.')[0].replace(' ','_')
+        self._tSavePlot = self.getPlotsByType('temporal','jsat')
+        self._sSavePlot = self.getPlotsByType('spatial','jsat')
+        path = os.path.join('recordings',self._recDir)
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        # Make sure directory exists before starting to record
+        while True:
+            if os.path.isdir(path):
+                self._record = True
+                self.btnRecord.setText('Stop recording')
+                self.btnRecord.clicked.disconnect(self.record)
+                self.btnRecord.clicked.connect(self.stopRecording)
+                self.btnRecordCELMA.setText('Stop recording')
+                self.btnRecordCELMA.clicked.disconnect(self.record)
+                self.btnRecordCELMA.clicked.connect(self.stopRecording)
+                break
+
+
+    def stopRecording(self):
+        self._record = False
+        self.btnRecord.setText('Record')
+        self.btnRecord.clicked.disconnect(self.stopRecording)
+        self.btnRecord.clicked.connect(self.record)
+        self.btnRecordCELMA.setText('Record')
+        self.btnRecordCELMA.clicked.disconnect(self.stopRecording)
+        self.btnRecordCELMA.clicked.connect(self.record)
+
+
     def play(self):
         if self._playing:
             return
         self._playing = True
         self.btnPlay.setText('Stop')
+        self.btnRecord.setVisible(True)
         self.btnPlay.clicked.disconnect(self.play)
         self.btnPlay.clicked.connect(self.stop)
 
@@ -2584,75 +2998,124 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         incr   = self.playIncrement
         for i in range(minimum,maximum,incr):
             slider.setValue(i)
+            if self._record:
+                time = self.dtime[slider.value()]
+                tFileName = os.path.join('recordings',self._recDir,'jsat_T_'+str(time)+'.png')
+                sFileName = os.path.join('recordings',self._recDir,'jsat_S_'+str(time)+'.png')
+                self._tSavePlot.fig.savefig(tFileName, format='png')
+                self._sSavePlot.fig.savefig(sFileName, format='png') 
             if self._stop or i == maximum-1:
                 self.btnPlay.setText('Play')
                 self.btnPlay.clicked.disconnect(self.stop)
                 self.btnPlay.clicked.connect(self.play)
+                self.btnRecord.setVisible(False)
                 self._playing = False
                 self._stop = False
+                self._record = False
                 break
-        pass
 
 
+    def updateCELMAs(self):
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        
+        if not self.CELMAexists or not self.btnCELMAupdate.isVisible():
+            return
+        self.clearCELMAs()
+        self.btnCELMA.setText('Return to profiles')
+        self.createSpatialCELMA()
+
+        _start = self.editCELMAstartTime.text()
+        _end   = self.editCELMAendTime.text()
+        if self.cbTemporalCELMAs.isChecked():
+            for plot in self.getTemporalPlots():
+                self.createTemporalCELMA(plot)
+                self.editCELMAstartTime.setText(_start)
+                self.editCELMAendTime.setText(_end)
+        else:
+            logging.info('Temporal CELMAs not selected (anymore)')
+            logging.info('Resetting axes limits to [{},{}]'\
+                         .format(str(_start),str(_end)))
+            for plot in self.getTemporalPlots():
+                try:
+                    _start = float(str(_start))
+                    _end   = float(str(_end))
+                except:
+                    logging.warning("Could not convert axes limits")
+                    pass
+                else:
+                    plot.axes.set_xlim((_start,_end),emit=False)
+        
+        if not self.multiplePOIs:
+            self.btnPlayCELMA.setVisible(True)
+
+        self.btnCELMAupdate.setVisible(False)
+        QtGui.QApplication.restoreOverrideCursor()
+
+ 
     def toggleCELMAs(self):
         """
         Toggles spatial and tempral CELMAs. Invoked by clicking GUI button
         """
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         if self.CELMAexists:
-            self.btnCELMA.setText('ELM-Average')
-            self.btnCELMAupdate.setVisible(False)
-            self.btnPlayCELMA.setVisible(False)
             self.clearCELMAs()
-            self.activateXtimeSlider()
+            for plot in self.plots:
+                plot.reinstateView()
             self.CELMAexists = False
-            for plot in self.getTemporalPlots():
-                plot.clearPOImarkers()
-                plot._timeUpdtID = plot.canvas.callbacks.connect(
-                                        'xlim_changed',self.updateRange)
-                plot.CELMAexists = False
         else:
-            # Save CELMA start and end times to reinstate them after the CELMAs
-            # have been created. This is necessary since changes of axes limits
-            # sometime during what happens here cause the LineEdits to take
-            # different values.
-            _start = self.editCELMAstartTime.text()
-            _end   = self.editCELMAendTime.text()
-
             self.statusbar.showMessage('Performing coherent ELM averaging on spatial plot')
-            self.btnCELMA.setText('Return to profiles')
             self.deactivateXtimeSlider()
+
+            for plot in self.plots:
+                plot.memorizeView()
+
             self.createSpatialCELMA()
-            if not self.multiplePOIs:
-                self.btnPlayCELMA.setVisible(True)
-            self.CELMAexists = True
 
             if self.cbTemporalCELMAs.isChecked():
-                temporalPlots = self.getTemporalPlots()
-                for plot in temporalPlots:
-                    plot.canvas.callbacks.disconnect(plot._timeUpdtID)
-                for i, plot in enumerate(temporalPlots):
-                    plot.CELMAexists = True
-                    self.statusbar.showMessage(
-                            'Performing coherent ELM averaging on temporal plots'+\
-                            '(plot {} of {})'.format(i,len(temporalPlots)))
-                    self.createTemporalCELMA(plot)
-            self.statusbar.showMessage('Coherent ELM averaging finished successfully.')
+                # Save CELMA start and end times to reinstate them after the CELMAs
+                # have been created. This is necessary since changes of axes limits
+                # sometime during what happens here cause the LineEdits to take
+                # different values.
+                _start = self.editCELMAstartTime.text()
+                _end   = self.editCELMAendTime.text()
 
-            # Reinstate original times
-            self.editCELMAstartTime.setText(_start)
-            self.editCELMAendTime.setText(_end)
+                for plot in self.getTemporalPlots():
+                    plot.canvas.callbacks.disconnect(plot._timeUpdtID)
+                    self.statusbar.showMessage(
+                        'Performing coherent ELM averaging on temporal plots')
+                    self.createTemporalCELMA(plot)
+                    # Reinstate original times
+                    # Each temporal plot will experience a change in xlim and
+                    # therefore change the CELMA time range in the GUI that the
+                    # next plot relies on. The disconnect above this does not
+                    # seem to work
+                    self.editCELMAstartTime.setText(_start)
+                    self.editCELMAendTime.setText(_end)
+
+            if not self.multiplePOIs:
+                self.btnPlayCELMA.setVisible(True)
+                
+            self.btnCELMA.setText('Return to profiles')
+            self.CELMAexists = True
+            self.populateELMtable()
+
+            self.statusbar.showMessage('Coherent ELM averaging finished successfully.')
+        QtGui.QApplication.restoreOverrideCursor()
+
 
 
     def createTemporalCELMA(self, plot):
         settings = self.getCELMAsettings()
         if settings is None:
             print "Error getting CELMA settings"
+            logging.error("Error getting CELMA settings")
             return
 
-        plot.clearCELMA()
+        #plot.clearCELMA()
         plot.hideArtists(exceptFor=plot.POImarkers) 
 
-        mode      = str(self.comboCELMAmode.currentText())
+        #mode      = str(self.comboCELMAmode.currentText())
+        normalize = self.cbCELMAnormalize.isChecked()
         probeName = str(self.comboCELMAprobe.currentText())
         compare   = str(self.comboELMcompare.currentText())
         binning   = self.menuEnableBinning.isChecked()
@@ -2660,57 +3123,80 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         if probeName not in [p.name for p in plot.probes]:
             print "{} does not exist in {} {} plot"\
                     .format(probeName, plot.type, plot.quantity)
+            logging.info("{} does not exist in {} {} plot"\
+                    .format(probeName, plot.type, plot.quantity))
             return
+
+        if normalize:
+           plot.changeTickLabels('percent')
+        else:
+           plot.changeTickLabels('milliseconds')
 
         plot.coherentELMaveraging(
                 *settings, 
                 probe = probeName, 
-                mode = mode, 
+                normalize = normalize,
                 binning = binning, 
-                compare = compare)
+                compare = compare,
+                ignore  = self.ignoreELMs)
+        
+        plot.CELMAexists = True
         plot.indicator.hide()
         plot.axes.relim()
         plot.canvas.draw()
 
 
     def clearCELMAs(self):
+        """ Ends CELMA mode and reinstates normal mode """
         for plot in self.plots:
             plot.clearCELMA()
-            plot.showArtists()
-            plot.viewAll()
             plot.canvas.draw()
+            if plot.type=='temporal':
+                plot.clearPOImarkers()
+                plot._timeUpdtID = plot.canvas.callbacks.connect(
+                                        'xlim_changed',self.updateRange)
+        self.btnCELMAupdate.setVisible(False)
+        self.btnPlayCELMA.setVisible(False)
+        self.btnCELMA.setText('ELM-Average')
+        self.activateXtimeSlider()
 
 
     def plotMaximaDistances(self):
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         try:
             plot = self.getSpatialPlots()[0]
         except IndexError:
             print "ERROR: to assess detachment quality, there has to be "+\
-                    "a spatial plot initialized. Could not find any, though"
+                    "a spatial plot initialized."
+            logging.error("ERROR: to assess detachment quality, there has to be "+\
+                    "a spatial plot initialized.")
             return
 
         settings = self.getCELMAsettings()
         if settings is None:
             print "Error getting settings"
+            logging.error("Error getting CELMA settings")
             return
         start, end, ELMnum = settings
 
         timeData = next((plot.rawdata[key]['time'] for key in plot.rawdata),None)
         timeData = Conversion.removeNans(timeData)
         ind      = np.where((start <= timeData) & (timeData <= end))
-        times    = timeData[ind][::self.Dt]
+        times    = timeData[ind]#[::self.Dt]
         
-        ind      = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end))
+        ind      = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end) 
+                                        & ~np.in1d(self.ELMonsets,self.ignoreELMs))
         ELMstarts= self.ELMonsets[ind][:ELMnum]
-        ELMends  = self.ELMends[ind[:ELMnum]]
-        ELMtoELM = self.ELMtoELM[ind[:ELMnum]]
+        ELMends  = self.ELMends[ind][:ELMnum]
+        ELMtoELM = self.ELMtoELM[ind][:ELMnum]
 
         size = float(len(times))
         positionsRZ = plot.getProbePositions()
         means     = self.radioDistancesMeans.isChecked()
         medians   = self.radioDistancesMedians.isChecked()
         fitting   = self.cbDistancesFitting.isChecked()
-        mode      = self.comboCELMAmode.currentText()
+        #mode      = self.comboCELMAmode.currentText()
+        normalize = self.cbCELMAnormalize.isChecked()
         fitMethod = plot.fitMethod
 
         maximaTimes  = []
@@ -2748,12 +3234,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 fit = plot.findFit(dataToFit, possToFit, method=fitMethod)
                 if fit is None:
                     print "Fitting failed for unknown reason: did not return any data"
+                    logging.critical( "Fitting failed for unknown reason: did not return any data")
                     continue
                 
                 fitx, fity = fit
-                ind = np.where(~np.isnan(fity))
-                fitx = fitx[ind]
-                fity = fity[ind]*scale
+                fitx = fitx[~np.isnan(fity)]
+                fity = fity[~np.isnan(fity)]*scale
                 maxx = fitx[np.argmax(fity)]
                 profilesXdata.append(fitx)
                 profilesYdata.append(fity)
@@ -2767,9 +3253,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             
         if len(maximaValues) == 0:
             print "ERROR: No maxima data to plot"
+            loggin.critical("No maxima data to plot")
             return
         if len(maximaValues) != len(maximaTimes):
             print "ERROR: Maxima data and locations arrays have different sizes"
+            loggin.critical("Maxima data and locations arrays have different sizes")
             return
         maximaTimes = np.array(maximaTimes)
         maximaValues = np.array(maximaValues)
@@ -2783,24 +3271,26 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         axes   = self.popout.currentAxes()
         axes.set_ylabel(ylabel)
         axes.set_xlabel(xlabel)
-        axes.plot(maximaTimes,maximaValues,marker='+')
-        axes.axhline(0,0,1,ls='--',color='black')
+        axes.plot(maximaTimes,maximaValues,
+                    marker='+',label = 'Maximum distance from strikeline')
+        axes.axhline(0,0,1,ls='--',color='black', label = 'Strikeline')
         # Mark ELM durations in time evolution
-        for ton, tend in zip(ELMstarts,ELMends):
-            axes.axvspan(ton,tend,0,1,color='grey',alpha=0.2)
+        for i, (ton, tend) in enumerate(zip(ELMstarts,ELMends)):
+            axes.axvspan(ton,tend,0,1,color='grey',alpha=0.2,
+                        label = 'ELM {} @{:.4}s)'.format(i,ton))
 
         # CELMA of temporal maximum-distance-from-strikeline evolution
         newAx = self.popout.addSubplot()
         for ton, dt in zip(ELMstarts,ELMtoELM):
             ind = np.where((ton <= maximaTimes) & (maximaTimes < ton+dt))
-            if mode == 'Normalize':
-                xlabel = 'Time [%] (Normalized to ELM duration)'
+            if normalize:
+                xlabel = 'ELM duration [%]'
                 t = (maximaTimes[ind] - ton)/dt
-            elif mode == 'Default':
+            else:
                 xlabel = 'Time [s]'
                 t = maximaTimes[ind] - ton
             y = maximaValues[ind]
-            newAx.scatter(t,y)
+            newAx.scatter(t,y, label='ELM {} @{:.4}s)'.format(i,ton))
         ylabel = 'Distance from strikeline (CELMA)'
         newAx.set_ylabel(ylabel)
         newAx.set_xlabel(xlabel)
@@ -2818,8 +3308,22 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             for x, y in zip(profilesXdata, profilesYdata):
                 newAx.scatter(x,y)
 
+        QtGui.QApplication.restoreOverrideCursor()
         self.popout.update()
         self.popout.show()
+
+
+
+class QPlainTextEditLogger(logging.Handler):
+    def __init__(self, parent):
+        super(QPlainTextEditLogger,self).__init__()
+        self.widget = QtGui.QPlainTextEdit(parent)
+        self.widget.setReadOnly(True)    
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.widget.appendPlainText(msg)    
+
 
 
 class ToolFigureCanvas(FigureCanvas):
@@ -2881,6 +3385,7 @@ class FigureWindow(QtGui.QMainWindow):
             self.canvas       = plot.canvas
             self._isBreakout  = True
             self._container   = plot.container
+            self._geometry    = plot.container.geometry()
 
         self.toolbar= NavigationToolbar(self.canvas, self)
 
@@ -2908,6 +3413,7 @@ class FigureWindow(QtGui.QMainWindow):
 
     def _returnFigure(self):
         self._container.addWidget(self.canvas)
+        self._container.setGeometry(self._geometry)
 
 
     def currentAxes(self):
@@ -2945,7 +3451,8 @@ class FigureWindow(QtGui.QMainWindow):
         if type in self._plotTypes:
             self._plotType = type
         else:
-            print "Error unrecognized plotting method passed"
+            print "Error: unrecognized plotting method passed"
+            logging.error("Unrecognized plotting method passed")
         
         
     def feedSettings(self, overrule=False, **kwargs):
@@ -3019,12 +3526,14 @@ class LimitsDialog(QtGui.QDialog):
         start, end = dialog.limits()
         return (start, end, result == QtGui.QDialog.Accepted)
 
+
+
 class ColorPatch(QtGui.QWidget):
     clicked = QtCore.pyqtSignal()
     
     def __init__(self, color):
         super(ColorPatch, self).__init__()
-        self.color = mpl.colors.rgb2hex(color)
+        self.color = QColor(mpl.colors.rgb2hex(color))
 
 
     def mousePressEvent(self, event):
@@ -3039,7 +3548,7 @@ class ColorPatch(QtGui.QWidget):
 
 
     def drawPatch(self, qp):
-        qp.setBrush(QColor(self.color))
+        qp.setBrush(self.color)
         qp.drawRect(10, 10, 50, 10)
 
 
@@ -3048,8 +3557,19 @@ class ColorPatch(QtGui.QWidget):
             rgb   = color
             color = QtGui.QColor()
             color.setRgb(*rgb)
+
+        if type=='mpl':
+            color = QColor(mpl.colors.rgb2hex(color))
+
         self.color = color
         self.update()
+
+
+    def rgb(self):
+        r = self.color.red()
+        g = self.color.green()
+        b = self.color.blue()
+        return (r,g,b)
 
 
 
@@ -3065,9 +3585,7 @@ class Tools():
     
     @staticmethod
     def padToFit(array, n, dummy=np.NAN):
-        if type(array).__name__ != 'ndarray':
-            print "Expected ndarray as first argument, not", type(array).__name__
-            return
+        array = np.array(array)
 
         rest = array.size % n
         if rest != 0:
@@ -3144,6 +3662,7 @@ class Indicator():
         """
         if self.parentAxes is None or self.parentCanvas is None:
             print "Error: invalid parent axes or canvas"
+            logging.critical("Invalid parent axes or canvas")
             return
 
         self.time   = time
@@ -3183,9 +3702,11 @@ class Indicator():
 
         #Plot new indicator if there is none
         else:
-            self.indic      = self.parentAxes.axvline(x=self.time, color=self.color)
+            self.indic      = self.parentAxes.axvline(x=self.time,
+                                color=self.color, label='Current position')
             self.indic_fill = self.parentAxes.axvspan(self.tminus, self.tplus,
-                                                        alpha=0.5, color=self.color)
+                                    alpha=0.5, color=self.color,
+                                    label='Time window used\nfor averaging spatial plot')
             self.parentCanvas.draw()
 
 
@@ -3248,7 +3769,7 @@ class Plot(QObject):
         self.quantity   = quantity
         self.ELMonsets  = gui.ELMonsets
         self.ELMends    = gui.ELMends
-        self.ELMmaxima  = gui.ELMends
+        self.ELMmaxima  = gui.ELMmaxima
         self.ELMtoELM   = gui.ELMtoELM
         self.data       = {}
         self.times      = {}
@@ -3265,6 +3786,7 @@ class Plot(QObject):
         self.fitNum     = 1000
         self.probes     = []
         self.CELMAexists= False
+        self.fits = []
 
         self.fig    = Figure(dpi=self.dpi)
         self.axes   = self.fig.add_subplot(111)
@@ -3278,6 +3800,29 @@ class Plot(QObject):
         self.canvas.optionsClicked.connect(self.toolbar.configure_subplots)
 
         self.axes.get_xaxis().get_major_formatter().set_useOffset(False)
+
+        
+
+    def memorizeView(self):
+        _xlim = self.axes.get_xlim()
+        _ylim = self.axes.get_ylim()
+        self._view = (_xlim,_ylim)
+
+
+    def reinstateView(self):
+        try:
+            _xlim, _ylim = self._view
+        except (AttributeError, RuntimeError):
+            print "ERROR: View has to be memorized before it can be reinstated"
+            logging.critical("ERROR: View has to be memorized before it can be reinstated")
+            return
+
+        self.axes.set_xlim(_xlim)
+        self.axes.set_ylim(_ylim)
+
+        # Delete view to be sure it doesn't linger around and causes unexpected
+        # behavior. It's better to get an error message
+        del self._view
 
 
     def shareWisdom(self, fromAx, toFig, toAx):
@@ -3369,9 +3914,24 @@ class Plot(QObject):
             except ValueError,e:
                 print "Could not remove CELMA {} in {} plot"\
                         .format(CELMA,self.type)
+                logging.error("Could not remove CELMA {} in {} plot"\
+                        .format(CELMA,self.type))
             except AttributeError:
                 pass
+        self.CELMAexists = False
         self.CELMAs = []
+
+        for fit in self.fits:
+            try:
+                fit.remove()
+            except AttributeError:
+                pass
+        self.fits = []
+
+        self.showArtists()
+        if self.type=='temporal':
+            self.changeTickLabels('seconds')
+            self.clearPOImarkers()
 
 
     def updateColors(self):
@@ -3420,12 +3980,22 @@ class Plot(QObject):
             scatter.set_visible(True)
 
 
-    def averagesInBins(self, n, x, y, noZeros=False):
+    def averagesInBins(self, n, x, y, avgMethod=None, noZeros=False):
         """
         Creates `n` bins in which the averages of `x`and `y` are respectively
         calculated. If noZeros is true, averages evaluating to zero will be
         filtered. Expects arrays to be ordered by x
         """
+        if avgMethod is None:
+            avgMethod = self.avgMethod
+
+        try:
+            _avgfunc = getattr(np, avgMethod)
+        except AttributeError:
+            logging.error("Invalid average method. Use a numpy method."+\
+                            " Continuing with np.mean")
+            _avgFunc = np.mean
+            
         x = Conversion.removeNans(x,y)
         y = Conversion.removeNans(y)
 
@@ -3438,14 +4008,16 @@ class Plot(QObject):
             ind = np.where((left <= x) & (x <=right))[0]
             if len(y[ind]) == 0:
                 print "No data points in bin [{},{}]".format(left, right)
+                logging.warn("No data points in bin [{},{}]".format(left, right))
                 avgs[i] = 0
             else:
-                avgs[i] = np.mean(y[ind])
+                avgs[i] = _avgfunc(y[ind])
 
         avgs = avgs[t.argsort()]
         t    = t[t.argsort()]
 
         if len(avgs) == 0:
+            logging.error("No averages found")
             return
 
         if noZeros:
@@ -3461,7 +4033,6 @@ class Plot(QObject):
             reset() since no data is discarded. Axes limits are not retained,
             however.
         """
-        print "Clearing axes for {} {} plot".format(self.type, self.quantity)
         self.axes.clear()
         for legend in self.fig.legends:
             try:
@@ -3527,6 +4098,8 @@ class Plot(QObject):
             except Exception, e:
                 print "Signal {} cannot be read and is skipped. Message: "\
                         .format(signal) + str(e)
+                logging.info("Signal {} cannot be read and is skipped. Message: "\
+                        .format(signal) + str(e))
             else:
                 if probe not in rawdata:
                     rawdata[probe] = {}
@@ -3535,11 +4108,11 @@ class Plot(QObject):
 
                 self.createProbe(probe)
                 print "Successfully read signal", signal
+                logging.info("Successfully read signal {}".format(signal))
                 progress += (30-initProg)/signalNum
                 #self.progressed.emit(progress)
 
         self.probes.sort(key = lambda x: x.name)
-        #self.attributeColorsToProbes()
 
         return rawdata
 
@@ -3578,6 +4151,7 @@ class Plot(QObject):
     def getTimeArray(self, shot=None, timeArrays=None):
         if shot is None and timeArrays is None:
             print "Either shot or an array of time arrays must be provided"
+            logging.critical( "Either shot or an array of time arrays must be provided")
             return
         if timeArrays is None or len(timeArrays) == 0:
             # This will NOT work for LSF since getSignalNames returns an empty
@@ -3592,8 +4166,10 @@ class Plot(QObject):
                         timeArrays.append(shot.getTimeBase(obj))
                     except:
                         print "Failed to retrieve time base for signal", obj
+                        logging.warn("Failed to retrieve time base for signal", obj)
             if len(timeArrays) == 0:
                 print "Failed to find any time arrays for these signals"
+                logging.critical( "Failed to find any time arrays for these signals")
                 return
 
         equal = (np.diff(
@@ -3601,8 +4177,10 @@ class Plot(QObject):
                     ==0).all()
 
         if not equal:
-            print """Warning: time base arrays fetched from shotfile are not
-            equal! Proceed with caution."""
+            print "Warning: time base arrays fetched from shotfile are not"+\
+                    " equal! Proceed with caution."
+            logging.error("Warning: time base arrays fetched from shotfile are not"+\
+                    " equal! Proceed with caution.")
         return timeArrays[0]
 
 
@@ -3647,7 +4225,6 @@ class SpatialPlot(Plot):
                 'jsat': 'j$_{sat}$ [kA/m$^2$]'
                 }
 
-        # Number of data points over which to average
         self.type = 'spatial'
         self.timeRange = []
         self.fits = []
@@ -3657,7 +4234,8 @@ class SpatialPlot(Plot):
         self.zsl = self.gui.zsl
 
         self.strikeline = self.axes.axvline(
-                            0,0,1,ls='--',lw='4',color='grey', alpha=.7)
+                            0,0,1,ls='--',lw='4',color='grey', alpha=.7,
+                            label = 'Strikeline')
         
         self.quantity = quantity
         self.timeArray = self.gui.timeArray
@@ -3666,11 +4244,16 @@ class SpatialPlot(Plot):
         # Set axes labels
         self.axes.set_title("{} distribution on the outer lower target plate".format(quantName))
         self.axes.set_ylabel(self.axLabels[quantity])
-        self.axes.set_xlabel("$\Delta$s [m]")
+        self.axes.set_xlabel("$\Delta$s [cm]")
 
         # Hide axes offsets
         self.axes.yaxis.get_offset_text().set_visible(False)
         self.axes.xaxis.get_offset_text().set_visible(False)
+
+        def centimeter(val, pos):
+            return "{}".format(val*100)
+        fmt = mpl.ticker.FuncFormatter(centimeter)
+        self.axes.xaxis.set_major_formatter(fmt)
         
         if not isinstance(self, CurrentPlot):
             self.shot = gui.LSDshot
@@ -3698,7 +4281,7 @@ class SpatialPlot(Plot):
 
     def coherentELMaveraging(self, start, end, ELMnumber, POIrelative, range,
             unit, marker=None, color=None, multiplePOIs=False, fitting=True,
-            facecolor=None):
+            facecolor=None, ignore=[]):
         """
         Performs an average over a specified amount of ELMs at a point of
         interest relative to the ELM start time
@@ -3719,7 +4302,11 @@ class SpatialPlot(Plot):
         # Filter arrays according to passed values start, end, ELMnum
         # Pad the index array for ELMtoELM so that the (i-1)th element is
         # included in case POIrelative is negative. np.where returns tuple.
-        ind    = np.where((self.ELMonsets>=start) & (self.ELMonsets<=end))
+        ind    = np.where((self.ELMonsets>=start) & (self.ELMonsets<=end) & ~np.in1d(self.ELMonsets,ignore))
+        if len(ind[0]) == 0:
+            print "ERROR: No ELMs in specified range {}s-{}s".format(start,end)
+            logging.critical("No ELMs in specified range {}s-{}s".format(start,end))
+            return
         durInd = np.pad(ind[0], (1,0), 'constant', constant_values = ind[0][0]-1)
         ELMonsets = self.ELMonsets[ind][:ELMnumber]
         ELMtoELM  = self.ELMtoELM[durInd][:ELMnumber+1] 
@@ -3757,8 +4344,7 @@ class SpatialPlot(Plot):
             for vals, locs in zip(data.values(), positions.values()):
                 if len(vals) != len(locs):
                     print "Number of values is not the same as number of locations."
-                    print "\nValues:", len(vals)
-                    print "\nPositions:", len(locs)
+                    logging.critical("Number of values is not the same as number of locations.")
                 data_tot[POIreal].extend(list(vals))
                 positions_tot[POIreal].extend(list(locs))
         
@@ -3782,7 +4368,8 @@ class SpatialPlot(Plot):
             locs = positions_tot[POI]
             scatter = self.axes.scatter(locs, vals, color=color,
                                         alpha=alpha, marker=marker,
-                                        facecolor=facecolor)
+                                        facecolor=facecolor,
+                                        label='POI @{:.4f}s'.format(POI))
             self.CELMAs.append(scatter)
             
             if not multiplePOIs:
@@ -3799,7 +4386,6 @@ class SpatialPlot(Plot):
         if fitting:
             xdata = []
             ydata = []
-            self.fits = []
             for POI, data in data_tot.iteritems():
                 locs = positions_tot[POI]
                 ydata.extend(data)
@@ -3807,7 +4393,6 @@ class SpatialPlot(Plot):
 
             fit = self.plotFit(xdata,ydata,color=color,update=False)
             self.fits.append(fit)
-            self.CELMAs.append(fit)
 
         if not self.fixyLim:
             self.axes.set_xlim(-0.07,0.3)
@@ -3940,7 +4525,13 @@ class SpatialPlot(Plot):
             color = self.fitColor
         fit = self.fit
 
-        xft, yft = self.findFit(xdata, ydata, method)
+        result = self.findFit(xdata, ydata, method)
+        if result is None:
+            print "ERROR: Fit could not be determined"
+            logging.error("Fit could not be determined")
+            return
+
+        xft, yft = result
 
         if not update:
             try:
@@ -3951,8 +4542,10 @@ class SpatialPlot(Plot):
         if hasattr(self, 'fit') and self.fit is not None:
             self.fit.set_xdata(xft)
             self.fit.set_ydata(yft)
+            fit = self.fit
         else:
-            fit, = self.axes.plot(xft, yft, color)
+            fit, = self.axes.plot(xft, yft, color,
+                                    label=method.capitalize()+' fit')
             # This is needed only for when the fit is first initialized: Then
             # self.fit is None and the fit must be attributed to it
             if update:
@@ -3970,7 +4563,7 @@ class SpatialPlot(Plot):
        #     self.canvas.update()
        #     self.canvas.flush_events()
 
-        return self.fit
+        return fit
 
 
     def findFit(self, xdata=None, ydata=None, method=None):
@@ -3993,12 +4586,17 @@ class SpatialPlot(Plot):
             data = np.array(ydata)
 
         if data.size == 0:
-            print "No data"
+            print "No data to fit"
+            logging.error( "No data to fit")
             return
         
         # Sort data from "left to right"
         data = data[locs.argsort()]
         locs = locs[locs.argsort()]
+
+        # This is necessary for scipy curve_fit to work
+        locs = Conversion.removeNans(locs,data)
+        data = Conversion.removeNans(data)
         
         xmin, xmax = (np.min(locs),np.max(locs))
         xft  = np.arange(xmin, xmax, 1/float(self.fitNum))
@@ -4008,8 +4606,12 @@ class SpatialPlot(Plot):
             # large/small values
             scal = np.max(data)
             y    = data/scal
-            ft   = FitFunctions.fit(locs, y)
-            yft  = FitFunctions.eich_model(xft, *ft)
+            try:
+                ft   = FitFunctions.fit(locs, y)
+                yft  = FitFunctions.eich_model(xft, *ft)
+            except RuntimeError:
+                logging.error("Could not find fit parameters")
+                return
             yft *= scal
            
         #elif method == 'Linear':
@@ -4026,6 +4628,7 @@ class SpatialPlot(Plot):
 
         else:
             print "Unrecognized fit method", method
+            logging.error("Unrecognized fit method", method)
             return
         return xft, yft
 
@@ -4079,17 +4682,20 @@ class SpatialPlot(Plot):
                     self.realtmax = dtime[-1]
                     print("Maximum value of time range to evaluate is out " +\
                             "of range. Using maximum of available time range.")
+                    logging.warning("Maximum value of time range to evaluate is out " +\
+                            "of range. Using maximum of available time range.")
                 try:
                     self.realtime = dtime[time]
-                except Exception:
+                except IndexError:
                     print "Could not determine realtime from time array"
+                    logging.warning( "Could not determine realtime from time array")
                     if time >= dtime.size: 
                         self.realtime = dtime[-1]
-                        print "Choosing last time point worked"
                     elif time < dtime.size: 
                         self.realtime = dtime[0]
-                        print "Choosing first time point worked"
-                    else: print("FATAL: Realtime could not be determined.")
+                    else: 
+                        print("FATAL: Realtime could not be determined.")
+                        logging.critical("Realtime could not be determined!")
                 
                 # Filter for time range. 
                 ind = np.ma.where((dtime >= self.realtmin) & (dtime <= self.realtmax))
@@ -4114,22 +4720,24 @@ class SpatialPlot(Plot):
 
         n = self.avgNum
         for probeName, probeData in data.iteritems():
-            locations = positions[probeName]
-            probeData = Tools.padToFit(probeData, n, np.NAN)
+            probePositions = positions[probeName]
             # Ignore nans if wished. Ignoring will ensure plot points to be
             # plotted even if one or more of its data points are NaNs
             if self.ignoreNans:
                 # NaN filtering must occur before averaging instead of using
                 # nanmean or location will not know which values got filtered
                 # by nanmean
-                locations = Conversion.removeNans(locations, probeData)
+                probePositions = Conversion.removeNans(probePositions, probeData)
                 probeData = Conversion.removeNans(probeData)
             else:
-                locations = np.array(locations)
+                probePositions = np.array(probePositions)
                 probeData = np.array(probeData)
+
+            probePositions = Tools.padToFit(probePositions, n, np.NAN)
+            probeData = Tools.padToFit(probeData, n, np.NAN)
             
             data[probeName]      = probeData.reshape(-1,n).mean(axis=1)
-            positions[probeName] = locations.reshape(-1,n).mean(axis=1)
+            positions[probeName] = probePositions.reshape(-1,n).mean(axis=1)
             
         ## Averaging
         #for probe, data in data.iteritems():
@@ -4242,6 +4850,11 @@ class SpatialPlot(Plot):
                             to {} in the respective shot file data but the\
                             found values for R and z don\'t match! Data\
                             evaluation will not be reliable.')
+                    logging.critical('\n\nTried to find timestamps of\
+                            strikeline R and z measurements at times closest\
+                            to {} in the respective shot file data but the\
+                            found values for R and z don\'t match! Data\
+                            evaluation will not be reliable.')
 
                 # Calculate delta-s
                 # Assumption: divertor tile is flat
@@ -4280,7 +4893,8 @@ class SpatialPlot(Plot):
                 color = self.defaultColor
 
             # Plot
-            self.scatters[probeName] = self.axes.scatter(x, y, color=color)
+            self.scatters[probeName] = self.axes.scatter(x, y, color=color,
+                                                            label=probeName)
 
             probe = next((p for p in self.probes if p.name == probeName), None)
             probe.setPlotted(self.canvas, True)
@@ -4396,7 +5010,7 @@ class SpatialPlot(Plot):
 
         # Re-draw everything if axes are not fixed
         else:
-            plot, = self.axes.plot(xtot,ytot)
+            plot, = self.axes.plot(xtot,ytot, label='Dummy for rescaling')
             self.axes.relim()
             self.axes.autoscale()
             self.axes.set_xlim(-0.07,0.3)
@@ -4446,14 +5060,32 @@ class TemporalPlot(Plot):
         self.CELMAcolor     = config['CELMA']['color']
         self.CELMAavgColor = config['CELMA']['averagedCurveColor']
         self.CELMAmarker    = config['CELMA']['marker']
+        self.avgMethod      = config['CELMA']['avgMethod']
+        self.CELMAnormalize = False
         self.type      = 'temporal'
         self.ELMmarkers= {}
         self.shot      = gui.LSDshot
         self.POImarkers = []
+        self._reinstateAxesLabels = False
 
         # Set axes labels
         self.axes.set_ylabel(self.axTitles[self.quantity])
-        self.axes.set_xlabel('Time [s]')
+
+        self.changeTickLabels('seconds')
+        #self.fig.canvas.mpl_connect('pick_event', self.showAnnotation)
+
+
+    #def showAnnotation(self, event):
+    #    artist = event.artist
+    #    for marker in self.POImarkers:
+    #        if marker.contains(event)[0]:
+    #            label  = artist.get_label()
+    #            x = event.xdata
+    #            y = event.ydata
+
+    #            self.axes.annotate(label, xy=(x,y), xytext=(10,10),
+    #                                textcoords='offset points')
+
 
 
     def init(self, time, range):
@@ -4517,7 +5149,6 @@ class TemporalPlot(Plot):
         Rescales yaxis to better resolve data and keep all lines completely
         visible in y-direction if TemporalPlot.rescaling is True.
         """
-        #print "Rescaling", self.quantity
         if self.rescaling:
             xmin, xmax = self.axes.xaxis.get_view_interval()
             data = []
@@ -4562,6 +5193,7 @@ class TemporalPlot(Plot):
 
         n = self.avgNum
         print "Averaging temporal data over {} adjacent values".format(n)
+        logging.info("Averaging temporal data over {} adjacent values".format(n))
         for probeName in data:
             #########################################
             # Add ignoreNans check
@@ -4571,6 +5203,29 @@ class TemporalPlot(Plot):
             time[probeName] = time[probeName].reshape(-1,n).mean(axis=1)
 
         return data, time
+
+
+    def changeTickLabels(self, unit):
+        if unit == 'seconds':
+            def seconds(val, loc):
+                return "{}s".format(val)
+            fmt = mpl.ticker.FuncFormatter(seconds)
+            self.axes.xaxis.set_major_formatter(fmt)
+            self._reinstateAxesLabels = False
+
+        elif unit == 'milliseconds':
+            def milliseconds(val, loc):
+                return "{}ms".format(val*1000)
+            fmt = mpl.ticker.FuncFormatter(milliseconds)
+            self.axes.xaxis.set_major_formatter(fmt)
+            self._reinstateAxesLabels = False
+
+        elif unit == 'percent':
+            def percent(val, loc):
+                return "{}%".format(val*100)
+            fmt = mpl.ticker.FuncFormatter(percent)
+            self.axes.xaxis.set_major_formatter(fmt)
+            self._reinstateAxesLabels = True
 
 
     def updateAveraging(self, avgNum):
@@ -4587,9 +5242,11 @@ class TemporalPlot(Plot):
             showGaps = self.showGaps
         if len(self.data) == 0:
             print "Error: No data to update"
+            logging.critical( "Error: No data to update")
             return
         if len(self.probes) == 0:
             print "Error: No probes to update"
+            logging.critical( "Error: No probes to update")
             return
 
         visible = False
@@ -4616,13 +5273,14 @@ class TemporalPlot(Plot):
                 x = self.times[probeName]
 
                 # Filter NaNs if wished
-                if self.showGaps == False:
+                if showGaps == False:
                    x = Conversion.removeNans(x,y) 
                    y = Conversion.removeNans(y) 
 
                 # Plot data
                 color = probe.color
-                plot, = self.axes.plot(x,y, color=color, marker=marker)
+                plot, = self.axes.plot(x,y, color=color, marker=marker,
+                                        label=probeName)
                 
                 probe.setPlotted(self.canvas, True)
                 probe.setVisible(self.canvas, True)
@@ -4653,13 +5311,16 @@ class TemporalPlot(Plot):
         ylim = self.axes.get_ylim()
 
 
-    def coherentELMaveraging(self, start, end, ELMnum, probe, mode, color=None,
+    def coherentELMaveraging(self, start, end, ELMnum, probe, normalize=None, color=None,
                             avgColor=None, alpha=None, binning=False,
                             binNumber=None, compare=None, marker=None,
-                            pad=None):
+                            pad=None, ignore=[], avgMethod=None):
         print "\nELM-synchronizing temporal {} signal".format(self.quantity)
+        logging.info("\nELM-synchronizing temporal {} signal".format(self.quantity))
         print "From {}s to {}s".format(start,end)
+        logging.info("From {}s to {}s".format(start,end))
         print "Taking at most {} ELMs into account".format(ELMnum)
+        logging.info("Taking at most {} ELMs into account".format(ELMnum))
 
         if pad is None:
             pad = self.CELMApad
@@ -4674,6 +5335,8 @@ class TemporalPlot(Plot):
             marker = self.CELMAmarker
         if avgColor is None:
             avgColor = self.CELMAavgColor
+        if normalize is None:
+            normalize = self.CELMAnormalize
 
         time = np.array(self.times[probe])
         data = np.array(self.data[probe])
@@ -4684,14 +5347,18 @@ class TemporalPlot(Plot):
 
         ### Finding ELM times in range
         # Filter arrays according to passed values start, end, ELMnum
-        ind    = np.where((self.ELMonsets>=start) & (self.ELMonsets<=end))[0][:ELMnum]
+        ind    = np.where((self.ELMonsets>=start) & (self.ELMonsets<=end) & ~np.in1d(self.ELMonsets,ignore))[0][:ELMnum]
+        if len(ind) == 0:
+            print "ERROR: No ELMs in specified range {}s-{}s".format(start,end)
+            logging.critical("No ELMs in specified range {}s-{}s".format(start,end))
+            return
         ELMonsets = self.ELMonsets[ind]
         ELMtoELM  = self.ELMtoELM[ind]
         ELMends   = self.ELMends[ind]
         ELMmaxima = self.ELMmaxima[ind]
 
-        print "Found ELM onsets:", ELMonsets
-        print "Found ELM durations:", ELMtoELM
+        #print "Found ELM onsets:", ELMonsets
+        #print "Found ELM durations:", ELMtoELM
 
         if compare == 'Start':
             shiftArray = ELMonsets
@@ -4700,20 +5367,23 @@ class TemporalPlot(Plot):
         elif compare == 'Maximum':
             shiftArray = ELMmaxima
         else:
-            print "Unknown compare mode. Synchronizing by ELM start"
+            print "Unknown compare mode {}. Synchronizing by ELM start".format(compare)
+            logging.warning("Unknown compare mode {}. Synchronizing by ELM start".format(compare))
             shiftArray = ELMonsets
 
         dataTotal = []
         timeTotal = []
         i = 0
-        for ton, dt, shift in zip(ELMonsets, ELMtoELM, shiftArray):
+        for i, (ton, dt, shift) in enumerate(zip(ELMonsets, ELMtoELM, shiftArray)):
             ind = np.where((ton-dt - pad <= time) & (time <= ton+dt + pad))[0]
-            if mode == 'Default':
-                timeELM = time[ind] - shift
-            elif mode == 'Normalize':
+            if normalize:
                 timeELM = (time[ind] - shift)/dt
+            else:
+                timeELM = time[ind] - shift
             dataELM = data[ind]
-            scatter = self.axes.scatter(timeELM,dataELM, marker=marker, color=color, alpha=alpha)
+            scatter = self.axes.scatter(timeELM,dataELM, marker=marker, 
+                                        color=color, alpha=alpha,
+                                        label='ELM {} @{:.4f}s'.format(i,ton))
             self.CELMAs.append(scatter)
 
             dataTotal.extend(list(dataELM))
@@ -4724,22 +5394,16 @@ class TemporalPlot(Plot):
 
         if len(timeTotal) == 0 and len(dataTotal) == 0:
             print "ERROR: Retreived ELM data or time arrays contain no data"
+            logging.critical("ERROR: Retreived ELM data or time arrays contain no data")
             return
-        # This check doesn't make a lot of sense since the arrays they were
-        # created from must have been of the same length since plotting them
-        # succeeded.
-        #if len(timeTotal) != len(dataTotal):
-        #    print "ERROR: Retreived ELM data and time arrays do not have "+\
-        #            "equal lengths."
-        #    return
         
         if binning:
-            result = self.averagesInBins(binNumber, timeTotal, dataTotal)
+            result = self.averagesInBins(binNumber, timeTotal, dataTotal, avgMethod)
             if result is not None:
                 t, avgs = result
 
                 self.CELMAs.append(
-                        self.axes.plot(t,avgs,color=avgColor)[0])
+                        self.axes.plot(t,avgs,color=avgColor,label='Linear fit')[0])
 
         self.axes.set_xlim(min(timeTotal), max(timeTotal))
         self.axes.set_ylim(min(dataTotal), max(dataTotal))
@@ -4796,6 +5460,7 @@ class CurrentPlot(Plot):
         
         if not hasMapping:
             print "No mapping found"
+            logging.critical("No mapping found")
             return
 
         shot = self.shot
@@ -4815,12 +5480,15 @@ class CurrentPlot(Plot):
                                     " @channel {} ({}), {} ({}): {}".format(channel,
                                             type(channel), ind, type(ind),
                                             str(e))
+                            logging.warn("Could not retrieve LSF data for probe {}".format(probe)+\
+                                    " @channel {} ({}), {} ({}): {}".format(channel,
+                                            type(channel), ind, type(ind),
+                                            str(e)))
 
                         self.createProbe(probe)
                         timeArrays.append(shot(channel).time)
 
         self.probes.sort(key = lambda x: x.name)
-        #self.attributeColorsToProbes()
         self.timeArray = self.getTimeArray(timeArrays=timeArrays)
         return rawdata
 
@@ -4839,6 +5507,7 @@ class CurrentPlot(Plot):
                     channel, ind = info.split('_')
                 except:
                     print "Could not retrieve LSC data for probe", probe
+                    logging.warn("Could not retrieve LSC data for probe {}".format(probe))
                 else:
                     # Actual LSC data starts with 'ch' while shotfile object
                     # names start with 'CH'.
@@ -4857,6 +5526,7 @@ class CurrentPlot(Plot):
         file not available. 
         """
         print "\n++++++++++++++++ Getting mappings +++++++++++++++++++++++++\n"
+        logging.info("\n++++++++++++++++ Getting mappings +++++++++++++++++++++++++\n")
 
         # Try to get mapping from LSC shotfile
         if self.gui.menuUseLSC.isChecked():
@@ -4864,8 +5534,9 @@ class CurrentPlot(Plot):
 
         if len(self.map) == 0:
             print "Trying to get mapping from text file"
+            logging.info("Getting mapping from text file {}"\
+                        .format(self.mapFilePath))
             # File load dialog if mapFilePath was set to None during runtime
-            print self.mapFilePath
             specified = self.mapFilePath != ''
             exists = os.path.isfile(self.mapFilePath)
             if self.mapFilePath is None or not specified or not exists:
@@ -4894,6 +5565,8 @@ class CurrentPlot(Plot):
                     except:
                         print "Failed to read probe-channel mapping file" +\
                                 " {} at line {}: {}".format(self.mapFilePath, i, line)
+                        logging.error("Failed to read probe-channel mapping file" +\
+                                " {} at line {}: {}".format(self.mapFilePath, i, line))
                         break
             
                     # If channel doesn't start with "CH", add the prefix so LSF
@@ -4911,15 +5584,21 @@ class CurrentPlot(Plot):
                         probe = probe[1:].lower()
                         print "Found Isat for probe {} on channel {}-{}"\
                                 .format(probe,channel, ind)
+                        logging.info("Found Isat for probe {} on channel {}-{}"\
+                            .format(probe,channel, ind))
                         self.map[probe] = (channel, ind)
         
         if len(self.map) > 0:
             #print "\n\nProbe mappings:"
             #for probe in self.map:
             #    print "Probe: {:5s}Channel: {}".format(probe,self.map[probe])
+            logging.info( "\n\nProbe mappings:")
+            for probe in self.map:
+                logging.info("Probe: {:5s}Channel: {}".format(probe,self.map[probe]))
             return True
         else:
             print "Failed to get probe-channel mapping. jsat will not be plotted"
+            logging.critical( "Failed to get probe-channel mapping. jsat will not be plotted")
             return False
 
 
@@ -4928,9 +5607,11 @@ class CurrentPlot(Plot):
         calibrate = self.gui.menuCalibrateJsat.isChecked()
         if not calibrate:
             #print "\n++++ JSAT NOT CALIBRATED ++++\n --> Activate calibration in GUI"
+            logging.warning("\n++++ JSAT NOT CALIBRATED ++++\n")
             return
 
         print "\nCalibrating data"
+        logging.info( "\nCalibrating data")
         if len(self.calib) == 0:
             self.getCalibrations()
 
@@ -4940,6 +5621,8 @@ class CurrentPlot(Plot):
             if l*w == 0:
                 print "Caution! Invalid dimensions for probe {}.".format(probe)+\
                         " No calibration possible."
+                logging.error("Caution! Invalid dimensions for probe {}.".format(probe)+\
+                        " No calibration possible.")
                 continue
             rawdata[probe]['data'] = data/(l*w)
         
@@ -4948,6 +5631,7 @@ class CurrentPlot(Plot):
 
     def getCalibrationsFromShotfile(self):
         print "Getting calibrations from shotfile..."
+        logging.info( "Getting calibrations from shotfile...")
         shot = self.LSCshot
         for obj in shot.getObjectNames().values():
             probeInLSF = obj in [p.name for p in self.probes]
@@ -4959,6 +5643,7 @@ class CurrentPlot(Plot):
                 except:
                     print "Could not retrieve geometry of probe {} from LSC".format(probe)
                     print "Aborting"
+                    logging.critical("Could not retrieve geometry of probe {} from LSC".format(probe))
                     return False
 
                 self.calib[probe] = (float(l), float(w))
@@ -4983,6 +5668,10 @@ class CurrentPlot(Plot):
         #print "\n\nProbe dimensions:"
         #for probe in self.calib:
         #    print "Probe: {:5s} Geometry: {}".format(probe,self.calib[probe])
+        logging.info("\n\nProbe dimensions:")
+        for probe in self.calib:
+            logging.info("Probe: {:5s} Geometry: {}".format(probe,self.calib[probe]))
+
         return self.calib
 
 
