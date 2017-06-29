@@ -7,4 +7,5 @@ Results
 Poster*
 test*
 recordings
-profile.log
+*.log
+changeLog.txt

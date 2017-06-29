@@ -499,7 +499,7 @@
                </size>
               </property>
               <property name="currentIndex">
-               <number>4</number>
+               <number>0</number>
               </property>
               <property name="tabsClosable">
                <bool>false</bool>
@@ -1540,6 +1540,7 @@
       <string>Fitting</string>
      </property>
      <addaction name="menuFit"/>
+     <addaction name="menuDetachedFit"/>
      <addaction name="menuFitEvaluationPoints"/>
      <addaction name="menuFitColor"/>
      <addaction name="separator"/>
@@ -2135,6 +2136,17 @@
   <action name="menuRecord">
    <property name="text">
     <string>Record</string>
+   </property>
+  </action>
+  <action name="menuDetachedFit">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Consider detachment</string>
+   </property>
+   <property name="toolTip">
+    <string>Introduces extra free parameter to shift the fit according to an estimate of the current detachment quality</string>
    </property>
   </action>
  </widget>

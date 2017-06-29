@@ -135,7 +135,8 @@ class Probe():
         self._plotted = {}
         self._visible = {}
         self._selected = {}
-        self.color = None
+        self.color = (0,0,0)
+        self.CELMA = False
 
 
     def __str__(self):
@@ -443,6 +444,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self._stop = False
         self._playing = False
         self._record = False
+        self.voltageNames = {
+                'Vfl-Vrf': '8',
+                'Vpos-Vfl': '1',
+                'Vneg-Vpos': '2'}
 
         # Set up UI
         self.setupUi(self)
@@ -1218,20 +1223,26 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         for plot in self.plots:
             for probeName, color in zip(probeNames, colors):
+                # Find probe with this name
                 probe = next((p for p in plot.probes 
                                 if p.name == probeName), None)
                 if probe is None:
-                    #print "Probe {} does not exist in ".format(probeName)+\
-                    #        "{} {} plot.".format(plot.type, plot.quantity)
                     logging.info("Probe {} does not exist in ".format(probeName)+\
                                  "{} {} plot.".format(plot.type, plot.quantity))
+                    continue
+                # Allow for default color
+                if probeName in self.defaultProbeColors:
+                    probe.color = self.defaultProbeColors[probeName]
                     continue
                 color       = tuple(color)[:-1]
                 probe.color = color
             plot.updateColors()
                 
         for probeName, color in zip(probeNames,colors):
-            self.probeColors[probeName] = color
+            # Do not overwrite default colors. Otherwise they cannot be applied
+            # next time the plots are reloaded (see switchxPlot or toggleLSC)
+            if probeName not in self.defaultProbeColors:
+                self.probeColors[probeName] = color
 
 
     def clearPlots(self):
@@ -1251,7 +1262,22 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.clearCELMAs()
         self.CELMAexists = False
         self.patches = {}
-        self.probeColors = {}
+        self.probeColors = self.config['Application']['probeColors']
+        try:
+            self.probeColors = eval(self.probeColors)
+        except SyntaxError:
+            logging.info("No or invalid probe colors specified in config file: {}"\
+                            .format(self.probeColors))
+            self.probeColors = {}
+        else:
+            for probe, color in self.probeColors.iteritems():
+                self.probeColors[probe] = [el/255. for el in color]
+            logging.info("Colors loaded from config file:")
+            logging.info(self.probeColors)
+        # Save as default colors so they are not overwritten when reloading
+        # plots (see attributeProbeColors)
+        self.defaultProbeColors = self.probeColors
+            
         self.ignoreELMs = []
         self.clearPlots()
 
@@ -1353,6 +1379,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.menuAutoscaling.triggered.connect(self.toggleRescaling)
                 self.menuFitEvaluationPoints.triggered.connect(self.setFitPoints)
                 self.menuFitColor.triggered.connect(self.setFitColor)
+                self.menuDetachedFit.triggered.connect(self.changeFitDetachment)
                 self.menuFit.triggered.connect(
                         functools.partial(self.toggleFit, 'spatial'))
                 self.menuFitMethodEich.triggered.connect(
@@ -1394,7 +1421,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.btnZoom.clicked.connect(self.activateZoom)
 
                 self.btnFindMaximaDistances.clicked.connect(self.plotMaximaDistances)
-                self.btnTdivNbar.clicked.connect(self.createTNplot)
+                #self.btnTdivNbar.clicked.connect(self.createTNplot)
 
             self.statusbar.showMessage('Shot was fully loaded', 5000)
             logging.info( "\n\n+++++++++++++++++ ALL DONE! ++++++++++++++++++\n\n")
@@ -1435,7 +1462,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             attr = getattr(plot,attr) 
             attr = cb.isChecked()
         self.showCELMAupdateButton()
-        
 
 
     def reload(self):
@@ -1481,6 +1507,56 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def showShotUpdateButton(self):
         self.btnShotUpdate.setVisible(True)
+
+    
+    def getProbeVoltages(self):
+        shot = self.LSFshot
+        map  = self.getVoltageMapping()
+        data = {}
+        time = {}
+        for objName in shot.getObjectNames().values():
+            if objName.startswith('CH'):
+                for probe, (channel, ind) in map.iteritems():
+                    if channel == objName:
+                        try:
+                            data[probe] = shot(channel).data[ind]
+                            time[probe] = shot(channel).time
+                        except TypeError, e:
+                            print "Could not retrieve voltage data for probe {}".format(probe)+\
+                                    " @channel {} ({}), {} ({}): {}".format(channel,
+                                            type(channel), ind, type(ind),
+                                            str(e))
+                            logging.warn("Could not retrieve voltage data for probe {}".format(probe)+\
+                                    " @channel {} ({}), {} ({}): {}".format(channel,
+                                            type(channel), ind, type(ind),
+                                            str(e)))
+        return time, data
+
+
+    def getVoltageMapping(self):
+        shot = self.LSCshot
+        map = []
+        for vname,i in self.voltageNames.iteritems():
+            signalName = 'ZSV' + i
+            for obj in shot.getObjectNames().values():
+                if obj.startswith(self.region):
+                    probe = obj
+                    data = shot(obj)[signalName].data 
+                    info = ''.join([el for el in data if el.split() != []])
+                    try:
+                        channel, ind = info.split('_')
+                    except:
+                        logging.warn("Could not retrieve LSC data for probe {}".format(probe))
+                    else:
+                        # Actual LSC data starts with 'ch' while shotfile object
+                        # names start with 'CH'.
+                        channel = 'CH' + channel[2:]
+                        # Indices are saved as numbers 1-6 but must serve as
+                        # indexes 0-5
+                        ind = int(ind) - 1
+                        map[probe] = (channel, ind)
+        return map
+
 
 
     def showCELMAupdateButton(self):
@@ -1754,7 +1830,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.editCELMAstartTime.setText("{:.6f}".format(limits[0]))
         self.editCELMAendTime.setText("{:.6f}".format(limits[1]))
         
-            
 
     def setSliderRange(self, limits):
         """ Sets the time slider range corresponding to the time range in the temporal plot. """
@@ -1832,7 +1907,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.statusbar.showMessage('Window width not valid', 3000)
 
 
-    
     def setTemporalAvgNum(self):
         currAvgNum = next((p.avgNum for p in self.plots 
                                         if p.type=='temporal'),None)
@@ -2007,6 +2081,37 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     plot.type.capitalize() + ' ' + plot.quantity.upper())
             table.setVerticalHeaderItem(rowPos, item)
 
+            ## Add Tdiv, Nbar, V
+            #for label,color in [('Tdiv','b'),('Nbar','r'),('V','g')]:
+            #    # Insert new column and color patch only if probeName is not in
+            #    # HorizontalHeaderLabel.
+            #    inHeader = False
+            #    for j in range(table.columnCount()):
+            #        headerText = str(table.horizontalHeaderItem(j).text())
+            #        if label == headerText:
+            #            colPos = j
+            #            inHeader = True
+            #            break
+            #    if not inHeader:
+            #        colPos = table.columnCount()
+            #        table.insertColumn(colPos)
+
+            #        patch = ColorPatch(color) 
+            #        patch.clicked.connect(
+            #                functools.partial(self.changeCompareColor, patch, label))
+            #        table.setCellWidget(0, colPos, patch)
+            #        self.patches[label] = patch
+
+            #    item = QtGui.QTableWidgetItem(label)
+            #    table.setHorizontalHeaderItem(colPos, item)
+
+            #    cb = QtGui.QCheckBox()
+            #    cb.setTristate(False)
+            #    cb.stateChanged.connect(
+            #            functools.partial(self.toggleCompare, cb, label, plot.type, plot.quantity))
+            #    table.setCellWidget(i+1, colPos, cb)
+
+            # Add probes
             for probe in plot.probes:
                 probeName = probe.name
                 color     = probe.color
@@ -2051,7 +2156,81 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                         functools.partial(self.togglePlots, cb, probe, type, quantity))
 
                 table.setCellWidget(i+1, colPos, cb)
+        
+        rowPos = table.rowCount()
+        table.insertRow(rowPos)
+        item = QtGui.QTableWidgetItem('Temporal CELMA')
+        table.setVerticalHeaderItem(rowPos, item)
 
+        # This will take the probes from the next best plot. Not all plots
+        # necessarily have the same probes. This might provide too many/too
+        # little probes
+        probes = next((p.probes for p in self.getTemporalPlots()),None)
+        for probe in probes:
+            # It is pretty certain this probe is already somewhere in the
+            # header. If not, something went wrong with populating the header
+            for j in range(table.columnCount()):
+                headerText = str(table.horizontalHeaderItem(j).text())
+                if probe.name == headerText:
+                    colPos = j
+                    break
+            cb = QtGui.QCheckBox()
+            cb.setTristate(False)
+            cb.stateChanged.connect(
+                    functools.partial(self.markProbeForCELMA, cb, probe.name))
+            table.setCellWidget(rowPos,colPos,cb)
+
+
+    #def toggleProbeVoltage(self, probe, vType):
+    #    time, data = self.voltages[probe.name][vType]
+
+    #    for plot in self.getTemporalPlots():
+    #        if cb.isChecked():
+    #            if probe.name + vType not in plot._showing:
+    #                if plot.compareAx is not None:
+    #                    plot.removeCompareAxes()
+    #                plot.createCompareAxes()
+    #            plot.addComparePlot(time,data,color)
+    #            plot.showing[probe.name+vType] = True
+    #        else:
+    #            if probe.name + vType in plot._showing:
+    #                plot.removeCompareAxes()
+    #            del plot.showing[probe.name+vType]
+
+
+    #def toggleCompare(self, cb, label, type, quantity):
+    #    plot = next((p for p in self.getTemporalPlots() 
+    #                        if p.type==type and p.quantity==quantity), None)
+    #    if plot is not None:
+    #        if cb.isChecked():
+    #            color = self.comparePlotColors[label]
+    #            time, data = self.compareData[label]
+    #            plot.createCompareAxes(time, data, color)
+    #        else:
+    #            plot.removeCompareAxes()
+    #            self.comparePlot.remove()
+    #            self.compareAx.remove()
+    #
+
+    #def changeCompareColor(self, patch, label):
+    #    # Choose new color
+    #    dialog = QtGui.QColorDialog()
+    #    dialog.setWindowState(dialog.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+    #    dialog.activateWindow()
+    #    color = dialog.getColor()
+    #    if not QColor.isValid(color):
+    #        return
+
+    #    # Conversion to matplotlib-compatible rgb value
+    #    red = color.red()/255.
+    #    blue = color.blue()/255.
+    #    green = color.green()/255.
+    #    rgb = (red,green,blue)
+
+    #    patch.setColor(color)
+    #    self.comparePlot.set_color(rgb)
+    #    self.comparePlotColors[label] = rgb
+                    
 
     def populateCELMAprobeCombo(self):
         """
@@ -2794,6 +2973,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 "E-mail: amazigh.zerzour@gmail.com ")
 
 
+    def changeFitDetachment(self):
+        for plot in self.getSpatialPlots():
+            plot.detachedFit = self.menuDetachedFit.isChecked()
+            plot.plotFit()
+
+
     def savexPlot(self):
         """ Saves spatial plot figures. """
         for p in self.getSpatialPlots():
@@ -3103,6 +3288,21 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         QtGui.QApplication.restoreOverrideCursor()
 
 
+    def markProbeForCELMA(self, cb, probeName):
+        """
+        Callback function that sets probe attribute `CELMA` to True if the
+        according checkbox has been clicked and checked. createTemporalCELMA()
+        relies on this attribute.
+        """
+        for plot in self.plots:
+            for probe in plot.probes:
+                if probe.name == probeName:
+                    if cb.isChecked():
+                        print "Marking probe {} for CELMA".format(probeName)
+                        probe.CELMA = True
+                    else:
+                        probe.CELMA = False
+
 
     def createTemporalCELMA(self, plot):
         settings = self.getCELMAsettings()
@@ -3111,34 +3311,40 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             logging.error("Error getting CELMA settings")
             return
 
-        #plot.clearCELMA()
         plot.hideArtists(exceptFor=plot.POImarkers) 
 
-        #mode      = str(self.comboCELMAmode.currentText())
         normalize = self.cbCELMAnormalize.isChecked()
-        probeName = str(self.comboCELMAprobe.currentText())
+        #probeName = str(self.comboCELMAprobe.currentText())
+        probes = [p for p in plot.probes if p.CELMA]
         compare   = str(self.comboELMcompare.currentText())
         binning   = self.menuEnableBinning.isChecked()
-
-        if probeName not in [p.name for p in plot.probes]:
-            print "{} does not exist in {} {} plot"\
-                    .format(probeName, plot.type, plot.quantity)
-            logging.info("{} does not exist in {} {} plot"\
-                    .format(probeName, plot.type, plot.quantity))
-            return
 
         if normalize:
            plot.changeTickLabels('percent')
         else:
            plot.changeTickLabels('milliseconds')
 
-        plot.coherentELMaveraging(
-                *settings, 
-                probe = probeName, 
-                normalize = normalize,
-                binning = binning, 
-                compare = compare,
-                ignore  = self.ignoreELMs)
+        for probe in probes:
+            probeName = probe.name
+            color     = probe.color
+            if probeName not in [p.name for p in plot.probes]:
+                print "{} does not exist in {} {} plot"\
+                        .format(probeName, plot.type, plot.quantity)
+                logging.info("{} does not exist in {} {} plot"\
+                        .format(probeName, plot.type, plot.quantity))
+                return
+
+            plot.coherentELMaveraging(
+                    *settings, 
+                    probe = probeName, 
+                    normalize = normalize,
+                    binning = binning, 
+                    compare = compare,
+                    color = color,
+                    avgColor = color,
+                    lw = 3,
+                    alpha = 0.4,
+                    ignore  = self.ignoreELMs)
         
         plot.CELMAexists = True
         plot.indicator.hide()
@@ -3231,7 +3437,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if fitting:
                 scale = max(dataToFit)
                 dataToFit = [el/scale for el in dataToFit]
-                fit = plot.findFit(dataToFit, possToFit, method=fitMethod)
+                time = self.dtime[self.xTimeSlider.value()]
+                fit = plot.findFit(time, dataToFit, possToFit, method=fitMethod)
                 if fit is None:
                     print "Fitting failed for unknown reason: did not return any data"
                     logging.critical( "Fitting failed for unknown reason: did not return any data")
@@ -3341,11 +3548,11 @@ class ToolFigureCanvas(FigureCanvas):
         #saveMenu = QtGui.QMenu()
 
         menu.addAction('Save plot', self.saveClicked.emit)
-        menu.addAction('Save all temporal plots', 
-            functools.partial(self.collectiveSaveClicked.emit, 'temporal'))
-        menu.addAction('Save all plots',
-                functools.partial(self.collectiveSaveClicked.emit, 'all'))
-        menu.addSeparator()
+        #menu.addAction('Save all temporal plots', 
+        #    functools.partial(self.collectiveSaveClicked.emit, 'temporal'))
+        #menu.addAction('Save all plots',
+        #        functools.partial(self.collectiveSaveClicked.emit, 'all'))
+        #menu.addSeparator()
         #menu.addMenu(saveMenu)
         menu.addAction('Edit line and axes properties', self.editClicked.emit)
         menu.addAction('Edit plot properties', self.optionsClicked.emit)
@@ -3844,8 +4051,6 @@ class Plot(QObject):
                     mpl.artist.setp(newline,attr=value)
                 
 
-
-
     def viewAll(self):
         """ Sets view so that all visible plots and scatter plots are fully
         displayed. 
@@ -3886,15 +4091,16 @@ class Plot(QObject):
             pass
         else:
             return True
-        try:
-            x.size
-        except AttributeError:
-            pass
-        else:
-            if x.size == 2 and x[0]==x[1]:
-                return True
-            else:
-                return False
+        # np.ndarrays have len() too
+        #try:
+        #    x.size
+        #except AttributeError:
+        #    pass
+        #else:
+        #    if x.size == 2 and x[0]==x[1]:
+        #        return True
+        #    else:
+        #        return False
         try:
             len(x)
         except TypeError:
@@ -3933,7 +4139,7 @@ class Plot(QObject):
             self.changeTickLabels('seconds')
             self.clearPOImarkers()
 
-
+    
     def updateColors(self):
         """
         This function should be invoked after the probes were attributed new
@@ -4212,6 +4418,7 @@ class SpatialPlot(Plot):
         self.CELMAfacecolor = config['CELMA']['facecolor']
         self.showCELMAAvg   = config['CELMA']['showAverages']
         self.CELMAalpha     = config['CELMA']['alpha']
+        self.detachedFit    = config['detachedFit']
 
         self.scatters = {}
         self.quantities = {
@@ -4279,6 +4486,22 @@ class SpatialPlot(Plot):
             self.plotFit()
 
 
+    def createCompareAxes(self):
+        self.compareAx = plot.axes.twinx()
+        self.comparePlots = {}
+
+
+    def removeCompareAxes(self):
+        self.compareAx.remove()
+        self.compareAx = None
+        self.comparePlots = {}
+
+
+    def addComparePlot(self, time, data, color):
+        p, = self.compareAx.plot(time, data, alpha=0.3, lw=2, ls='--', color=color)
+        plot.comparePlots[probe] = p
+
+
     def coherentELMaveraging(self, start, end, ELMnumber, POIrelative, range,
             unit, marker=None, color=None, multiplePOIs=False, fitting=True,
             facecolor=None, ignore=[]):
@@ -4332,24 +4555,24 @@ class SpatialPlot(Plot):
         ### Data retrieval
         for POIreal in POIs:
             if POIreal not in data_tot:
-                data_tot[POIreal] = []
+                data_tot[POIreal] = {}
             if POIreal not in positions_tot:
-                positions_tot[POIreal] = []
+                positions_tot[POIreal] = {}
 
             data, timeRange = self.getDataInTimeWindow(self.rawdata, POIreal, range)
             positions       = self.getProbePositions()
             positions       = self.rztods(positions, timeRange)
             data, positions = self.averageData(data, positions)
 
-            for vals, locs in zip(data.values(), positions.values()):
+            for probe, vals in data.iteritems():
+                locs = positions[probe]
                 if len(vals) != len(locs):
                     print "Number of values is not the same as number of locations."
                     logging.critical("Number of values is not the same as number of locations.")
-                data_tot[POIreal].extend(list(vals))
-                positions_tot[POIreal].extend(list(locs))
+                data_tot[POIreal][probe] = vals
+                positions_tot[POIreal][probe] = locs
         
         #### Averaging
-        # Averaging per probe needs data from each POIreal per probe 
         #if average:
         #    for POI in POIs:
         #        y = np.nanmean(data_tot[POI])
@@ -4364,32 +4587,30 @@ class SpatialPlot(Plot):
             colors = [color]*POIs.size
 
         for color, POI in zip(colors, POIs):
-            vals = data_tot[POI]
-            locs = positions_tot[POI]
-            scatter = self.axes.scatter(locs, vals, color=color,
-                                        alpha=alpha, marker=marker,
-                                        facecolor=facecolor,
-                                        label='POI @{:.4f}s'.format(POI))
-            self.CELMAs.append(scatter)
-            
-            if not multiplePOIs:
-                handles.append(scatter)
-                labels.append(POI)
-
-        if multiplePOIs:
-            handles.append(scatter)
-            #proxy = mpl.patches.Patch(color=color)
-            #handles.append(proxy)
-            labels.append('CELMA @{}%'.format(int(POIrelative)))
+            for probe in self.probes:
+                probeName = probe.name
+                if not multiplePOIs:
+                    probeColor = probe.color
+                else:
+                    probeColor = color
+                
+                vals = data_tot[POI][probeName]
+                locs = positions_tot[POI][probeName]
+                scatter = self.axes.scatter(locs, vals, color=probeColor,
+                                            alpha=alpha, marker=marker,
+                                            facecolor=facecolor,
+                                            label='POI @{:.4f}s'.format(POI))
+                self.CELMAs.append(scatter)
 
         #### Fitting
         if fitting:
             xdata = []
             ydata = []
-            for POI, data in data_tot.iteritems():
-                locs = positions_tot[POI]
-                ydata.extend(data)
-                xdata.extend(locs)
+            for POI, probeData in data_tot.iteritems():
+                for probe, data in probeData.iteritems():
+                    locs = positions_tot[POI][probe]
+                    ydata.extend(list(data))
+                    xdata.extend(list(locs))
 
             fit = self.plotFit(xdata,ydata,color=color,update=False)
             self.fits.append(fit)
@@ -4516,6 +4737,12 @@ class SpatialPlot(Plot):
     def plotFit(self, xdata=None, ydata=None, color=None, method=None,
                         update=True):
         """ Plots a fit function to the shown data based on the Eich function
+
+        Parameters:
+        
+        shiftToStrikeline: if True, the current time at which the plot is to 
+              be drawn influences the fit. Then, the fit is shifted by the
+              separatrix position.
         """
         if method is None:
             method = self.fitMethod
@@ -4524,8 +4751,9 @@ class SpatialPlot(Plot):
         if color is None:
             color = self.fitColor
         fit = self.fit
+        detached = self.detachedFit
 
-        result = self.findFit(xdata, ydata, method)
+        result = self.findFit(xdata, ydata, method, detached=detached)
         if result is None:
             print "ERROR: Fit could not be determined"
             logging.error("Fit could not be determined")
@@ -4566,7 +4794,7 @@ class SpatialPlot(Plot):
         return fit
 
 
-    def findFit(self, xdata=None, ydata=None, method=None):
+    def findFit(self, xdata=None, ydata=None, method=None, detached=False):
         """
         Finds fit x and y data based on passed data and method
         If no data was passed, the plots currently shown on the plot canvas
@@ -4607,11 +4835,15 @@ class SpatialPlot(Plot):
             scal = np.max(data)
             y    = data/scal
             try:
-                ft   = FitFunctions.fit(locs, y)
-                yft  = FitFunctions.eich_model(xft, *ft)
+                ft   = FitFunctions.fit(locs, y, detachment=detached)
             except RuntimeError:
                 logging.error("Could not find fit parameters")
                 return
+            else:
+                if detached:
+                    yft  = FitFunctions.eich_model_detached(xft, *ft)
+                else:
+                    yft  = FitFunctions.eich_model(xft, *ft)
             yft *= scal
            
         #elif method == 'Linear':
@@ -5314,12 +5546,9 @@ class TemporalPlot(Plot):
     def coherentELMaveraging(self, start, end, ELMnum, probe, normalize=None, color=None,
                             avgColor=None, alpha=None, binning=False,
                             binNumber=None, compare=None, marker=None,
-                            pad=None, ignore=[], avgMethod=None):
-        print "\nELM-synchronizing temporal {} signal".format(self.quantity)
+                            pad=None, ignore=[], avgMethod=None, lw=1):
         logging.info("\nELM-synchronizing temporal {} signal".format(self.quantity))
-        print "From {}s to {}s".format(start,end)
         logging.info("From {}s to {}s".format(start,end))
-        print "Taking at most {} ELMs into account".format(ELMnum)
         logging.info("Taking at most {} ELMs into account".format(ELMnum))
 
         if pad is None:
@@ -5356,9 +5585,6 @@ class TemporalPlot(Plot):
         ELMtoELM  = self.ELMtoELM[ind]
         ELMends   = self.ELMends[ind]
         ELMmaxima = self.ELMmaxima[ind]
-
-        #print "Found ELM onsets:", ELMonsets
-        #print "Found ELM durations:", ELMtoELM
 
         if compare == 'Start':
             shiftArray = ELMonsets
@@ -5398,12 +5624,16 @@ class TemporalPlot(Plot):
             return
         
         if binning:
-            result = self.averagesInBins(binNumber, timeTotal, dataTotal, avgMethod)
+            result = self.averagesInBins(binNumber, timeTotal, dataTotal,
+                                                avgMethod)
             if result is not None:
                 t, avgs = result
 
                 self.CELMAs.append(
-                        self.axes.plot(t,avgs,color=avgColor,label='Linear fit')[0])
+                        self.axes.plot(t,avgs,
+                                        color=avgColor,
+                                        lw=lw,
+                                        label='Linear regression')[0])
 
         self.axes.set_xlim(min(timeTotal), max(timeTotal))
         self.axes.set_ylim(min(dataTotal), max(dataTotal))
@@ -5448,7 +5678,7 @@ class CurrentPlot(Plot):
         self.axes.set_ylabel('Current density [kA/m$^2$]')
 
         def formatTicks(val, loc):
-            return '{:.0f}'.format(val*1e-3)
+            return '{:.1f}'.format(val*1e-3)
         fmt = mpl.ticker.FuncFormatter(formatTicks)
         self.axes.yaxis.set_major_formatter(fmt)
 
@@ -5496,6 +5726,8 @@ class CurrentPlot(Plot):
     def getMappingFromShotfile(self):
         self.gui.statusbar.showMessage("Trying to get probe-channel mapping from LSC")
         shot = self.LSCshot
+
+        map = {}
         signalName = 'ZSI' + self.segment
 
         for obj in shot.getObjectNames().values():
@@ -5515,9 +5747,9 @@ class CurrentPlot(Plot):
                     # Indices are saved as numbers 1-6 but must serve as
                     # indexes 0-5
                     ind = int(ind) - 1
-                    self.map[probe] = (channel, ind)
-
-        return self.map
+                    map[probe] = (channel, ind)
+                        
+        return map
 
 
     def getMapping(self):
