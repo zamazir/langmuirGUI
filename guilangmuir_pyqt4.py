@@ -427,16 +427,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.playIncrement = config['playIncrement']
         self.defaultFilter = '{} (*.{})'.format(self.defaultExtension[1:].upper(),
                                                 self.defaultExtension[1:].lower())
-        self.shots   = {'LSF':None,
-                        'LSD':None,
-                        'LSC':None,
-                        'ELM':None,
-                        'EQU':None}
-        self.LSFshot = self.shots['LSF']
-        self.LSDshot = self.shots['LSD']
-        self.LSCshot = self.shots['LSC']
-        self.ELMshot = self.shots['ELM']
-        self.EQUshot = self.shots['EQU']
         self.fitNum = 1000
         self.POIpositions = sorted(['-20','20','50'])
         self.CELMAexists = False
@@ -1037,7 +1027,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 plot.canvas.update()
                 plot.canvas.flush_events()
 
-        
 
     def toggleRescaling(self):
         rescaling = self.menuAutoscaling.isChecked()
@@ -1850,7 +1839,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         if enableLive:
             self.xTimeSlider.valueChanged.connect(self.updateIndicators)
         else:
-            self.xTimeSlider.valueChanged.disconnect(self.updateIndicators)
+            try:
+                self.xTimeSlider.valueChanged.disconnect(self.updateIndicators)
+            except Exception, e:
+                logging.error("Could not disable live indicator updates:")
+                logging.error(str(e))
 
 
     def saveSpatialData(self):
@@ -1887,6 +1880,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def updatexPlotText(self):
+        return
         for p in self.plots:
             if hasattr(p, 'updateText'):
                 p.updateText()
@@ -3113,13 +3107,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         maximum= slider.high()-1
         incr   = self.playIncrement
         size = (maximum-minimum)/incr
-        for i in range(minimum,maximum,incr):
-            print "Step {} of {}".format(i,size)
+        for k, i in enumerate(range(minimum,maximum,incr)):
+            k += 1
+            print "Step {} of {}".format(k,size)
             slider.setMiddle(i)
             if self._record:
-                time = self.dtime[slider.value()]
-                tFileName = os.path.join('recordings',self._recDir,'jsat_T_CELMA'+str(time)+'.png')
-                sFileName = os.path.join('recordings',self._recDir,'jsat_S_CELMA'+str(time)+'.png')
+                tFileName = os.path.join('recordings',self._recDir,'jsat_T_CELMA'+str(k)+'.png')
+                sFileName = os.path.join('recordings',self._recDir,'jsat_S_CELMA'+str(k)+'.png')
                 self._tSavePlot.fig.savefig(tFileName, format='png')
                 self._sSavePlot.fig.savefig(sFileName, format='png') 
             if self._stop or i == maximum-1:
@@ -3150,10 +3144,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if os.path.isdir(path):
                 self._record = True
                 self.btnRecord.setText('Stop recording')
-                self.btnRecord.clicked.disconnect(self.record)
+                try:
+                    self.btnRecord.clicked.disconnect(self.record)
+                    self.btnRecordCELMA.clicked.disconnect(self.record)
+                except TypeError: 
+                    pass
                 self.btnRecord.clicked.connect(self.stopRecording)
                 self.btnRecordCELMA.setText('Stop recording')
-                self.btnRecordCELMA.clicked.disconnect(self.record)
                 self.btnRecordCELMA.clicked.connect(self.stopRecording)
                 break
 
@@ -3397,7 +3394,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         ELMtoELM = self.ELMtoELM[ind][:ELMnum]
 
         size = float(len(times))
-        positionsRZ = plot.getProbePositions()
+        #positionsRZ = plot.getProbePositions()
         means     = self.radioDistancesMeans.isChecked()
         medians   = self.radioDistancesMedians.isChecked()
         fitting   = self.cbDistancesFitting.isChecked()
@@ -3412,7 +3409,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         for i, _time in enumerate(times):
             data, timeRange = plot.getDataInTimeWindow(plot.rawdata, _time, self.Dt)
-            positions       = plot.rztods(positionsRZ, timeRange)
+            #positions       = plot.rztods(positionsRZ, timeRange)
+            positions       = plot.getDeltaS(timeRange)
             data, positions = plot.averageData(data, positions)
             
             dataToFit = []
@@ -3994,6 +3992,7 @@ class Plot(QObject):
         self.probes     = []
         self.CELMAexists= False
         self.fits = []
+        self.LSCshot = gui.LSCshot
 
         self.fig    = Figure(dpi=self.dpi)
         self.axes   = self.fig.add_subplot(111)
@@ -4008,6 +4007,13 @@ class Plot(QObject):
 
         self.axes.get_xaxis().get_major_formatter().set_useOffset(False)
 
+
+    def attributeProbePositions(self):
+        for probe in self.probes:
+            probeName = probe.name
+            pos = self.LSCshot(probeName)['Ort'].data/1000.
+            logging.info("\nProbe {} has position s = {}".format(probeName, pos))
+            probe.position = pos
         
 
     def memorizeView(self):
@@ -4472,12 +4478,14 @@ class SpatialPlot(Plot):
         saved to self.rawdata.
         """
         self.rawdata    = self.getShotData()
+        self.attributeProbePositions()
         if isinstance(self, CurrentPlot):
             self.rawdata= self.calibrateData(self.rawdata)
         data, timeRange = self.getDataInTimeWindow(self.rawdata, time, range)
         self.timeRange  = timeRange
-        positions       = self.getProbePositions()
-        positions       = self.rztods(positions, timeRange)
+        #positions       = self.getProbePositions()
+        #positions       = self.rztods(positions, timeRange)
+        positions       = self.getDeltaS(timeRange)
         data, positions = self.averageData(data, positions)
 
         self.initPlot(data, positions)
@@ -4560,8 +4568,9 @@ class SpatialPlot(Plot):
                 positions_tot[POIreal] = {}
 
             data, timeRange = self.getDataInTimeWindow(self.rawdata, POIreal, range)
-            positions       = self.getProbePositions()
-            positions       = self.rztods(positions, timeRange)
+            #positions       = self.getProbePositions()
+            #positions       = self.rztods(positions, timeRange)
+            positions       = self.getDeltaS(timeRange)
             data, positions = self.averageData(data, positions)
 
             for probe, vals in data.iteritems():
@@ -4865,7 +4874,6 @@ class SpatialPlot(Plot):
         return xft, yft
 
 
-
     def getDataInTimeWindow(self, rawdata, time, range):
         """ 
         Extracts data in `range` around `time` from `data`
@@ -5022,6 +5030,25 @@ class SpatialPlot(Plot):
         return data, positions
 
 
+    def getDeltaS(self, timeRange):
+        """
+        Reads the s coodrinates of probes directly from LSC and the
+        s-coordinate of the strikeline from FPG. Calculates ds for each probe
+        and returns it in a dictionary.
+        """
+        ds = {}
+        for probe in self.probes:
+            probeName     = probe.name
+            ds[probeName] = []
+            for time in timeRange[probeName]:
+                ind = np.abs((self.ssl['time'] - time)).argmin()
+                ssl = self.ssl['data'][ind]
+                _ds = probe.position - ssl
+
+                ds[probeName].append(_ds)
+        return ds
+
+
     def getProbePositions(self):
         """ 
         Gets positions of probes in the specified region in terms of R,z
@@ -5040,6 +5067,10 @@ class SpatialPlot(Plot):
                 probePositions[probeName] = (R,z)
 
         self.probePositions = probePositions
+
+        logging.info("Probe positions:")
+        for probe, position in probePositions.iteritems():
+            logging.info("{}: {}".format(probe, position))
 
         return probePositions
 
@@ -5132,7 +5163,7 @@ class SpatialPlot(Plot):
             probe.setPlotted(self.canvas, True)
 
         # Add text box showing the current time
-        self.updateText()
+        #self.updateText()
         self.updateAxesLabels()
         
         self.axes.set_xlim(-0.07,0.3)
@@ -5204,7 +5235,8 @@ class SpatialPlot(Plot):
         range           = self.gui.Dt
         data, timeRange = self.getDataInTimeWindow(self.rawdata, time, range)
         self.timeRange  = timeRange
-        pos             = self.rztods(self.probePositions, timeRange)
+        #pos             = self.rztods(self.probePositions, timeRange)
+        pos             = self.getDeltaS(timeRange)
         data, pos       = self.averageData(data, pos)
         self.data = data
         self.pos  = pos
@@ -5597,6 +5629,11 @@ class TemporalPlot(Plot):
             logging.warning("Unknown compare mode {}. Synchronizing by ELM start".format(compare))
             shiftArray = ELMonsets
 
+        ELMstartMarker = self.axes.axvline(
+                            0,0,1,ls='--',lw='4',color='grey', alpha=.7,
+                            label = 'ELM start')
+        self.CELMAs.append(ELMstartMarker)
+
         dataTotal = []
         timeTotal = []
         i = 0
@@ -5672,7 +5709,6 @@ class CurrentPlot(Plot):
         self.calib           = {}
         self.map             = {}
         self.shot            = gui.LSFshot
-        self.LSCshot         = gui.LSCshot
         self.gui             = gui
 
         self.axes.set_ylabel('Current density [kA/m$^2$]')
