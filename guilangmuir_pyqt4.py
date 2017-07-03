@@ -723,10 +723,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def changeAvgMethod(self):
         currMethod = next((p.avgMethod for p in self.getTemporalPlots()), None)
         
-        method, ok = QtGui.QDialog.getText(self, 
+        method, ok = QtGui.QInputDialog.getText(self, 
                 "Change averaging method",
                 "Insert numpy method to be used for the temporal CELMA fit",
-                value = currMethod)
+                text = currMethod)
         if ok:
             for plot in self.getTemporalPlots():
                 plot.avgMethod = str(method)
@@ -1246,6 +1246,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             Loads specified shot, updates all plots on the GUI and implements
             interactivity 
         """
+        logging.info('Loading shot')
         QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         self.btnShotUpdate.setVisible(False)
         self.clearCELMAs()
@@ -1285,13 +1286,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if not ok:
                 return
             self.progBar.setValue(60)
-            #ok = self.createPlot(self.PlotContainer21,'temporal','te')
-            #if not ok:
-            #    return
-            #self.progBar.setValue(70)
-            #ok = self.createPlot(self.PlotContainer22,'temporal','ne')
-            #if not ok:
-            #    return
+            ok = self.createPlot(self.PlotContainer21,'temporal','te')
+            if not ok:
+                return
+            self.progBar.setValue(70)
+            ok = self.createPlot(self.PlotContainer22,'temporal','ne')
+            if not ok:
+                return
             self.progBar.setValue(80)
             ok = self.createPlot(self.PlotContainer23,'temporal','jsat')
             if not ok:
@@ -2890,6 +2891,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             logging.critical( "Could not read shotnumber")
             return False
 
+        logging.info("Getting last LSC shot number")
         ok = self.getLatestLSC(self.shotnr)
         if not ok:
             print "Failed to get latest LSC. Returned {}".format(ok)
@@ -2898,6 +2900,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.progBar.setValue(5)
 
         # Get temperature and density data from langmuir diags
+        logging.info("Getting LSD shot")
         ok = self.getInterpretedLangmuirData()
         if not ok:
             print "Failed to get interpreted langmuir data"
@@ -2905,6 +2908,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             return False
 
         # Get strikeline positions from diagnostic
+        logging.info("Getting FPG shot")
         ok = self.getStrikelineData()
         if not ok:
             print "Failed to get strikeline data"
@@ -2913,6 +2917,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.progBar.setValue(25)
         
         # Get ELM times
+        logging.info("Getting ELM shot")
         ok = self.getELMdata()
         if not ok:
             print "Failed to get ELM data"
@@ -2921,6 +2926,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.progBar.setValue(30)
 
         # Get raw langmuir data
+        logging.info("Getting LSF shot")
         ok = self.getRawLangmuirData()
         if not ok:
             print "Failed to get raw langmuir data"
@@ -2929,6 +2935,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.progBar.setValue(40)
 
         # Get probe configuration data
+        logging.info("Getting LSC shot")
         ok = self.getConfigurationData()
         if not ok:
             print "Failed to get configuration data"
@@ -5602,6 +5609,9 @@ class TemporalPlot(Plot):
         time = np.array(self.times[probe])
         data = np.array(self.data[probe])
 
+        logging.info("\nData to ELM-average: {}".format(data))
+        logging.info("\nTimes to ELM-average: {}".format(time))
+
         # Not doing this will result in problems during numpy comparisons
         time = Conversion.removeNans(time, data)
         data = Conversion.removeNans(data)
@@ -5637,6 +5647,7 @@ class TemporalPlot(Plot):
         dataTotal = []
         timeTotal = []
         i = 0
+        logging.info("Found ELM starts: {}".format(ELMonsets))
         for i, (ton, dt, shift) in enumerate(zip(ELMonsets, ELMtoELM, shiftArray)):
             ind = np.where((ton-dt - pad <= time) & (time <= ton+dt + pad))[0]
             if normalize:
@@ -5645,7 +5656,7 @@ class TemporalPlot(Plot):
                 timeELM = time[ind] - shift
             dataELM = data[ind]
             scatter = self.axes.scatter(timeELM,dataELM, marker=marker, 
-                                        color=color, alpha=alpha,
+                                        color=color, alpha=alpha, linewidth=0,
                                         label='ELM {} @{:.4f}s'.format(i,ton))
             self.CELMAs.append(scatter)
 
@@ -5653,13 +5664,13 @@ class TemporalPlot(Plot):
             timeTotal.extend(list(timeELM))
             i += 1
 
-        timeTotal, dataTotal = zip(*sorted(zip(timeTotal,dataTotal)))
-
         if len(timeTotal) == 0 and len(dataTotal) == 0:
             print "ERROR: Retreived ELM data or time arrays contain no data"
             logging.critical("ERROR: Retreived ELM data or time arrays contain no data")
             return
         
+        timeTotal, dataTotal = zip(*sorted(zip(timeTotal,dataTotal)))
+
         if binning:
             result = self.averagesInBins(binNumber, timeTotal, dataTotal,
                                                 avgMethod)
