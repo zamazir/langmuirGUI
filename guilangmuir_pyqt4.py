@@ -3140,7 +3140,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def record(self):
         import datetime
-        self._recDir = str(datetime.datetime.now()).split('.')[0].replace(' ','_')
+        self._recDir = str(datetime.datetime.now())\
+                            .split('.')[0]\
+                            .replace(' ','_').replace(':','-')
         self._tSavePlot = self.getPlotsByType('temporal','jsat')
         self._sSavePlot = self.getPlotsByType('spatial','jsat')
         path = os.path.join('recordings',self._recDir)
