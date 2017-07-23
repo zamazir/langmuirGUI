@@ -1301,7 +1301,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
             self.attributeColorsToProbes()
             self.populateProbeList()
-            self.populateCELMAprobeCombo()
 
             # Synchronize temporal plots
             Sync.sync(*self.getTemporalPlots())
@@ -1329,7 +1328,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.comboELMcompare.currentIndexChanged.connect(self.showCELMAupdateButton)
                 #self.comboCELMAmode.currentIndexChanged.connect(self.showCELMAupdateButton)
                 self.cbCELMAnormalize.stateChanged.connect(self.showCELMAupdateButton)
-                self.comboCELMAprobe.currentIndexChanged.connect(self.showCELMAupdateButton)
                 self.editCELMAELMnum.textChanged.connect(self.showCELMAupdateButton)
                 self.editCELMAstartTime.textChanged.connect(self.showCELMAupdateButton)
                 self.editCELMAendTime.textChanged.connect(self.showCELMAupdateButton)
@@ -1610,7 +1608,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         self.attributeColorsToProbes()
         self.populateProbeList()
-        self.populateCELMAprobeCombo()
 
 
     def createSpatialCELMA(self):
@@ -2226,25 +2223,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     #    self.comparePlot.set_color(rgb)
     #    self.comparePlotColors[label] = rgb
                     
-
-    def populateCELMAprobeCombo(self):
-        """
-        Uses `probeNames` to pupulate the combo box where the probe for
-        coherent ELM averaging can be selected
-        """
-        combo = self.comboCELMAprobe
-        combo.clear()
-
-        toAdd = []
-        for plot in self.plots:
-            if plot.type == 'temporal':
-                for probe in plot.probes:
-                    if combo.findText(probe.name) < 0:
-                        toAdd.append(probe.name)
-                        
-        toAdd.sort()
-        combo.addItems(toAdd)
-
 
     def updatexPlot(self):
         """
@@ -3311,6 +3289,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def createTemporalCELMA(self, plot):
+        logging.info("Creating temporal CELMA")
         settings = self.getCELMAsettings()
         if settings is None:
             print "Error getting CELMA settings"
@@ -3320,7 +3299,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         plot.hideArtists(exceptFor=plot.POImarkers) 
 
         normalize = self.cbCELMAnormalize.isChecked()
-        #probeName = str(self.comboCELMAprobe.currentText())
         probes = [p for p in plot.probes if p.CELMA]
         compare   = str(self.comboELMcompare.currentText())
         binning   = self.menuEnableBinning.isChecked()
@@ -3330,6 +3308,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         else:
            plot.changeTickLabels('milliseconds')
 
+        logging.info("Creatung CELMAs for these probes: {}".format(probes))
         for probe in probes:
             probeName = probe.name
             color     = probe.color
