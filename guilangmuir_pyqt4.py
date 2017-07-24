@@ -3313,9 +3313,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         _end   = self.editCELMAendTime.text()
         if self.cbTemporalCELMAs.isChecked():
             for plot in self.getTemporalPlots():
+                xlim = plot.axes.get_xlim()
+                modeHasChanged = plot._CELMAnormalize != self.cbCELMAnormalize.isChecked()
                 self.createTemporalCELMA(plot)
                 self.editCELMAstartTime.setText(_start)
                 self.editCELMAendTime.setText(_end)
+                
+                # If normalization hasn't been toggled, reinstate axis limits
+                if not modeHasChanged:
+                    plot.axes.set_xlim(xlim)
         else:
             logging.info('Temporal CELMAs not selected (anymore)')
             logging.info('Resetting axes limits to [{},{}]'\
@@ -3329,6 +3335,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     pass
                 else:
                     plot.axes.set_xlim((_start,_end),emit=False)
+                    plot.draw()
         
         if not self.multiplePOIs:
             self.btnPlayCELMA.setVisible(True)
@@ -3421,8 +3428,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         if normalize:
            plot.changeTickLabels('percent')
+           plot._CELMAnormalize = True
         else:
            plot.changeTickLabels('milliseconds')
+           plot._CELMAnormalize = False
 
         logging.info("Creatung CELMAs for these probes: {}".format(probes))
         for probe in probes:
@@ -5489,7 +5498,7 @@ class TemporalPlot(Plot):
         self.ELMmarkers= {}
         self.shot      = gui.LSDshot
         self.POImarkers = []
-        self._reinstateAxesLabels = False
+        self._CELMAnormalize = False
 
         # Set axes labels
         self.axes.set_ylabel(self.axTitles[self.quantity])
@@ -5634,21 +5643,18 @@ class TemporalPlot(Plot):
                 return "{}s".format(val)
             fmt = mpl.ticker.FuncFormatter(seconds)
             self.axes.xaxis.set_major_formatter(fmt)
-            self._reinstateAxesLabels = False
 
         elif unit == 'milliseconds':
             def milliseconds(val, loc):
                 return "{}ms".format(val*1000)
             fmt = mpl.ticker.FuncFormatter(milliseconds)
             self.axes.xaxis.set_major_formatter(fmt)
-            self._reinstateAxesLabels = False
 
         elif unit == 'percent':
             def percent(val, loc):
                 return "{}%".format(val*100)
             fmt = mpl.ticker.FuncFormatter(percent)
             self.axes.xaxis.set_major_formatter(fmt)
-            self._reinstateAxesLabels = True
 
 
     def updateAveraging(self, avgNum):
