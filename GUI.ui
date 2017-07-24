@@ -273,19 +273,6 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="1" column="0">
-                    <widget class="QLineEdit" name="shotNumberEdit">
-                     <property name="maximumSize">
-                      <size>
-                       <width>100</width>
-                       <height>30</height>
-                      </size>
-                     </property>
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Insert a shot number and press enter to load shot data&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="0" column="1">
                     <widget class="QLabel" name="label_7">
                      <property name="maximumSize">
@@ -452,6 +439,13 @@
                     <widget class="QPushButton" name="btnShotUpdate">
                      <property name="text">
                       <string>Update</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QComboBox" name="comboShotNumber">
+                     <property name="editable">
+                      <bool>true</bool>
                      </property>
                     </widget>
                    </item>

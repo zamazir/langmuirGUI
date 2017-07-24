@@ -36,6 +36,11 @@
 #
 ##############################################################################
 
+import sys
+import os
+import pickle
+import functools
+
 import matplotlib as mpl
 mpl.use('Qt4Agg')
 from matplotlib import cm
@@ -43,25 +48,21 @@ from matplotlib import pyplot as plt
 from matplotlib import patches
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from PyQt4 import QtGui, QtCore, Qt
 from PyQt4.QtGui import (QWidget, QMessageBox, QPainter, QColor)
 from PyQt4.QtCore import pyqtSlot, pyqtSignal
 from PyQt4.QtCore import QObject
 from PyQt4.uic import loadUiType
-from fitting import FitFunctions
-import dd
-import numpy as np
-import sys
-import os
-import pickle
-import functools
-from scipy import interpolate
 from configobj import ConfigObj
 from validate import Validator
-from slider import SchizoSlider
+from scipy import interpolate
+import numpy as np
 import logging
+
+import dd
+from fitting import FitFunctions
+from slider import SchizoSlider
 
 logging.basicConfig(
                 filename='langmuirAnalyzer.log', 
@@ -529,6 +530,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.statusbar.addPermanentWidget(self.progBar)
 
         # Set general behavior of GUI
+        self.shotNumberEdit = self.comboShotNumber.lineEdit()
+        self.loadRecentShotNumbers()
         self.shotNumberEdit.returnPressed.connect(self.load)
         self.xTimeEdit.setMaxLength(7)
         self.shotNumberEdit.setMaxLength(5)
@@ -560,6 +563,41 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         self.shotNumberEdit.setFocus()
 
+
+    def loadRecentShotNumbers(self):
+        dir = '.'
+        fileName = 'recentShotnumbers.txt'
+        filePath = os.path.join(dir,fileName)
+        try:
+            with open(filePath,'r') as f:
+               lines = f.readlines()
+        except IOError:
+            return
+        for line in lines:
+            self.comboShotNumber.addItem(line)
+
+
+    def saveShotNumberToRecents(self):
+        dir = '.'
+        fileName = 'recentShotnumbers.txt'
+        filePath = os.path.join(dir,fileName)
+        try:
+            with open(filePath,'r') as f:
+               lines = f.readlines()
+        except IOError:
+            with open(filePath,'w+') as f:
+               lines = []
+
+        shotnr = str(self.shotnr)
+        lines = [line for line in lines if not line.startswith(shotnr)]
+        lines = lines[:4]
+        lines.insert(0, shotnr)
+
+        with open(filePath,'w+') as f:
+            for line in lines:
+                line = line.rstrip('\n')
+                f.write(line+'\n')
+        
 
     def setLoggerLevel(self):
         level = str(self.comboLogLevel.currentText())
@@ -1156,6 +1194,68 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             ind  = self.xTimeSlider.value()
             time = self.dtime[ind]
             plot.update(time)
+
+
+    def savePlot(self, plot):
+        print "Saving plot"
+        type = plot.type
+        quantity = plot.quantity
+
+        if plot.CELMAexists:
+            start = '{:.4f}'.format(float(self.editCELMAstartTime))
+            end   = '{:.4f}'.format(float(self.editCELMAendTime))
+        else:
+            start, end = plot.axes.get_xlim()
+            start = '{:.4f}'.format(start)
+            end   = '{:.4f}'.format(end)
+
+        if plot.CELMAexists:
+            CELMAprobes = [p.name for p in plot.probes if p.CELMA]
+        else:
+            CELMAprobes = [p.name for p in plot.probes 
+                           if p.isVisible(plot.canvas)]
+        if len(CELMAprobes) > 1:
+            probeName = 'multiple'
+        elif len(CELMAprobes) == 1:
+            probeName = probes[0]
+        else:
+            probeName = 'None'
+
+        if self.cbCELMAnormalize.isChecked():
+            mode = 'normalized'
+        else:
+            mode = 'default'
+
+        syncedBy = 'syncedBy' + str(self.comboELMcompare.currentText())
+        extension = '.svg'
+
+        if plot.CELMAexists:
+            fileName = '_'.join([type, quantity, 'CELMA', start, end, probeName,
+                                mode, syncedBy])
+        else:
+            fileName = '_'.join([type, quantity, start, end, probeName, mode,
+                                syncedBy])
+        fileName += extension
+
+        print "Saving to file", fileName
+
+        dialog = QtGui.QFileDialog()
+        dialog.setDefaultSuffix('svg')
+        filePath = dialog.getSaveFileName(
+                                    parent=self,
+                                    caption="Save figure as",
+                                    directory=os.path.join(plot.saveDir,fileName),
+                                    filter="Portable Network Graphics (PNG) (*.png);;"+\
+                                           "Encapsulated PostScript (EPS) (*.eps);;"+\
+                                           "Scalable Vector Graphics (SVG) (*.svg)",
+                                    selectedFilter='SVG (*.svg)')
+        if filePath:
+            filePath = str(filePath)
+            _, fmt = os.path.splitext(filePath)
+            plot.fig.savefig(filePath, format=fmt[1:])
+            plot.saveDir = os.path.dirname(fileName)
+            logging.info("{} {} plot saved to {}".format(
+                                plot.type, plot.quantity, filePath))
 
 
     def setTimeText(self):
@@ -2925,6 +3025,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         # timeArray comes from LSD data
         self.xTimeSlider.setRange(0, len(self.timeArray)-1)
         
+        self.saveShotNumberToRecents()
         self.statusbar.clearMessage()
 
         return True
@@ -3531,15 +3632,8 @@ class ToolFigureCanvas(FigureCanvas):
         
         self.toolButton = QtGui.QToolButton(self)
         menu     = QtGui.QMenu()
-        #saveMenu = QtGui.QMenu()
 
         menu.addAction('Save plot', self.saveClicked.emit)
-        #menu.addAction('Save all temporal plots', 
-        #    functools.partial(self.collectiveSaveClicked.emit, 'temporal'))
-        #menu.addAction('Save all plots',
-        #        functools.partial(self.collectiveSaveClicked.emit, 'all'))
-        #menu.addSeparator()
-        #menu.addMenu(saveMenu)
         menu.addAction('Edit line and axes properties', self.editClicked.emit)
         menu.addAction('Edit plot properties', self.optionsClicked.emit)
         menu.addSeparator()
@@ -3830,7 +3924,7 @@ class Indicator():
             except RuntimeError:
                 continue
             
-            if isinstance(attr,FigureCanvasQTAgg):
+            if isinstance(attr,FigureCanvas):
                 canvas = attr
             elif isinstance(attr,mpl.axes.Axes):
                 axes = attr
@@ -3981,6 +4075,7 @@ class Plot(QObject):
         self.CELMAexists= False
         self.fits = []
         self.LSCshot = gui.LSCshot
+        self.saveDir = '.'
 
         self.fig    = Figure(dpi=self.dpi)
         self.axes   = self.fig.add_subplot(111)
@@ -3989,11 +4084,72 @@ class Plot(QObject):
         self.toolbar = NavigationToolbar(self.canvas, gui)
         self.toolbar.hide()
 
-        self.canvas.saveClicked.connect(self.toolbar.save_figure)
+        # This does not work when using self.save. Weird!
+        self.canvas.saveClicked.connect(
+                functools.partial(self.gui.savePlot, self))
         self.canvas.editClicked.connect(self.toolbar.edit_parameters)
         self.canvas.optionsClicked.connect(self.toolbar.configure_subplots)
 
         self.axes.get_xaxis().get_major_formatter().set_useOffset(False)
+
+    def test(self):
+        print "!!!!!!!!!!! TEST !!!!!!!!!!!!!!!"
+
+    #def saveMe(self):
+    #    print "Saving plot"
+    #    type = self.type
+    #    quantity = self.quantity
+
+    #    if self.CELMAexists:
+    #        start = '{:.4f}'.format(float(self.gui.editCELMAstartTime))
+    #        end   = '{:.4f}'.format(float(self.gui.editCELMAendTime))
+    #    else:
+    #        start, end = self.axes.get_xlim()
+    #        start = '{:.4f}'.format(start)
+    #        end   = '{:.4f}'.format(end)
+
+    #    if self.CELMAexists:
+    #        CELMAprobes = [p.name for p in self.probes if p.CELMA]
+    #    else:
+    #        CELMAprobes = [p.name for p in self.probes 
+    #                       if p.isVisible(self.canvas)]
+    #    if len(CELMAprobes) > 1:
+    #        probeName = 'multiple'
+    #    elif len(CELMAprobes) == 1:
+    #        probeName = probes[0]
+    #    else:
+    #        probeName = 'None'
+
+    #    if self.gui.cbCELMAnormalize.isChecked():
+    #        mode = 'normalized'
+    #    else:
+    #        mode = 'default'
+
+    #    syncedBy = '_syncedBy' + str(self.gui.comboELMcompare.currentText())
+    #    extension = '.svg'
+
+    #    if self.CELMAexists:
+    #        fileName = '_'.join([type, quantity, 'CELMA', start, end, probeName,
+    #                            mode, syncedBy])
+    #    else:
+    #        fileName = '_'.join([type, quantity, start, end, probeName, mode,
+    #                            syncedBy])
+    #    fileName += extension
+
+    #    print "Saving to file", fileName
+
+    #    filePath = QtGui.QFileDialog.getSaveFileName(
+    #                                parent=self.gui,
+    #                                caption="Save figure as",
+    #                                directory=os.path.join(self.saveDir,fileName),
+    #                                filter="PNG (*.png);;EPS (*.eps);;SVG (*.svg)",
+    #                                selectedFilter='{SVG} (*.{svg})')
+    #    if os.path.isfile(filePath):
+    #        _, fmt = os.path.splitext(filePath)
+    #        self.fig.savefig(filePath, format=fmt)
+    #        self.saveDir = os.path.dirname(fileName)
+    #        logging.info("{} {} plot saved to {}".format(
+    #                            self.type, self.quantity, filePath))
 
 
     def attributeProbePositions(self):
@@ -5589,9 +5745,6 @@ class TemporalPlot(Plot):
 
         time = np.array(self.times[probe])
         data = np.array(self.data[probe])
-
-        logging.info("\nData to ELM-average: {}".format(data))
-        logging.info("\nTimes to ELM-average: {}".format(time))
 
         # Not doing this will result in problems during numpy comparisons
         time = Conversion.removeNans(time, data)
