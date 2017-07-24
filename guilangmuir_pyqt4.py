@@ -464,6 +464,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.radioDistancesNoAveraging.setChecked(True)
         self.setWindowTitle('Langmuir Data Analyzer')
         self.insertLinks()
+        self.journalLink = None
 
         # Logger
         logTextBox = QPlainTextEditLogger(self)
@@ -1517,6 +1518,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
             self.toggleMainSettings()
             self.activateZoom()
+            self.insertJournalLink()
 
         # If shot data was not loaded successfully, unbind actions
         else:
@@ -1528,6 +1530,19 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         QtGui.QApplication.restoreOverrideCursor()
         self.hideProgress()
+
+
+    def insertJournalLink(self):
+        if self.journalLink is not None:
+            self.menuInfo.removeAction(self.journalLink)
+            
+        journal = QtGui.QAction(self.menuInfo)
+        journal.setText('AUG journal entry for shot ' + str(self.shotnr))
+        journal.triggered.connect(
+                functools.partial(self.openLink,
+                    'https://www.aug.ipp.mpg.de/cgibin/local_or_pass/journal.cgi?shot='+str(self.shotnr)))
+        self.menuInfo.insertAction(self.menuAbout,journal)
+        self.journalLink = journal
 
 
     def createTNplot(self):
