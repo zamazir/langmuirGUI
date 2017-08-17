@@ -2,6 +2,7 @@
 *.swp
 *.un~
 *.svg
+*.pyc
 
 Results
 Poster*
