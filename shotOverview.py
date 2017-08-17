@@ -39,14 +39,18 @@ ax = axes[2]
 shot = dd.shotfile('UVS', shotNumber)
 t = shot('D_tot').time
 y = shot('D_tot').data / 10**22
-ax.plot(t,y, label='D puffing')
+ax.plot(t,y, label='D fuelling')
 
 t = shot('N_tot').time
 y = shot('N_tot').data / 10**22
 ax.plot(t,y, label='N seeding')
 
+t = shot('Ne_tot').time
+y = shot('Ne_tot').data / 10**22
+ax.plot(t,y, label='Ne seeding')
+
 ax.grid(True)
-ax.set_ylabel('$Puffing/Seeding$ [$10^{22}$/s]')
+ax.set_ylabel('Puffing/Seeding [$10^{22}$/s]')
 # Line integrated density
 #ax = axes[2]
 #shot = dd.shotfile('TOT', shotNumber)
