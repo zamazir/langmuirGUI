@@ -4373,8 +4373,8 @@ class Plot(QObject):
             _avgfunc = getattr(np, avgMethod)
         except AttributeError:
             logging.error("Invalid average method. Use a numpy method."+\
-                            " Continuing with np.mean")
-            _avgFunc = np.mean
+                            " Continuing with np.median")
+            _avgFunc = np.median
             
         x = Conversion.removeNans(x,y)
         y = Conversion.removeNans(y)
@@ -4387,8 +4387,8 @@ class Plot(QObject):
             t[i] = (left + right)/2
             ind = np.where((left <= x) & (x <=right))[0]
             if len(y[ind]) == 0:
-                print "No data points in bin [{},{}]".format(left, right)
-                logging.warn("No data points in bin [{},{}]".format(left, right))
+                logging.warn("{} {} plot: No data points in bin {} [{},{}]"
+                             .format(self.type, self.quantity, i+1, left, right))
                 avgs[i] = 0
             else:
                 avgs[i] = _avgfunc(y[ind])

@@ -23882,3 +23882,2764 @@ ELM-synchronizing temporal jsat signal
 24/07/2017 03:58:46 AM [INFO]: From 4.386288s to 4.41328s
 24/07/2017 03:58:46 AM [INFO]: Taking at most 10000 ELMs into account
 24/07/2017 03:58:46 AM [INFO]: Found ELM starts: [ 4.39031982  4.39760494  4.4048748   4.41257477]
+22/08/2017 09:32:03 PM [WARNING]: Could not find action Temporal Plot
+22/08/2017 09:32:03 PM [WARNING]: Could not find action Spatial Plot
+22/08/2017 09:33:07 PM [INFO]: Loading shot
+22/08/2017 09:33:07 PM [INFO]: Colors loaded from config file:
+22/08/2017 09:33:07 PM [INFO]: {'ua3': [1.0, 0.6, 0.0], 'ua2': [0.0, 0.4, 0.6], 'ua5': [0.3333333333333333, 0.3333333333333333, 0.4980392156862745], 'ua4': [0.8, 0.0, 0.0]}
+22/08/2017 09:33:07 PM [INFO]: Read shot number 32273 from GUI
+22/08/2017 09:33:07 PM [INFO]: Getting last LSC shot number
+22/08/2017 09:33:09 PM [INFO]: Getting LSD shot
+22/08/2017 09:33:09 PM [ERROR]: Failed to retrieve time base for signal ne-ua0
+22/08/2017 09:33:09 PM [ERROR]: Failed to retrieve time base for signal te-ua0
+22/08/2017 09:33:10 PM [INFO]: Getting FPG shot
+22/08/2017 09:33:10 PM [INFO]: Getting ELM shot
+22/08/2017 09:33:11 PM [INFO]: Getting LSF shot
+22/08/2017 09:33:12 PM [INFO]: Getting LSC shot
+22/08/2017 09:33:12 PM [INFO]: Latest LSC shot number: 32163
+22/08/2017 09:33:12 PM [INFO]: +++++++++Data retrieval was successful+++++++++
+22/08/2017 09:33:12 PM [INFO]: 
+++++++++++++++++ Getting mappings +++++++++++++++++++++++++
+
+22/08/2017 09:33:12 PM [WARNING]: Could not retrieve LSC data for probe ua0
+22/08/2017 09:33:12 PM [WARNING]: Could not retrieve LSC data for probe ua5
+22/08/2017 09:33:12 PM [WARNING]: Could not retrieve LSC data for probe uad
+22/08/2017 09:33:12 PM [WARNING]: Could not retrieve LSC data for probe uae
+22/08/2017 09:33:12 PM [WARNING]: Could not retrieve LSC data for probe uaf
+22/08/2017 09:33:12 PM [INFO]: 
+
+Probe mappings:
+22/08/2017 09:33:12 PM [INFO]: Probe: ua9  Channel: ('CH23', 4)
+22/08/2017 09:33:12 PM [INFO]: Probe: ua8  Channel: ('CH23', 3)
+22/08/2017 09:33:12 PM [INFO]: Probe: ua1  Channel: ('CH21', 1)
+22/08/2017 09:33:12 PM [INFO]: Probe: ua3  Channel: ('CH21', 5)
+22/08/2017 09:33:12 PM [INFO]: Probe: ua2  Channel: ('CH21', 3)
+22/08/2017 09:33:12 PM [INFO]: Probe: ua4  Channel: ('CH22', 1)
+22/08/2017 09:33:12 PM [INFO]: Probe: ua7  Channel: ('CH23', 1)
+22/08/2017 09:33:12 PM [INFO]: Probe: ua6  Channel: ('CH22', 5)
+22/08/2017 09:33:12 PM [INFO]: Probe: uaa  Channel: ('CH24', 1)
+22/08/2017 09:33:12 PM [INFO]: Probe: uac  Channel: ('CH24', 5)
+22/08/2017 09:33:12 PM [INFO]: Probe: uab  Channel: ('CH24', 3)
+22/08/2017 09:33:14 PM [INFO]: 
+Probe ua1 has position s = 0.996
+22/08/2017 09:33:14 PM [INFO]: 
+Probe ua2 has position s = 1.021
+22/08/2017 09:33:14 PM [INFO]: 
+Probe ua3 has position s = 1.046
+22/08/2017 09:33:14 PM [INFO]: 
+Probe ua4 has position s = 1.071
+22/08/2017 09:33:14 PM [INFO]: 
+Probe ua6 has position s = 1.121
+22/08/2017 09:33:14 PM [INFO]: 
+Probe ua7 has position s = 1.146
+22/08/2017 09:33:14 PM [INFO]: 
+Probe ua8 has position s = 1.171
+22/08/2017 09:33:14 PM [INFO]: 
+Probe ua9 has position s = 1.221
+22/08/2017 09:33:14 PM [INFO]: 
+Probe uaa has position s = 1.271
+22/08/2017 09:33:14 PM [INFO]: 
+Probe uab has position s = 1.302
+22/08/2017 09:33:14 PM [INFO]: 
+Probe uac has position s = 1.331
+22/08/2017 09:33:14 PM [INFO]: 
+Calibrating data
+22/08/2017 09:33:14 PM [INFO]: Getting calibrations from shotfile...
+22/08/2017 09:33:14 PM [INFO]: 
+
+Probe dimensions:
+22/08/2017 09:33:14 PM [INFO]: Probe: ua9   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:33:14 PM [INFO]: Probe: ua8   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:14 PM [INFO]: Probe: ua1   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:14 PM [INFO]: Probe: ua3   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:14 PM [INFO]: Probe: ua2   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:14 PM [INFO]: Probe: ua4   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:14 PM [INFO]: Probe: ua7   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:14 PM [INFO]: Probe: ua6   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:14 PM [INFO]: Probe: uaa   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:33:14 PM [INFO]: Probe: uac   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:33:14 PM [INFO]: Probe: uab   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:33:14 PM [INFO]: Signal te-ua0 cannot be read and is skipped. Message: Error by DDsinfo (8.1): status of signal doesn't permit access
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-ua1
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-ua2
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-ua3
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-ua4
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-ua5
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-ua6
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-ua7
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-ua8
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-ua9
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-uaa
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-uab
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-uac
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-uad
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-uae
+22/08/2017 09:33:14 PM [INFO]: Successfully read signal te-uaf
+22/08/2017 09:33:14 PM [INFO]: Averaging temporal data over 2 adjacent values
+22/08/2017 09:33:16 PM [INFO]: Signal ne-ua0 cannot be read and is skipped. Message: Error by DDsinfo (8.1): status of signal doesn't permit access
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-ua1
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-ua2
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-ua3
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-ua4
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-ua5
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-ua6
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-ua7
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-ua8
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-ua9
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-uaa
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-uab
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-uac
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-uad
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-uae
+22/08/2017 09:33:16 PM [INFO]: Successfully read signal ne-uaf
+22/08/2017 09:33:16 PM [INFO]: Averaging temporal data over 2 adjacent values
+22/08/2017 09:33:18 PM [INFO]: 
+++++++++++++++++ Getting mappings +++++++++++++++++++++++++
+
+22/08/2017 09:33:18 PM [WARNING]: Could not retrieve LSC data for probe ua0
+22/08/2017 09:33:18 PM [WARNING]: Could not retrieve LSC data for probe ua5
+22/08/2017 09:33:18 PM [WARNING]: Could not retrieve LSC data for probe uad
+22/08/2017 09:33:18 PM [WARNING]: Could not retrieve LSC data for probe uae
+22/08/2017 09:33:18 PM [WARNING]: Could not retrieve LSC data for probe uaf
+22/08/2017 09:33:18 PM [INFO]: 
+
+Probe mappings:
+22/08/2017 09:33:18 PM [INFO]: Probe: ua9  Channel: ('CH23', 4)
+22/08/2017 09:33:18 PM [INFO]: Probe: ua8  Channel: ('CH23', 3)
+22/08/2017 09:33:18 PM [INFO]: Probe: ua1  Channel: ('CH21', 1)
+22/08/2017 09:33:18 PM [INFO]: Probe: ua3  Channel: ('CH21', 5)
+22/08/2017 09:33:18 PM [INFO]: Probe: ua2  Channel: ('CH21', 3)
+22/08/2017 09:33:18 PM [INFO]: Probe: ua4  Channel: ('CH22', 1)
+22/08/2017 09:33:18 PM [INFO]: Probe: ua7  Channel: ('CH23', 1)
+22/08/2017 09:33:18 PM [INFO]: Probe: ua6  Channel: ('CH22', 5)
+22/08/2017 09:33:18 PM [INFO]: Probe: uaa  Channel: ('CH24', 1)
+22/08/2017 09:33:18 PM [INFO]: Probe: uac  Channel: ('CH24', 5)
+22/08/2017 09:33:18 PM [INFO]: Probe: uab  Channel: ('CH24', 3)
+22/08/2017 09:33:19 PM [INFO]: 
+Calibrating data
+22/08/2017 09:33:19 PM [INFO]: Getting calibrations from shotfile...
+22/08/2017 09:33:19 PM [INFO]: 
+
+Probe dimensions:
+22/08/2017 09:33:19 PM [INFO]: Probe: ua9   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:33:19 PM [INFO]: Probe: ua8   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:19 PM [INFO]: Probe: ua1   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:19 PM [INFO]: Probe: ua3   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:19 PM [INFO]: Probe: ua2   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:19 PM [INFO]: Probe: ua4   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:19 PM [INFO]: Probe: ua7   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:19 PM [INFO]: Probe: ua6   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:33:19 PM [INFO]: Probe: uaa   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:33:19 PM [INFO]: Probe: uac   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:33:19 PM [INFO]: Probe: uab   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:33:19 PM [INFO]: Averaging temporal data over 2 adjacent values
+22/08/2017 09:33:21 PM [INFO]: 
+Attributing colors to probes
+22/08/2017 09:33:21 PM [INFO]: Probe ua5 does not exist in spatial jsat plot.
+22/08/2017 09:33:21 PM [INFO]: Probe uad does not exist in spatial jsat plot.
+22/08/2017 09:33:21 PM [INFO]: Probe uae does not exist in spatial jsat plot.
+22/08/2017 09:33:21 PM [INFO]: Probe uaf does not exist in spatial jsat plot.
+22/08/2017 09:33:22 PM [INFO]: Probe ua5 does not exist in temporal jsat plot.
+22/08/2017 09:33:22 PM [INFO]: Probe uad does not exist in temporal jsat plot.
+22/08/2017 09:33:22 PM [INFO]: Probe uae does not exist in temporal jsat plot.
+22/08/2017 09:33:22 PM [INFO]: Probe uaf does not exist in temporal jsat plot.
+22/08/2017 09:33:23 PM [INFO]: 
+
+++++++++++++++POPULATING PROBE TABLE++++++++++
+22/08/2017 09:33:23 PM [INFO]: 
+
++++++++++++++++++ ALL DONE! ++++++++++++++++++
+
+
+22/08/2017 09:52:29 PM [INFO]: Loading shot
+22/08/2017 09:52:31 PM [INFO]: Colors loaded from config file:
+22/08/2017 09:52:31 PM [INFO]: {'ua3': [1.0, 0.6, 0.0], 'ua2': [0.0, 0.4, 0.6], 'ua5': [0.3333333333333333, 0.3333333333333333, 0.4980392156862745], 'ua4': [0.8, 0.0, 0.0]}
+22/08/2017 09:52:31 PM [INFO]: Read shot number 32201 from GUI
+22/08/2017 09:52:31 PM [INFO]: Getting last LSC shot number
+22/08/2017 09:52:31 PM [INFO]: Getting LSD shot
+22/08/2017 09:52:34 PM [ERROR]: Failed to retrieve time base for signal ne-ua0
+22/08/2017 09:52:34 PM [ERROR]: Failed to retrieve time base for signal te-ua0
+22/08/2017 09:52:34 PM [INFO]: Getting FPG shot
+22/08/2017 09:52:40 PM [INFO]: Getting ELM shot
+22/08/2017 09:52:41 PM [INFO]: Getting LSF shot
+22/08/2017 09:52:43 PM [INFO]: Getting LSC shot
+22/08/2017 09:52:43 PM [INFO]: Latest LSC shot number: 32163
+22/08/2017 09:52:43 PM [INFO]: +++++++++Data retrieval was successful+++++++++
+22/08/2017 09:52:44 PM [INFO]: 
+++++++++++++++++ Getting mappings +++++++++++++++++++++++++
+
+22/08/2017 09:52:44 PM [WARNING]: Could not retrieve LSC data for probe ua0
+22/08/2017 09:52:44 PM [WARNING]: Could not retrieve LSC data for probe ua5
+22/08/2017 09:52:44 PM [WARNING]: Could not retrieve LSC data for probe uad
+22/08/2017 09:52:44 PM [WARNING]: Could not retrieve LSC data for probe uae
+22/08/2017 09:52:44 PM [WARNING]: Could not retrieve LSC data for probe uaf
+22/08/2017 09:52:44 PM [INFO]: 
+
+Probe mappings:
+22/08/2017 09:52:44 PM [INFO]: Probe: ua9  Channel: ('CH23', 4)
+22/08/2017 09:52:44 PM [INFO]: Probe: ua8  Channel: ('CH23', 3)
+22/08/2017 09:52:44 PM [INFO]: Probe: ua1  Channel: ('CH21', 1)
+22/08/2017 09:52:44 PM [INFO]: Probe: ua3  Channel: ('CH21', 5)
+22/08/2017 09:52:44 PM [INFO]: Probe: ua2  Channel: ('CH21', 3)
+22/08/2017 09:52:44 PM [INFO]: Probe: ua4  Channel: ('CH22', 1)
+22/08/2017 09:52:44 PM [INFO]: Probe: ua7  Channel: ('CH23', 1)
+22/08/2017 09:52:44 PM [INFO]: Probe: ua6  Channel: ('CH22', 5)
+22/08/2017 09:52:44 PM [INFO]: Probe: uaa  Channel: ('CH24', 1)
+22/08/2017 09:52:44 PM [INFO]: Probe: uac  Channel: ('CH24', 5)
+22/08/2017 09:52:44 PM [INFO]: Probe: uab  Channel: ('CH24', 3)
+22/08/2017 09:52:58 PM [INFO]: 
+Probe ua1 has position s = 0.996
+22/08/2017 09:52:58 PM [INFO]: 
+Probe ua2 has position s = 1.021
+22/08/2017 09:52:58 PM [INFO]: 
+Probe ua3 has position s = 1.046
+22/08/2017 09:52:58 PM [INFO]: 
+Probe ua4 has position s = 1.071
+22/08/2017 09:52:58 PM [INFO]: 
+Probe ua6 has position s = 1.121
+22/08/2017 09:52:58 PM [INFO]: 
+Probe ua7 has position s = 1.146
+22/08/2017 09:52:58 PM [INFO]: 
+Probe ua8 has position s = 1.171
+22/08/2017 09:52:58 PM [INFO]: 
+Probe ua9 has position s = 1.221
+22/08/2017 09:52:58 PM [INFO]: 
+Probe uaa has position s = 1.271
+22/08/2017 09:52:58 PM [INFO]: 
+Probe uab has position s = 1.302
+22/08/2017 09:52:58 PM [INFO]: 
+Probe uac has position s = 1.331
+22/08/2017 09:52:58 PM [INFO]: 
+Calibrating data
+22/08/2017 09:52:58 PM [INFO]: Getting calibrations from shotfile...
+22/08/2017 09:52:58 PM [INFO]: 
+
+Probe dimensions:
+22/08/2017 09:52:58 PM [INFO]: Probe: ua9   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:52:58 PM [INFO]: Probe: ua8   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:52:58 PM [INFO]: Probe: ua1   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:52:58 PM [INFO]: Probe: ua3   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:52:58 PM [INFO]: Probe: ua2   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:52:58 PM [INFO]: Probe: ua4   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:52:58 PM [INFO]: Probe: ua7   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:52:58 PM [INFO]: Probe: ua6   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:52:58 PM [INFO]: Probe: uaa   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:52:58 PM [INFO]: Probe: uac   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:52:58 PM [INFO]: Probe: uab   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:52:59 PM [INFO]: Signal te-ua0 cannot be read and is skipped. Message: Error by DDsinfo (8.1): status of signal doesn't permit access
+22/08/2017 09:53:02 PM [INFO]: Successfully read signal te-ua1
+22/08/2017 09:53:02 PM [INFO]: Successfully read signal te-ua2
+22/08/2017 09:53:05 PM [INFO]: Successfully read signal te-ua3
+22/08/2017 09:53:05 PM [INFO]: Successfully read signal te-ua4
+22/08/2017 09:53:07 PM [INFO]: Successfully read signal te-ua5
+22/08/2017 09:53:07 PM [INFO]: Successfully read signal te-ua6
+22/08/2017 09:53:08 PM [INFO]: Successfully read signal te-ua7
+22/08/2017 09:53:12 PM [INFO]: Successfully read signal te-ua8
+22/08/2017 09:53:12 PM [INFO]: Successfully read signal te-ua9
+22/08/2017 09:53:14 PM [INFO]: Successfully read signal te-uaa
+22/08/2017 09:53:14 PM [INFO]: Successfully read signal te-uab
+22/08/2017 09:53:17 PM [INFO]: Successfully read signal te-uac
+22/08/2017 09:53:17 PM [INFO]: Successfully read signal te-uad
+22/08/2017 09:53:19 PM [INFO]: Successfully read signal te-uae
+22/08/2017 09:53:20 PM [INFO]: Successfully read signal te-uaf
+22/08/2017 09:53:20 PM [INFO]: Averaging temporal data over 2 adjacent values
+22/08/2017 09:53:22 PM [INFO]: Signal ne-ua0 cannot be read and is skipped. Message: Error by DDsinfo (8.1): status of signal doesn't permit access
+22/08/2017 09:53:25 PM [INFO]: Successfully read signal ne-ua1
+22/08/2017 09:53:25 PM [INFO]: Successfully read signal ne-ua2
+22/08/2017 09:53:27 PM [INFO]: Successfully read signal ne-ua3
+22/08/2017 09:53:27 PM [INFO]: Successfully read signal ne-ua4
+22/08/2017 09:53:31 PM [INFO]: Successfully read signal ne-ua5
+22/08/2017 09:53:31 PM [INFO]: Successfully read signal ne-ua6
+22/08/2017 09:53:33 PM [INFO]: Successfully read signal ne-ua7
+22/08/2017 09:53:33 PM [INFO]: Successfully read signal ne-ua8
+22/08/2017 09:53:36 PM [INFO]: Successfully read signal ne-ua9
+22/08/2017 09:53:36 PM [INFO]: Successfully read signal ne-uaa
+22/08/2017 09:53:37 PM [INFO]: Successfully read signal ne-uab
+22/08/2017 09:53:41 PM [INFO]: Successfully read signal ne-uac
+22/08/2017 09:53:41 PM [INFO]: Successfully read signal ne-uad
+22/08/2017 09:53:43 PM [INFO]: Successfully read signal ne-uae
+22/08/2017 09:53:43 PM [INFO]: Successfully read signal ne-uaf
+22/08/2017 09:53:43 PM [INFO]: Averaging temporal data over 2 adjacent values
+22/08/2017 09:53:44 PM [INFO]: 
+++++++++++++++++ Getting mappings +++++++++++++++++++++++++
+
+22/08/2017 09:53:44 PM [WARNING]: Could not retrieve LSC data for probe ua0
+22/08/2017 09:53:44 PM [WARNING]: Could not retrieve LSC data for probe ua5
+22/08/2017 09:53:44 PM [WARNING]: Could not retrieve LSC data for probe uad
+22/08/2017 09:53:44 PM [WARNING]: Could not retrieve LSC data for probe uae
+22/08/2017 09:53:44 PM [WARNING]: Could not retrieve LSC data for probe uaf
+22/08/2017 09:53:44 PM [INFO]: 
+
+Probe mappings:
+22/08/2017 09:53:44 PM [INFO]: Probe: ua9  Channel: ('CH23', 4)
+22/08/2017 09:53:44 PM [INFO]: Probe: ua8  Channel: ('CH23', 3)
+22/08/2017 09:53:44 PM [INFO]: Probe: ua1  Channel: ('CH21', 1)
+22/08/2017 09:53:44 PM [INFO]: Probe: ua3  Channel: ('CH21', 5)
+22/08/2017 09:53:44 PM [INFO]: Probe: ua2  Channel: ('CH21', 3)
+22/08/2017 09:53:44 PM [INFO]: Probe: ua4  Channel: ('CH22', 1)
+22/08/2017 09:53:44 PM [INFO]: Probe: ua7  Channel: ('CH23', 1)
+22/08/2017 09:53:44 PM [INFO]: Probe: ua6  Channel: ('CH22', 5)
+22/08/2017 09:53:44 PM [INFO]: Probe: uaa  Channel: ('CH24', 1)
+22/08/2017 09:53:44 PM [INFO]: Probe: uac  Channel: ('CH24', 5)
+22/08/2017 09:53:44 PM [INFO]: Probe: uab  Channel: ('CH24', 3)
+22/08/2017 09:53:46 PM [INFO]: 
+Calibrating data
+22/08/2017 09:53:46 PM [INFO]: Getting calibrations from shotfile...
+22/08/2017 09:53:46 PM [INFO]: 
+
+Probe dimensions:
+22/08/2017 09:53:46 PM [INFO]: Probe: ua9   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:53:46 PM [INFO]: Probe: ua8   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:53:46 PM [INFO]: Probe: ua1   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:53:46 PM [INFO]: Probe: ua3   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:53:46 PM [INFO]: Probe: ua2   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:53:46 PM [INFO]: Probe: ua4   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:53:46 PM [INFO]: Probe: ua7   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:53:46 PM [INFO]: Probe: ua6   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 09:53:46 PM [INFO]: Probe: uaa   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:53:46 PM [INFO]: Probe: uac   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:53:46 PM [INFO]: Probe: uab   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 09:53:46 PM [INFO]: Averaging temporal data over 2 adjacent values
+22/08/2017 09:53:47 PM [INFO]: 
+Attributing colors to probes
+22/08/2017 09:53:47 PM [INFO]: Probe ua5 does not exist in spatial jsat plot.
+22/08/2017 09:53:47 PM [INFO]: Probe uad does not exist in spatial jsat plot.
+22/08/2017 09:53:47 PM [INFO]: Probe uae does not exist in spatial jsat plot.
+22/08/2017 09:53:47 PM [INFO]: Probe uaf does not exist in spatial jsat plot.
+22/08/2017 09:53:48 PM [INFO]: Probe ua5 does not exist in temporal jsat plot.
+22/08/2017 09:53:48 PM [INFO]: Probe uad does not exist in temporal jsat plot.
+22/08/2017 09:53:48 PM [INFO]: Probe uae does not exist in temporal jsat plot.
+22/08/2017 09:53:48 PM [INFO]: Probe uaf does not exist in temporal jsat plot.
+22/08/2017 09:53:49 PM [INFO]: 
+
+++++++++++++++POPULATING PROBE TABLE++++++++++
+22/08/2017 09:53:49 PM [INFO]: 
+
++++++++++++++++++ ALL DONE! ++++++++++++++++++
+
+
+22/08/2017 09:59:01 PM [INFO]: Creating temporal CELMA
+22/08/2017 09:59:01 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7f8821c78518>, <__main__.LangmuirProbe instance at 0x7f8821c785a8>, <__main__.LangmuirProbe instance at 0x7f8821c78638>]
+22/08/2017 09:59:01 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 09:59:01 PM [INFO]: From 2.548642s to 2.596415s
+22/08/2017 09:59:01 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 09:59:01 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279]
+22/08/2017 09:59:01 PM [DEBUG]: No ELMs in range
+22/08/2017 09:59:01 PM [DEBUG]: No ELMs selected
+22/08/2017 09:59:01 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 09:59:01 PM [INFO]: From 2.548642s to 2.596415s
+22/08/2017 09:59:01 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 09:59:01 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279]
+22/08/2017 09:59:01 PM [WARNING]: No data points in bin [-2.28881835938e-05,0.000222110748291]
+22/08/2017 09:59:01 PM [WARNING]: No data points in bin [0.000222110748291,0.000467109680176]
+22/08/2017 09:59:01 PM [DEBUG]: No ELMs in range
+22/08/2017 09:59:01 PM [DEBUG]: No ELMs selected
+22/08/2017 09:59:01 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 09:59:01 PM [INFO]: From 2.548642s to 2.596415s
+22/08/2017 09:59:01 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 09:59:01 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279]
+22/08/2017 09:59:01 PM [DEBUG]: No ELMs in range
+22/08/2017 09:59:01 PM [DEBUG]: No ELMs selected
+22/08/2017 09:59:01 PM [INFO]: Creating temporal CELMA
+22/08/2017 09:59:01 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7f87e3ff4dd0>, <__main__.LangmuirProbe instance at 0x7f87e3ff4e60>, <__main__.LangmuirProbe instance at 0x7f87e3ff4ef0>]
+22/08/2017 09:59:01 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 09:59:01 PM [INFO]: From 2.548642s to 2.596415s
+22/08/2017 09:59:01 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 09:59:01 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279]
+22/08/2017 09:59:01 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 09:59:01 PM [INFO]: From 2.548642s to 2.596415s
+22/08/2017 09:59:01 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 09:59:01 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279]
+22/08/2017 09:59:01 PM [WARNING]: No data points in bin [-2.28881835938e-05,0.000222110748291]
+22/08/2017 09:59:01 PM [WARNING]: No data points in bin [0.000222110748291,0.000467109680176]
+22/08/2017 09:59:01 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 09:59:01 PM [INFO]: From 2.548642s to 2.596415s
+22/08/2017 09:59:01 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 09:59:01 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279]
+22/08/2017 09:59:01 PM [INFO]: Creating temporal CELMA
+22/08/2017 09:59:01 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7f8821fa08c0>, <__main__.LangmuirProbe instance at 0x7f8821fa0908>, <__main__.LangmuirProbe instance at 0x7f8821fa0878>]
+22/08/2017 09:59:01 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 09:59:01 PM [INFO]: From 2.548642s to 2.596415s
+22/08/2017 09:59:01 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 09:59:01 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279]
+22/08/2017 09:59:01 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 09:59:01 PM [INFO]: From 2.548642s to 2.596415s
+22/08/2017 09:59:01 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 09:59:01 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279]
+22/08/2017 09:59:01 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 09:59:01 PM [INFO]: From 2.548642s to 2.596415s
+22/08/2017 09:59:01 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 09:59:01 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279]
+22/08/2017 10:00:03 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:00:03 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7f8821c78518>, <__main__.LangmuirProbe instance at 0x7f8821c785a8>, <__main__.LangmuirProbe instance at 0x7f8821c78638>]
+22/08/2017 10:00:03 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:00:03 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:03 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:03 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:03 PM [DEBUG]: No ELMs in range
+22/08/2017 10:00:03 PM [DEBUG]: No ELMs selected
+22/08/2017 10:00:03 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:00:03 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:03 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:03 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:03 PM [WARNING]: No data points in bin [-3.58819961548e-05,0.000264418125153]
+22/08/2017 10:00:03 PM [DEBUG]: No ELMs in range
+22/08/2017 10:00:03 PM [DEBUG]: No ELMs selected
+22/08/2017 10:00:03 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:00:03 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:03 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:03 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:03 PM [DEBUG]: No ELMs in range
+22/08/2017 10:00:03 PM [DEBUG]: No ELMs selected
+22/08/2017 10:00:03 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:00:03 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7f87e3ff4dd0>, <__main__.LangmuirProbe instance at 0x7f87e3ff4e60>, <__main__.LangmuirProbe instance at 0x7f87e3ff4ef0>]
+22/08/2017 10:00:03 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:00:03 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:03 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:03 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:03 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:00:03 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:03 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:03 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:03 PM [WARNING]: No data points in bin [-3.58819961548e-05,0.000264418125153]
+22/08/2017 10:00:03 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:00:03 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:03 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:03 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:03 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:00:03 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7f8821fa08c0>, <__main__.LangmuirProbe instance at 0x7f8821fa0908>, <__main__.LangmuirProbe instance at 0x7f8821fa0878>]
+22/08/2017 10:00:03 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:00:03 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:03 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:03 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:03 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:00:03 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:03 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:03 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:03 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:00:03 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:03 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:03 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:31 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:00:31 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7f8821c78518>, <__main__.LangmuirProbe instance at 0x7f8821c785a8>, <__main__.LangmuirProbe instance at 0x7f8821c78638>]
+22/08/2017 10:00:31 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:00:31 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:31 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:31 PM [DEBUG]: No ELMs in range
+22/08/2017 10:00:31 PM [DEBUG]: No ELMs selected
+22/08/2017 10:00:31 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:00:31 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:31 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:31 PM [WARNING]: No data points in bin [-3.58819961548e-05,0.000264418125153]
+22/08/2017 10:00:31 PM [DEBUG]: No ELMs in range
+22/08/2017 10:00:31 PM [DEBUG]: No ELMs selected
+22/08/2017 10:00:31 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:00:31 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:31 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:31 PM [DEBUG]: No ELMs in range
+22/08/2017 10:00:31 PM [DEBUG]: No ELMs selected
+22/08/2017 10:00:31 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:00:31 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7f87e3ff4dd0>, <__main__.LangmuirProbe instance at 0x7f87e3ff4e60>, <__main__.LangmuirProbe instance at 0x7f87e3ff4ef0>]
+22/08/2017 10:00:31 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:00:31 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:31 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:31 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:00:31 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:31 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:31 PM [WARNING]: No data points in bin [-3.58819961548e-05,0.000264418125153]
+22/08/2017 10:00:31 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:00:31 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:31 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:31 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:00:31 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7f8821fa08c0>, <__main__.LangmuirProbe instance at 0x7f8821fa0908>, <__main__.LangmuirProbe instance at 0x7f8821fa0878>]
+22/08/2017 10:00:31 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:00:31 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:31 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:31 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:00:31 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:31 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:00:31 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:00:31 PM [INFO]: From 2.577139s to 2.624912s
+22/08/2017 10:00:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:00:31 PM [INFO]: Found ELM starts: [ 2.58101082  2.59335279  2.60267878  2.61016273  2.62417889]
+22/08/2017 10:11:21 PM [WARNING]: Could not find action Temporal Plot
+22/08/2017 10:11:21 PM [WARNING]: Could not find action Spatial Plot
+22/08/2017 10:11:33 PM [INFO]: Loading shot
+22/08/2017 10:11:33 PM [INFO]: Colors loaded from config file:
+22/08/2017 10:11:33 PM [INFO]: {'ua3': [1.0, 0.6, 0.0], 'ua2': [0.0, 0.4, 0.6], 'ua5': [0.3333333333333333, 0.3333333333333333, 0.4980392156862745], 'ua4': [0.8, 0.0, 0.0]}
+22/08/2017 10:11:33 PM [INFO]: Read shot number 32201 from GUI
+22/08/2017 10:11:33 PM [INFO]: Getting last LSC shot number
+22/08/2017 10:11:33 PM [INFO]: Getting LSD shot
+22/08/2017 10:11:33 PM [ERROR]: Failed to retrieve time base for signal ne-ua0
+22/08/2017 10:11:33 PM [ERROR]: Failed to retrieve time base for signal te-ua0
+22/08/2017 10:11:33 PM [INFO]: Getting FPG shot
+22/08/2017 10:11:33 PM [INFO]: Getting ELM shot
+22/08/2017 10:11:33 PM [INFO]: Getting LSF shot
+22/08/2017 10:11:33 PM [INFO]: Getting LSC shot
+22/08/2017 10:11:33 PM [INFO]: Latest LSC shot number: 32163
+22/08/2017 10:11:33 PM [INFO]: +++++++++Data retrieval was successful+++++++++
+22/08/2017 10:11:33 PM [INFO]: 
+++++++++++++++++ Getting mappings +++++++++++++++++++++++++
+
+22/08/2017 10:11:33 PM [WARNING]: Could not retrieve LSC data for probe ua0
+22/08/2017 10:11:33 PM [WARNING]: Could not retrieve LSC data for probe ua5
+22/08/2017 10:11:33 PM [WARNING]: Could not retrieve LSC data for probe uad
+22/08/2017 10:11:33 PM [WARNING]: Could not retrieve LSC data for probe uae
+22/08/2017 10:11:33 PM [WARNING]: Could not retrieve LSC data for probe uaf
+22/08/2017 10:11:33 PM [INFO]: 
+
+Probe mappings:
+22/08/2017 10:11:33 PM [INFO]: Probe: ua9  Channel: ('CH23', 4)
+22/08/2017 10:11:33 PM [INFO]: Probe: ua8  Channel: ('CH23', 3)
+22/08/2017 10:11:33 PM [INFO]: Probe: ua1  Channel: ('CH21', 1)
+22/08/2017 10:11:33 PM [INFO]: Probe: ua3  Channel: ('CH21', 5)
+22/08/2017 10:11:33 PM [INFO]: Probe: ua2  Channel: ('CH21', 3)
+22/08/2017 10:11:33 PM [INFO]: Probe: ua4  Channel: ('CH22', 1)
+22/08/2017 10:11:33 PM [INFO]: Probe: ua7  Channel: ('CH23', 1)
+22/08/2017 10:11:33 PM [INFO]: Probe: ua6  Channel: ('CH22', 5)
+22/08/2017 10:11:33 PM [INFO]: Probe: uaa  Channel: ('CH24', 1)
+22/08/2017 10:11:33 PM [INFO]: Probe: uac  Channel: ('CH24', 5)
+22/08/2017 10:11:33 PM [INFO]: Probe: uab  Channel: ('CH24', 3)
+22/08/2017 10:11:35 PM [INFO]: 
+Probe ua1 has position s = 0.996
+22/08/2017 10:11:35 PM [INFO]: 
+Probe ua2 has position s = 1.021
+22/08/2017 10:11:35 PM [INFO]: 
+Probe ua3 has position s = 1.046
+22/08/2017 10:11:35 PM [INFO]: 
+Probe ua4 has position s = 1.071
+22/08/2017 10:11:35 PM [INFO]: 
+Probe ua6 has position s = 1.121
+22/08/2017 10:11:35 PM [INFO]: 
+Probe ua7 has position s = 1.146
+22/08/2017 10:11:35 PM [INFO]: 
+Probe ua8 has position s = 1.171
+22/08/2017 10:11:35 PM [INFO]: 
+Probe ua9 has position s = 1.221
+22/08/2017 10:11:35 PM [INFO]: 
+Probe uaa has position s = 1.271
+22/08/2017 10:11:35 PM [INFO]: 
+Probe uab has position s = 1.302
+22/08/2017 10:11:35 PM [INFO]: 
+Probe uac has position s = 1.331
+22/08/2017 10:11:35 PM [INFO]: 
+Calibrating data
+22/08/2017 10:11:35 PM [INFO]: Getting calibrations from shotfile...
+22/08/2017 10:11:35 PM [INFO]: 
+
+Probe dimensions:
+22/08/2017 10:11:35 PM [INFO]: Probe: ua9   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 10:11:35 PM [INFO]: Probe: ua8   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:35 PM [INFO]: Probe: ua1   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:35 PM [INFO]: Probe: ua3   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:35 PM [INFO]: Probe: ua2   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:35 PM [INFO]: Probe: ua4   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:35 PM [INFO]: Probe: ua7   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:35 PM [INFO]: Probe: ua6   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:35 PM [INFO]: Probe: uaa   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 10:11:35 PM [INFO]: Probe: uac   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 10:11:35 PM [INFO]: Probe: uab   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 10:11:35 PM [INFO]: Signal te-ua0 cannot be read and is skipped. Message: Error by DDsinfo (8.1): status of signal doesn't permit access
+22/08/2017 10:11:35 PM [INFO]: Successfully read signal te-ua1
+22/08/2017 10:11:35 PM [INFO]: Successfully read signal te-ua2
+22/08/2017 10:11:35 PM [INFO]: Successfully read signal te-ua3
+22/08/2017 10:11:35 PM [INFO]: Successfully read signal te-ua4
+22/08/2017 10:11:35 PM [INFO]: Successfully read signal te-ua5
+22/08/2017 10:11:35 PM [INFO]: Successfully read signal te-ua6
+22/08/2017 10:11:35 PM [INFO]: Successfully read signal te-ua7
+22/08/2017 10:11:35 PM [INFO]: Successfully read signal te-ua8
+22/08/2017 10:11:36 PM [INFO]: Successfully read signal te-ua9
+22/08/2017 10:11:36 PM [INFO]: Successfully read signal te-uaa
+22/08/2017 10:11:36 PM [INFO]: Successfully read signal te-uab
+22/08/2017 10:11:36 PM [INFO]: Successfully read signal te-uac
+22/08/2017 10:11:36 PM [INFO]: Successfully read signal te-uad
+22/08/2017 10:11:36 PM [INFO]: Successfully read signal te-uae
+22/08/2017 10:11:36 PM [INFO]: Successfully read signal te-uaf
+22/08/2017 10:11:36 PM [INFO]: Averaging temporal data over 2 adjacent values
+22/08/2017 10:11:37 PM [INFO]: Signal ne-ua0 cannot be read and is skipped. Message: Error by DDsinfo (8.1): status of signal doesn't permit access
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-ua1
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-ua2
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-ua3
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-ua4
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-ua5
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-ua6
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-ua7
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-ua8
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-ua9
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-uaa
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-uab
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-uac
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-uad
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-uae
+22/08/2017 10:11:37 PM [INFO]: Successfully read signal ne-uaf
+22/08/2017 10:11:37 PM [INFO]: Averaging temporal data over 2 adjacent values
+22/08/2017 10:11:38 PM [INFO]: 
+++++++++++++++++ Getting mappings +++++++++++++++++++++++++
+
+22/08/2017 10:11:38 PM [WARNING]: Could not retrieve LSC data for probe ua0
+22/08/2017 10:11:38 PM [WARNING]: Could not retrieve LSC data for probe ua5
+22/08/2017 10:11:38 PM [WARNING]: Could not retrieve LSC data for probe uad
+22/08/2017 10:11:38 PM [WARNING]: Could not retrieve LSC data for probe uae
+22/08/2017 10:11:38 PM [WARNING]: Could not retrieve LSC data for probe uaf
+22/08/2017 10:11:38 PM [INFO]: 
+
+Probe mappings:
+22/08/2017 10:11:38 PM [INFO]: Probe: ua9  Channel: ('CH23', 4)
+22/08/2017 10:11:38 PM [INFO]: Probe: ua8  Channel: ('CH23', 3)
+22/08/2017 10:11:38 PM [INFO]: Probe: ua1  Channel: ('CH21', 1)
+22/08/2017 10:11:38 PM [INFO]: Probe: ua3  Channel: ('CH21', 5)
+22/08/2017 10:11:38 PM [INFO]: Probe: ua2  Channel: ('CH21', 3)
+22/08/2017 10:11:38 PM [INFO]: Probe: ua4  Channel: ('CH22', 1)
+22/08/2017 10:11:38 PM [INFO]: Probe: ua7  Channel: ('CH23', 1)
+22/08/2017 10:11:38 PM [INFO]: Probe: ua6  Channel: ('CH22', 5)
+22/08/2017 10:11:38 PM [INFO]: Probe: uaa  Channel: ('CH24', 1)
+22/08/2017 10:11:38 PM [INFO]: Probe: uac  Channel: ('CH24', 5)
+22/08/2017 10:11:38 PM [INFO]: Probe: uab  Channel: ('CH24', 3)
+22/08/2017 10:11:40 PM [INFO]: 
+Calibrating data
+22/08/2017 10:11:40 PM [INFO]: Getting calibrations from shotfile...
+22/08/2017 10:11:40 PM [INFO]: 
+
+Probe dimensions:
+22/08/2017 10:11:40 PM [INFO]: Probe: ua9   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 10:11:40 PM [INFO]: Probe: ua8   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:40 PM [INFO]: Probe: ua1   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:40 PM [INFO]: Probe: ua3   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:40 PM [INFO]: Probe: ua2   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:40 PM [INFO]: Probe: ua4   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:40 PM [INFO]: Probe: ua7   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:40 PM [INFO]: Probe: ua6   Geometry: (0.004999999888241291, 0.02500000037252903)
+22/08/2017 10:11:40 PM [INFO]: Probe: uaa   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 10:11:40 PM [INFO]: Probe: uac   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 10:11:40 PM [INFO]: Probe: uab   Geometry: (0.006000000052154064, 0.029999999329447746)
+22/08/2017 10:11:40 PM [INFO]: Averaging temporal data over 2 adjacent values
+22/08/2017 10:11:42 PM [INFO]: 
+Attributing colors to probes
+22/08/2017 10:11:42 PM [INFO]: Probe ua5 does not exist in spatial jsat plot.
+22/08/2017 10:11:42 PM [INFO]: Probe uad does not exist in spatial jsat plot.
+22/08/2017 10:11:42 PM [INFO]: Probe uae does not exist in spatial jsat plot.
+22/08/2017 10:11:42 PM [INFO]: Probe uaf does not exist in spatial jsat plot.
+22/08/2017 10:11:43 PM [INFO]: Probe ua5 does not exist in temporal jsat plot.
+22/08/2017 10:11:43 PM [INFO]: Probe uad does not exist in temporal jsat plot.
+22/08/2017 10:11:43 PM [INFO]: Probe uae does not exist in temporal jsat plot.
+22/08/2017 10:11:43 PM [INFO]: Probe uaf does not exist in temporal jsat plot.
+22/08/2017 10:11:43 PM [INFO]: 
+
+++++++++++++++POPULATING PROBE TABLE++++++++++
+22/08/2017 10:11:43 PM [INFO]: 
+
++++++++++++++++++ ALL DONE! ++++++++++++++++++
+
+
+22/08/2017 10:13:22 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:13:22 PM [INFO]: Creatung CELMAs for these probes: []
+22/08/2017 10:13:22 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:13:22 PM [INFO]: Creatung CELMAs for these probes: []
+22/08/2017 10:13:22 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:13:22 PM [INFO]: Creatung CELMAs for these probes: []
+22/08/2017 10:14:25 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:14:25 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:14:25 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:14:25 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:25 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:25 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:25 PM [DEBUG]: No ELMs in range
+22/08/2017 10:14:25 PM [DEBUG]: No ELMs selected
+22/08/2017 10:14:25 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:14:25 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:25 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:25 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:25 PM [WARNING]: temporal te plot: No data points in bin 52 [0.00018488407135,0.00040958404541]
+22/08/2017 10:14:25 PM [DEBUG]: No ELMs in range
+22/08/2017 10:14:25 PM [DEBUG]: No ELMs selected
+22/08/2017 10:14:25 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:14:25 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:25 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:25 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:26 PM [DEBUG]: No ELMs in range
+22/08/2017 10:14:26 PM [DEBUG]: No ELMs selected
+22/08/2017 10:14:26 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:14:26 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:14:26 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:14:26 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:26 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:26 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:14:26 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:26 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:26 PM [WARNING]: temporal ne plot: No data points in bin 52 [0.00018488407135,0.00040958404541]
+22/08/2017 10:14:26 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:14:26 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:26 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:26 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:14:26 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:14:26 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:14:26 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:26 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:26 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:14:26 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:26 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:26 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:14:26 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:26 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:57 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:14:57 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:14:57 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:14:57 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:57 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:57 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:57 PM [DEBUG]: No ELMs in range
+22/08/2017 10:14:57 PM [DEBUG]: No ELMs selected
+22/08/2017 10:14:57 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:14:57 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:57 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:57 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:57 PM [WARNING]: temporal te plot: No data points in bin 52 [0.00018488407135,0.00040958404541]
+22/08/2017 10:14:57 PM [DEBUG]: No ELMs in range
+22/08/2017 10:14:57 PM [DEBUG]: No ELMs selected
+22/08/2017 10:14:57 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:14:57 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:57 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:57 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:57 PM [DEBUG]: No ELMs in range
+22/08/2017 10:14:57 PM [DEBUG]: No ELMs selected
+22/08/2017 10:14:57 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:14:57 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:14:57 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:14:57 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:57 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:57 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:57 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:14:57 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:57 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:57 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:57 PM [WARNING]: temporal ne plot: No data points in bin 52 [0.00018488407135,0.00040958404541]
+22/08/2017 10:14:57 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:14:57 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:57 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:57 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:57 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:14:57 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:14:57 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:14:57 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:57 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:57 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:57 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:14:57 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:57 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:57 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:14:57 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:14:57 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:14:57 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:14:57 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:15:44 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:15:44 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:15:44 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:15:44 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:15:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:15:44 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:15:44 PM [DEBUG]: No ELMs in range
+22/08/2017 10:15:44 PM [DEBUG]: No ELMs selected
+22/08/2017 10:15:44 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:15:44 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:15:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:15:44 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:15:44 PM [WARNING]: temporal te plot: No data points in bin 52 [0.00018488407135,0.00040958404541]
+22/08/2017 10:15:44 PM [DEBUG]: No ELMs in range
+22/08/2017 10:15:44 PM [DEBUG]: No ELMs selected
+22/08/2017 10:15:44 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:15:44 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:15:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:15:44 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:15:44 PM [DEBUG]: No ELMs in range
+22/08/2017 10:15:44 PM [DEBUG]: No ELMs selected
+22/08/2017 10:15:44 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:15:44 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:15:44 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:15:44 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:15:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:15:44 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:15:45 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:15:45 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:15:45 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:15:45 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:15:45 PM [WARNING]: temporal ne plot: No data points in bin 52 [0.00018488407135,0.00040958404541]
+22/08/2017 10:15:45 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:15:45 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:15:45 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:15:45 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:15:45 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:15:45 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:15:45 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:15:45 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:15:45 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:15:45 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:15:45 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:15:45 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:15:45 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:15:45 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:15:45 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:15:45 PM [INFO]: From 2.665431s to 2.715925s
+22/08/2017 10:15:45 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:15:45 PM [INFO]: Found ELM starts: [ 2.67052269  2.68182683  2.69186687  2.69924068  2.7097168 ]
+22/08/2017 10:16:37 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:16:37 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:16:37 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:16:37 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:16:37 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:16:37 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:16:37 PM [DEBUG]: No ELMs in range
+22/08/2017 10:16:37 PM [DEBUG]: No ELMs selected
+22/08/2017 10:16:37 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:16:37 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:16:37 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:16:37 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:16:37 PM [DEBUG]: No ELMs in range
+22/08/2017 10:16:37 PM [DEBUG]: No ELMs selected
+22/08/2017 10:16:37 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:16:37 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:16:37 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:16:37 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:16:37 PM [DEBUG]: No ELMs in range
+22/08/2017 10:16:37 PM [DEBUG]: No ELMs selected
+22/08/2017 10:16:37 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:16:37 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:16:37 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:16:37 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:16:37 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:16:37 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:16:38 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:16:38 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:16:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:16:38 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:16:38 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:16:38 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:16:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:16:38 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:16:38 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:16:38 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:16:38 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:16:38 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:16:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:16:38 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:16:38 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:16:38 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:16:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:16:38 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:16:38 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:16:38 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:16:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:16:38 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:17 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:18:17 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:18:17 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:18:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:17 PM [DEBUG]: No ELMs in range
+22/08/2017 10:18:17 PM [DEBUG]: No ELMs selected
+22/08/2017 10:18:17 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:18:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:17 PM [DEBUG]: No ELMs in range
+22/08/2017 10:18:17 PM [DEBUG]: No ELMs selected
+22/08/2017 10:18:17 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:18:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:17 PM [DEBUG]: No ELMs in range
+22/08/2017 10:18:17 PM [DEBUG]: No ELMs selected
+22/08/2017 10:18:17 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:18:17 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:18:17 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:18:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:17 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:18:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:17 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:18:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:17 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:18:17 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:18:17 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:18:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:17 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:18:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:17 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:18:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:41 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:18:41 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:18:41 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:18:41 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:41 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:41 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:41 PM [DEBUG]: No ELMs in range
+22/08/2017 10:18:41 PM [DEBUG]: No ELMs selected
+22/08/2017 10:18:41 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:18:41 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:41 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:41 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:41 PM [DEBUG]: No ELMs in range
+22/08/2017 10:18:41 PM [DEBUG]: No ELMs selected
+22/08/2017 10:18:41 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:18:41 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:41 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:41 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:41 PM [DEBUG]: No ELMs in range
+22/08/2017 10:18:41 PM [DEBUG]: No ELMs selected
+22/08/2017 10:18:41 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:18:41 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:18:41 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:18:41 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:41 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:41 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:41 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:18:41 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:41 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:41 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:41 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:18:41 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:41 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:41 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:42 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:18:42 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:18:42 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:18:42 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:42 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:42 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:42 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:18:42 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:42 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:42 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:18:42 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:18:42 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:18:42 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:18:42 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:19:17 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:19:17 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:19:17 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:19:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:19:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:19:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:19:17 PM [DEBUG]: No ELMs in range
+22/08/2017 10:19:17 PM [DEBUG]: No ELMs selected
+22/08/2017 10:19:17 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:19:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:19:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:19:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:19:17 PM [DEBUG]: No ELMs in range
+22/08/2017 10:19:17 PM [DEBUG]: No ELMs selected
+22/08/2017 10:19:17 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:19:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:19:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:19:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:19:17 PM [DEBUG]: No ELMs in range
+22/08/2017 10:19:17 PM [DEBUG]: No ELMs selected
+22/08/2017 10:19:17 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:19:17 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:19:17 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:19:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:19:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:19:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:19:17 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:19:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:19:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:19:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:19:17 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:19:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:19:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:19:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:19:17 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:19:17 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:19:17 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:19:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:19:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:19:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:19:17 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:19:17 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:19:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:19:17 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:19:18 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:19:18 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:19:18 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:19:18 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:26:30 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:26:30 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:26:30 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:26:30 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:26:30 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:26:30 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:26:31 PM [DEBUG]: No ELMs in range
+22/08/2017 10:26:31 PM [DEBUG]: No ELMs selected
+22/08/2017 10:26:31 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:26:31 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:26:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:26:31 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:26:31 PM [DEBUG]: No ELMs in range
+22/08/2017 10:26:31 PM [DEBUG]: No ELMs selected
+22/08/2017 10:26:31 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:26:31 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:26:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:26:31 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:26:31 PM [DEBUG]: No ELMs in range
+22/08/2017 10:26:31 PM [DEBUG]: No ELMs selected
+22/08/2017 10:26:31 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:26:31 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:26:31 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:26:31 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:26:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:26:31 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:26:31 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:26:31 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:26:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:26:31 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:26:31 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:26:31 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:26:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:26:31 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:26:31 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:26:31 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:26:31 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:26:31 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:26:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:26:31 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:26:31 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:26:31 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:26:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:26:31 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:26:31 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:26:31 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:26:31 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:26:31 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:27:04 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:27:04 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:27:04 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:27:04 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:27:04 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:27:04 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:27:04 PM [DEBUG]: No ELMs in range
+22/08/2017 10:27:04 PM [DEBUG]: No ELMs selected
+22/08/2017 10:27:04 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:27:04 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:27:04 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:27:04 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:27:04 PM [DEBUG]: No ELMs in range
+22/08/2017 10:27:04 PM [DEBUG]: No ELMs selected
+22/08/2017 10:27:04 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:27:04 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:27:04 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:27:04 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:27:04 PM [DEBUG]: No ELMs in range
+22/08/2017 10:27:04 PM [DEBUG]: No ELMs selected
+22/08/2017 10:27:04 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:27:04 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:27:04 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:27:04 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:27:04 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:27:04 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:27:04 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:27:04 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:27:04 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:27:04 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:27:04 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:27:04 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:27:04 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:27:04 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:27:05 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:27:05 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:27:05 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:27:05 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:27:05 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:27:05 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:27:05 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:27:05 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:27:05 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:27:05 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:27:05 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:27:05 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:27:05 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:27:05 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:46:49 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:46:49 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:46:49 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:46:49 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:46:49 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:46:49 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:46:49 PM [DEBUG]: No ELMs in range
+22/08/2017 10:46:49 PM [DEBUG]: No ELMs selected
+22/08/2017 10:46:49 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:46:49 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:46:49 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:46:49 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:46:49 PM [DEBUG]: No ELMs in range
+22/08/2017 10:46:49 PM [DEBUG]: No ELMs selected
+22/08/2017 10:46:49 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:46:49 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:46:49 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:46:49 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:46:49 PM [DEBUG]: No ELMs in range
+22/08/2017 10:46:49 PM [DEBUG]: No ELMs selected
+22/08/2017 10:46:49 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:46:49 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:46:49 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:46:49 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:46:49 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:46:49 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:46:49 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:46:49 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:46:49 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:46:49 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:46:49 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:46:49 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:46:49 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:46:49 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:46:50 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:46:50 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:46:50 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:46:50 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:46:50 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:46:50 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:46:50 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:46:50 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:46:50 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:46:50 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:46:50 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:46:50 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:46:50 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:46:50 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:47:13 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:47:13 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:47:13 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:47:13 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:47:13 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:47:13 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:47:13 PM [DEBUG]: No ELMs in range
+22/08/2017 10:47:13 PM [DEBUG]: No ELMs selected
+22/08/2017 10:47:13 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:47:13 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:47:13 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:47:13 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:47:13 PM [DEBUG]: No ELMs in range
+22/08/2017 10:47:13 PM [DEBUG]: No ELMs selected
+22/08/2017 10:47:13 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:47:13 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:47:13 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:47:13 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:47:14 PM [DEBUG]: No ELMs in range
+22/08/2017 10:47:14 PM [DEBUG]: No ELMs selected
+22/08/2017 10:47:14 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:47:14 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:47:14 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:47:14 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:47:14 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:47:14 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:47:14 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:47:14 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:47:14 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:47:14 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:47:14 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:47:14 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:47:14 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:47:14 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:47:14 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:47:14 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:47:14 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:47:14 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:47:14 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:47:14 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:47:14 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:47:14 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:47:14 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:47:14 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:47:14 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:47:14 PM [INFO]: From 2.555007s to 2.765053s
+22/08/2017 10:47:14 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:47:14 PM [INFO]: Found ELM starts: [ 2.55519891  2.5631609   2.57329679  2.58101082  2.59335279  2.60267878
+  2.61016273  2.62417889  2.63927078  2.6493268   2.65675092  2.67052269
+  2.68182683  2.69186687  2.69924068  2.7097168   2.71710682  2.72535682
+  2.73562479  2.74323487  2.75323272  2.76394677]
+22/08/2017 10:48:16 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:48:16 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:48:16 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:48:16 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:48:16 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:48:16 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.73291874
+  3.75202084  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877
+  3.8179667   3.82771468  3.84130478  3.85340881  3.86209488  3.87167668
+  3.88380885  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:48:16 PM [DEBUG]: No ELMs in range
+22/08/2017 10:48:16 PM [DEBUG]: No ELMs selected
+22/08/2017 10:48:16 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:48:16 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:48:16 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:48:16 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.73291874
+  3.75202084  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877
+  3.8179667   3.82771468  3.84130478  3.85340881  3.86209488  3.87167668
+  3.88380885  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:48:17 PM [DEBUG]: No ELMs in range
+22/08/2017 10:48:17 PM [DEBUG]: No ELMs selected
+22/08/2017 10:48:17 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:48:17 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:48:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:48:17 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.73291874
+  3.75202084  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877
+  3.8179667   3.82771468  3.84130478  3.85340881  3.86209488  3.87167668
+  3.88380885  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:48:17 PM [DEBUG]: No ELMs in range
+22/08/2017 10:48:17 PM [DEBUG]: No ELMs selected
+22/08/2017 10:48:17 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:48:17 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:48:17 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:48:17 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:48:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:48:17 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.73291874
+  3.75202084  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877
+  3.8179667   3.82771468  3.84130478  3.85340881  3.86209488  3.87167668
+  3.88380885  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:48:17 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:48:17 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:48:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:48:17 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.73291874
+  3.75202084  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877
+  3.8179667   3.82771468  3.84130478  3.85340881  3.86209488  3.87167668
+  3.88380885  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:48:17 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:48:17 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:48:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:48:17 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.73291874
+  3.75202084  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877
+  3.8179667   3.82771468  3.84130478  3.85340881  3.86209488  3.87167668
+  3.88380885  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:48:17 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:48:17 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:48:17 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:48:17 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:48:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:48:17 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.73291874
+  3.75202084  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877
+  3.8179667   3.82771468  3.84130478  3.85340881  3.86209488  3.87167668
+  3.88380885  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:48:17 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:48:17 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:48:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:48:17 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.73291874
+  3.75202084  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877
+  3.8179667   3.82771468  3.84130478  3.85340881  3.86209488  3.87167668
+  3.88380885  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:48:17 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:48:17 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:48:17 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:48:17 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.73291874
+  3.75202084  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877
+  3.8179667   3.82771468  3.84130478  3.85340881  3.86209488  3.87167668
+  3.88380885  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:49:20 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:49:20 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:49:20 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:49:20 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:49:20 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:49:20 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:49:20 PM [ERROR]: No data to fit
+22/08/2017 10:49:20 PM [ERROR]: Fit could not be determined
+22/08/2017 10:49:20 PM [DEBUG]: No ELMs in range
+22/08/2017 10:49:20 PM [DEBUG]: No ELMs selected
+22/08/2017 10:49:20 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:49:20 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:49:20 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:49:20 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:49:21 PM [DEBUG]: No ELMs in range
+22/08/2017 10:49:21 PM [DEBUG]: No ELMs selected
+22/08/2017 10:49:21 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:49:21 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:49:21 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:49:21 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:49:21 PM [DEBUG]: No ELMs in range
+22/08/2017 10:49:21 PM [DEBUG]: No ELMs selected
+22/08/2017 10:49:21 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:49:21 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:49:21 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:49:21 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:49:21 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:49:21 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:49:21 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:49:21 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:49:21 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:49:21 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:49:21 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:49:21 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:49:21 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:49:21 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:49:21 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:49:21 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:49:21 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:49:21 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:49:21 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:49:21 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:49:21 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:49:21 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:49:21 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:49:21 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:49:21 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:49:21 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:49:21 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:49:21 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:25 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:25 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:56:25 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:25 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:25 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:25 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:25 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:25 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:25 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:25 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:25 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:25 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:25 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:25 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:25 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:25 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:25 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:25 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:26 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:26 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:26 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:26 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:56:26 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:26 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:26 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:26 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:26 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:26 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:26 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:26 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:26 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:26 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:26 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:56:26 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:26 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:26 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:26 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:26 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:26 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:26 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:26 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:26 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:26 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:37 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:37 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:56:37 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:37 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:37 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:37 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:37 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:37 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:37 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:37 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:37 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:37 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:37 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:37 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:37 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:37 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:37 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:37 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:38 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:38 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:38 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:38 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:56:38 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:38 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:38 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:38 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:38 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:38 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:38 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:38 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:38 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:38 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:38 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:56:38 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:38 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:38 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:38 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:38 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:38 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:38 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:38 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:38 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:38 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:47 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:47 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:56:47 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:47 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:47 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:47 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:47 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:47 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:47 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:47 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:47 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:47 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:48 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:48 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:48 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:48 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:48 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:48 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:48 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:48 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:48 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:48 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:56:48 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:48 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:48 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:48 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:48 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:48 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:48 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:48 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:48 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:48 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:48 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:48 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:48 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:48 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:56:48 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:48 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:48 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:48 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:48 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:48 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:48 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:48 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:48 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:48 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:48 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:48 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:55 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:55 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 10:56:55 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:55 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:55 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:55 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:55 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:55 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:55 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:55 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:55 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:55 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:55 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:55 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:55 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 10:56:55 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:55 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:55 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:55 PM [DEBUG]: No ELMs in range
+22/08/2017 10:56:55 PM [DEBUG]: No ELMs selected
+22/08/2017 10:56:55 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:55 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 10:56:55 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:55 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:55 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:55 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:55 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:55 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:55 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:55 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:56 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 10:56:56 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:56 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:56 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:56 PM [INFO]: Creating temporal CELMA
+22/08/2017 10:56:56 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 10:56:56 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:56 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:56 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:56 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:56 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:56 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:56 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:56 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 10:56:56 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 10:56:56 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 10:56:56 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 10:56:56 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:00:43 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:00:43 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 11:00:43 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:00:43 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:00:43 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:00:43 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:00:43 PM [DEBUG]: No ELMs in range
+22/08/2017 11:00:43 PM [DEBUG]: No ELMs selected
+22/08/2017 11:00:43 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:00:43 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:00:43 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:00:43 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:00:43 PM [DEBUG]: No ELMs in range
+22/08/2017 11:00:43 PM [DEBUG]: No ELMs selected
+22/08/2017 11:00:43 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:00:43 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:00:43 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:00:43 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:00:43 PM [DEBUG]: No ELMs in range
+22/08/2017 11:00:43 PM [DEBUG]: No ELMs selected
+22/08/2017 11:00:44 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:00:44 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 11:00:44 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:00:44 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:00:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:00:44 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:00:44 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:00:44 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:00:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:00:44 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:00:44 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:00:44 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:00:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:00:44 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:00:44 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:00:44 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 11:00:44 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:00:44 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:00:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:00:44 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:00:44 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:00:44 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:00:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:00:44 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:00:44 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:00:44 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:00:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:00:44 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:01:08 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:01:08 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 11:01:08 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:01:08 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:01:08 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:01:08 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:01:08 PM [DEBUG]: No ELMs in range
+22/08/2017 11:01:08 PM [DEBUG]: No ELMs selected
+22/08/2017 11:01:08 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:01:08 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:01:08 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:01:08 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:01:08 PM [DEBUG]: No ELMs in range
+22/08/2017 11:01:08 PM [DEBUG]: No ELMs selected
+22/08/2017 11:01:08 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:01:08 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:01:08 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:01:08 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:01:08 PM [DEBUG]: No ELMs in range
+22/08/2017 11:01:08 PM [DEBUG]: No ELMs selected
+22/08/2017 11:01:08 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:01:08 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 11:01:08 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:01:08 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:01:08 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:01:08 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:01:08 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:01:08 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:01:08 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:01:08 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:01:08 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:01:08 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:01:08 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:01:08 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:01:08 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:01:08 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 11:01:08 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:01:08 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:01:08 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:01:08 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:01:08 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:01:08 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:01:08 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:01:08 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:01:08 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:01:08 PM [INFO]: From 3.665182s to 3.931412s
+22/08/2017 11:01:08 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:01:08 PM [INFO]: Found ELM starts: [ 3.6766367   3.68704677  3.69614887  3.70667481  3.71694279  3.75202084
+  3.76273274  3.77430677  3.78310275  3.79187083  3.80175877  3.8179667
+  3.82771468  3.84130478  3.85340881  3.86209488  3.87167668  3.88380885
+  3.8940289   3.90597892  3.9171207   3.92712283]
+22/08/2017 11:15:36 PM [DEBUG]: No ELMs in range
+22/08/2017 11:15:36 PM [DEBUG]: No ELMs selected
+22/08/2017 11:15:36 PM [DEBUG]: No ELMs in range
+22/08/2017 11:15:36 PM [DEBUG]: No ELMs selected
+22/08/2017 11:15:38 PM [DEBUG]: No ELMs in range
+22/08/2017 11:15:38 PM [DEBUG]: No ELMs selected
+22/08/2017 11:15:38 PM [DEBUG]: No ELMs in range
+22/08/2017 11:15:38 PM [DEBUG]: No ELMs selected
+22/08/2017 11:15:38 PM [DEBUG]: No ELMs in range
+22/08/2017 11:15:38 PM [DEBUG]: No ELMs selected
+22/08/2017 11:15:38 PM [DEBUG]: No ELMs in range
+22/08/2017 11:15:38 PM [DEBUG]: No ELMs selected
+22/08/2017 11:16:11 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:16:11 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 11:16:11 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:16:11 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:16:11 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:16:11 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:16:11 PM [DEBUG]: No ELMs in range
+22/08/2017 11:16:11 PM [DEBUG]: No ELMs selected
+22/08/2017 11:16:11 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:16:11 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:16:11 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:16:11 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:16:11 PM [DEBUG]: No ELMs in range
+22/08/2017 11:16:11 PM [DEBUG]: No ELMs selected
+22/08/2017 11:16:11 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:16:11 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:16:11 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:16:11 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:16:11 PM [DEBUG]: No ELMs in range
+22/08/2017 11:16:11 PM [DEBUG]: No ELMs selected
+22/08/2017 11:16:11 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:16:11 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 11:16:11 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:16:11 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:16:11 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:16:11 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:16:11 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:16:11 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:16:11 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:16:11 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:16:11 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:16:11 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:16:11 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:16:11 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:16:11 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:16:11 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 11:16:11 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:16:11 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:16:11 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:16:11 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:16:11 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:16:11 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:16:11 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:16:11 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:16:11 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:16:11 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:16:11 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:16:11 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:18:44 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:18:44 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 11:18:44 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:18:44 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:18:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:18:44 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:18:44 PM [DEBUG]: No ELMs in range
+22/08/2017 11:18:44 PM [DEBUG]: No ELMs selected
+22/08/2017 11:18:44 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:18:44 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:18:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:18:44 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:18:44 PM [DEBUG]: No ELMs in range
+22/08/2017 11:18:44 PM [DEBUG]: No ELMs selected
+22/08/2017 11:18:44 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:18:44 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:18:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:18:44 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:18:44 PM [DEBUG]: No ELMs in range
+22/08/2017 11:18:44 PM [DEBUG]: No ELMs selected
+22/08/2017 11:18:44 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:18:44 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 11:18:44 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:18:44 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:18:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:18:44 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:18:44 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:18:44 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:18:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:18:44 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:18:44 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:18:44 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:18:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:18:44 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:18:44 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:18:44 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 11:18:44 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:18:44 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:18:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:18:44 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:18:44 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:18:44 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:18:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:18:44 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:18:44 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:18:44 PM [INFO]: From 4.549707s to 4.815937s
+22/08/2017 11:18:44 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:18:44 PM [INFO]: Found ELM starts: [ 4.55094862  4.56005287  4.56976461  4.58030272  4.58929491  4.59911871
+  4.60675669  4.61842489  4.62729502  4.63741493  4.64652491  4.65574884
+  4.66358662  4.67066097  4.68173265  4.68986702  4.69796085  4.70772076
+  4.71547461  4.72869873  4.7436409   4.75123882  4.7590909   4.76977062
+  4.78301477  4.79817295  4.80540085  4.81310892]
+22/08/2017 11:25:52 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:52 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:52 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:52 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:53 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:53 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:53 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:53 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:53 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:53 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs selected
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs in range
+22/08/2017 11:25:54 PM [DEBUG]: No ELMs selected
+22/08/2017 11:27:23 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:27:23 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+22/08/2017 11:27:23 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:27:23 PM [INFO]: From 5.799975s to 5.978543s
+22/08/2017 11:27:23 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:27:23 PM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+22/08/2017 11:27:23 PM [DEBUG]: No ELMs in range
+22/08/2017 11:27:23 PM [DEBUG]: No ELMs selected
+22/08/2017 11:27:23 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:27:23 PM [INFO]: From 5.799975s to 5.978543s
+22/08/2017 11:27:23 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:27:23 PM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+22/08/2017 11:27:23 PM [DEBUG]: No ELMs in range
+22/08/2017 11:27:23 PM [DEBUG]: No ELMs selected
+22/08/2017 11:27:23 PM [INFO]: 
+ELM-synchronizing temporal te signal
+22/08/2017 11:27:23 PM [INFO]: From 5.799975s to 5.978543s
+22/08/2017 11:27:23 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:27:23 PM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+22/08/2017 11:27:23 PM [DEBUG]: No ELMs in range
+22/08/2017 11:27:23 PM [DEBUG]: No ELMs selected
+22/08/2017 11:27:23 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:27:23 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+22/08/2017 11:27:23 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:27:23 PM [INFO]: From 5.799975s to 5.978543s
+22/08/2017 11:27:23 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:27:23 PM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+22/08/2017 11:27:23 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:27:23 PM [INFO]: From 5.799975s to 5.978543s
+22/08/2017 11:27:23 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:27:23 PM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+22/08/2017 11:27:23 PM [INFO]: 
+ELM-synchronizing temporal ne signal
+22/08/2017 11:27:23 PM [INFO]: From 5.799975s to 5.978543s
+22/08/2017 11:27:23 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:27:23 PM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+22/08/2017 11:27:23 PM [INFO]: Creating temporal CELMA
+22/08/2017 11:27:23 PM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+22/08/2017 11:27:23 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:27:23 PM [INFO]: From 5.799975s to 5.978543s
+22/08/2017 11:27:23 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:27:23 PM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+22/08/2017 11:27:23 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:27:23 PM [INFO]: From 5.799975s to 5.978543s
+22/08/2017 11:27:23 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:27:23 PM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+22/08/2017 11:27:23 PM [INFO]: 
+ELM-synchronizing temporal jsat signal
+22/08/2017 11:27:23 PM [INFO]: From 5.799975s to 5.978543s
+22/08/2017 11:27:23 PM [INFO]: Taking at most 10000 ELMs into account
+22/08/2017 11:27:23 PM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:41:40 AM [INFO]: Creating temporal CELMA
+23/08/2017 10:41:40 AM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+23/08/2017 10:41:40 AM [INFO]: 
+ELM-synchronizing temporal te signal
+23/08/2017 10:41:40 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:41:40 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:41:40 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:41:40 AM [DEBUG]: No ELMs in range
+23/08/2017 10:41:40 AM [DEBUG]: No ELMs selected
+23/08/2017 10:41:40 AM [INFO]: 
+ELM-synchronizing temporal te signal
+23/08/2017 10:41:40 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:41:40 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:41:40 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 2 [-0.0120304870605,-0.0118057823181]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 6 [-0.0111316680908,-0.0109069633484]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 7 [-0.0109069633484,-0.010682258606]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 8 [-0.010682258606,-0.0104575538635]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 9 [-0.0104575538635,-0.0102328491211]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 18 [-0.00843521118164,-0.00821050643921]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 19 [-0.00821050643921,-0.00798580169678]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 25 [-0.00686227798462,-0.00663757324219]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 26 [-0.00663757324219,-0.00641286849976]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 48 [-0.00169406890869,-0.00146936416626]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 49 [-0.00146936416626,-0.00124465942383]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 50 [-0.00124465942383,-0.0010199546814]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 51 [-0.0010199546814,-0.000795249938965]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 52 [-0.000795249938965,-0.000570545196533]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 53 [-0.000570545196533,-0.000345840454102]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 54 [-0.000345840454102,-0.00012113571167]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 55 [-0.00012113571167,0.000103569030762]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 56 [0.000103569030762,0.000328273773193]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 57 [0.000328273773193,0.000552978515625]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 58 [0.000552978515625,0.000777683258057]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 59 [0.000777683258057,0.00100238800049]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 60 [0.00100238800049,0.00122709274292]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 69 [0.00302473068237,0.0032494354248]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 79 [0.00527177810669,0.00549648284912]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 80 [0.00549648284912,0.00572118759155]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 81 [0.00572118759155,0.00594589233398]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 82 [0.00594589233398,0.00617059707642]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 83 [0.00617059707642,0.00639530181885]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 84 [0.00639530181885,0.00662000656128]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 85 [0.00662000656128,0.00684471130371]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 86 [0.00684471130371,0.00706941604614]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 88 [0.00729412078857,0.00751882553101]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 94 [0.00864234924316,0.0088670539856]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 95 [0.0088670539856,0.00909175872803]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 96 [0.00909175872803,0.00931646347046]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 97 [0.00931646347046,0.00954116821289]
+23/08/2017 10:41:40 AM [WARNING]: temporal te plot: No data points in bin 99 [0.00976587295532,0.00999057769775]
+23/08/2017 10:41:40 AM [DEBUG]: No ELMs in range
+23/08/2017 10:41:40 AM [DEBUG]: No ELMs selected
+23/08/2017 10:41:40 AM [INFO]: 
+ELM-synchronizing temporal te signal
+23/08/2017 10:41:40 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:41:40 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:41:40 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:41:40 AM [DEBUG]: No ELMs in range
+23/08/2017 10:41:40 AM [DEBUG]: No ELMs selected
+23/08/2017 10:41:40 AM [INFO]: Creating temporal CELMA
+23/08/2017 10:41:40 AM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+23/08/2017 10:41:40 AM [INFO]: 
+ELM-synchronizing temporal ne signal
+23/08/2017 10:41:40 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:41:40 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:41:40 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:41:40 AM [INFO]: 
+ELM-synchronizing temporal ne signal
+23/08/2017 10:41:40 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:41:40 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:41:40 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 2 [-0.0120304870605,-0.0118057823181]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 6 [-0.0111316680908,-0.0109069633484]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 7 [-0.0109069633484,-0.010682258606]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 8 [-0.010682258606,-0.0104575538635]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 9 [-0.0104575538635,-0.0102328491211]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 18 [-0.00843521118164,-0.00821050643921]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 19 [-0.00821050643921,-0.00798580169678]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 25 [-0.00686227798462,-0.00663757324219]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 26 [-0.00663757324219,-0.00641286849976]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 48 [-0.00169406890869,-0.00146936416626]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 49 [-0.00146936416626,-0.00124465942383]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 50 [-0.00124465942383,-0.0010199546814]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 51 [-0.0010199546814,-0.000795249938965]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 52 [-0.000795249938965,-0.000570545196533]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 53 [-0.000570545196533,-0.000345840454102]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 54 [-0.000345840454102,-0.00012113571167]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 55 [-0.00012113571167,0.000103569030762]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 56 [0.000103569030762,0.000328273773193]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 57 [0.000328273773193,0.000552978515625]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 58 [0.000552978515625,0.000777683258057]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 59 [0.000777683258057,0.00100238800049]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 60 [0.00100238800049,0.00122709274292]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 69 [0.00302473068237,0.0032494354248]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 79 [0.00527177810669,0.00549648284912]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 80 [0.00549648284912,0.00572118759155]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 81 [0.00572118759155,0.00594589233398]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 82 [0.00594589233398,0.00617059707642]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 83 [0.00617059707642,0.00639530181885]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 84 [0.00639530181885,0.00662000656128]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 85 [0.00662000656128,0.00684471130371]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 86 [0.00684471130371,0.00706941604614]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 88 [0.00729412078857,0.00751882553101]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 94 [0.00864234924316,0.0088670539856]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 95 [0.0088670539856,0.00909175872803]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 96 [0.00909175872803,0.00931646347046]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 97 [0.00931646347046,0.00954116821289]
+23/08/2017 10:41:40 AM [WARNING]: temporal ne plot: No data points in bin 99 [0.00976587295532,0.00999057769775]
+23/08/2017 10:41:40 AM [INFO]: 
+ELM-synchronizing temporal ne signal
+23/08/2017 10:41:40 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:41:40 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:41:40 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:41:40 AM [INFO]: Creating temporal CELMA
+23/08/2017 10:41:40 AM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+23/08/2017 10:41:40 AM [INFO]: 
+ELM-synchronizing temporal jsat signal
+23/08/2017 10:41:40 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:41:40 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:41:40 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:41:40 AM [INFO]: 
+ELM-synchronizing temporal jsat signal
+23/08/2017 10:41:40 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:41:40 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:41:40 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:41:41 AM [INFO]: 
+ELM-synchronizing temporal jsat signal
+23/08/2017 10:41:41 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:41:41 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:41:41 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:43:13 AM [INFO]: Creating temporal CELMA
+23/08/2017 10:43:13 AM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053f25ef0>, <__main__.LangmuirProbe instance at 0x7fb053f25f80>, <__main__.LangmuirProbe instance at 0x7fb053eb1050>]
+23/08/2017 10:43:13 AM [INFO]: 
+ELM-synchronizing temporal te signal
+23/08/2017 10:43:13 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:43:13 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:43:13 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:43:13 AM [DEBUG]: No ELMs in range
+23/08/2017 10:43:13 AM [DEBUG]: No ELMs selected
+23/08/2017 10:43:13 AM [INFO]: 
+ELM-synchronizing temporal te signal
+23/08/2017 10:43:13 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:43:13 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:43:13 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:43:13 AM [DEBUG]: No ELMs in range
+23/08/2017 10:43:13 AM [DEBUG]: No ELMs selected
+23/08/2017 10:43:13 AM [INFO]: 
+ELM-synchronizing temporal te signal
+23/08/2017 10:43:13 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:43:13 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:43:13 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:43:13 AM [DEBUG]: No ELMs in range
+23/08/2017 10:43:13 AM [DEBUG]: No ELMs selected
+23/08/2017 10:43:13 AM [INFO]: Creating temporal CELMA
+23/08/2017 10:43:13 AM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053db5dd0>, <__main__.LangmuirProbe instance at 0x7fb053db5e60>, <__main__.LangmuirProbe instance at 0x7fb053db5ef0>]
+23/08/2017 10:43:13 AM [INFO]: 
+ELM-synchronizing temporal ne signal
+23/08/2017 10:43:13 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:43:13 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:43:13 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:43:13 AM [INFO]: 
+ELM-synchronizing temporal ne signal
+23/08/2017 10:43:13 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:43:13 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:43:13 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:43:13 AM [INFO]: 
+ELM-synchronizing temporal ne signal
+23/08/2017 10:43:13 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:43:13 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:43:13 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:43:13 AM [INFO]: Creating temporal CELMA
+23/08/2017 10:43:13 AM [INFO]: Creatung CELMAs for these probes: [<__main__.LangmuirProbe instance at 0x7fb053c90710>, <__main__.LangmuirProbe instance at 0x7fb053c90758>, <__main__.LangmuirProbe instance at 0x7fb053c907a0>]
+23/08/2017 10:43:13 AM [INFO]: 
+ELM-synchronizing temporal jsat signal
+23/08/2017 10:43:13 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:43:13 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:43:13 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:43:13 AM [INFO]: 
+ELM-synchronizing temporal jsat signal
+23/08/2017 10:43:13 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:43:13 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:43:13 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
+23/08/2017 10:43:13 AM [INFO]: 
+ELM-synchronizing temporal jsat signal
+23/08/2017 10:43:13 AM [INFO]: From 5.799975s to 5.978543s
+23/08/2017 10:43:13 AM [INFO]: Taking at most 10000 ELMs into account
+23/08/2017 10:43:13 AM [INFO]: Found ELM starts: [ 5.80965662  5.81633091  5.82316875  5.82954073  5.83601475  5.84256268
+  5.84893894  5.85523462  5.86490297  5.87724876  5.88343859  5.89021683
+  5.89746666  5.90924263  5.91581488  5.92304277  5.92974472  5.93668079
+  5.94338083  5.95004082  5.96016502  5.9703126   5.97665882]
