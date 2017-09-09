@@ -1805,7 +1805,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.ignoreELMs.append(time)
 
 
-    def populateELMtable(self):
+    def populateELMtable(self, event=None):
         table = self.tblELMs
         table.setRowCount(0)
         table.setColumnCount(4)
@@ -1856,24 +1856,23 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             item = QtGui.QTableWidgetItem('{:.2f}'.format(f))
             table.setItem(rowPos,3,item)
 
-            self.showELMstatistics()
 
-
-    def showELMstatistics(self, dummy=None):
+    def showELMstatistics(self, event=None):
         settings = self.getCELMAsettings()
         if settings is None:
             logging.warn("CELMA settings could not be read")
             print "Error: CELMA settings could not be read"
             return
         start, end, ELMnum = settings
-        
-        ind          = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end))
-        ind_selected = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end)
-                                            & ~np.in1d(self.ELMonsets,self.ignoreELMs))
+ 
+        ind = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end))
+        ind_selected = np.where((start <= self.ELMonsets) &
+                                (self.ELMonsets <= end) &
+                                ~np.in1d(self.ELMonsets, self.ignoreELMs))
         if len(ind[0]) == 0:
             logging.debug("No ELMs in range")
             self.lblELMsInRange.setText('N/A')
-            
+
         if len(ind_selected[0]) == 0:
             logging.debug("No ELMs selected")
             self.lblELMnum.setText('N/A')
@@ -1882,16 +1881,18 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.lblELMmin.setText('N/A')
             self.lblELMmax.setText('N/A')
             return
-        ELMstarts= self.ELMonsets[ind_selected][:ELMnum]
-        ELMends  = self.ELMends[ind_selected][:ELMnum]
+        ELMstarts = self.ELMonsets[ind_selected][:ELMnum]
+        ELMends = self.ELMends[ind_selected][:ELMnum]
         ELMtoELM = self.ELMtoELM[ind_selected][:ELMnum]
         ELMfreqs = self.ELMfreqs[ind_selected][:ELMnum]
         self.lblELMsInRange.setText(str(len(ind[0])))
         self.lblELMnum.setText(str(len(ELMstarts)))
-        self.lblELMfreq.setText('{:.2f}'.format(np.mean(ELMfreqs)))
-        self.lblELMdur.setText('{:.2f}'.format(np.mean(ELMtoELM)*1000))
-        self.lblELMmin.setText('{:.2f}'.format(np.min(ELMtoELM)*1000))
-        self.lblELMmax.setText('{:.2f}'.format(np.max(ELMtoELM)*1000))
+        self.lblELMfreq.setText(u'{:.2f}\u00B1{:.2f}'.format(np.mean(ELMfreqs),
+                                                       np.std(ELMfreqs)))
+        self.lblELMdur.setText(u'{:.2f}\u00B1{:.2f}'.format(np.mean(ELMtoELM) * 1000,
+                                                      np.std(ELMtoELM) * 1000))
+        self.lblELMmin.setText('{:.2f}'.format(np.min(ELMtoELM) * 1000))
+        self.lblELMmax.setText('{:.2f}'.format(np.max(ELMtoELM) * 1000))
 
     
     def markPOIsInTemporalPlots(self, POIs, color=None):
@@ -2514,7 +2515,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         elif plot.type == 'temporal':
             plot._timeUpdtID = plot.axes.callbacks.connect(
                                         'xlim_changed', self.updateRange)
-            plot._ELMUpdtID = plot.axes.callbacks.connect(
+            plot._ELMtblUpdtID = plot.axes.callbacks.connect(
+                                        'xlim_changed', self.populateELMtable)
+            plot._ELMStatUpdtID = plot.axes.callbacks.connect(
                                         'xlim_changed', self.showELMstatistics)
 
         self.plots.append(plot)
@@ -3393,6 +3396,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.btnCELMA.setText('Return to profiles')
             self.CELMAexists = True
             self.populateELMtable()
+            self.showELMstatistics()
 
             self.statusbar.showMessage('Coherent ELM averaging finished successfully.')
         QtGui.QApplication.restoreOverrideCursor()
