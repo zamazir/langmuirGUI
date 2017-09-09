@@ -2304,6 +2304,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     break
             cb = QtGui.QCheckBox()
             cb.setTristate(False)
+
+            # Check for CELMA if checked in any plot
+            checkCB = any(probe.isSelected(plot.canvas) for plot in self.plots)
+            if checkCB:
+                cb.setChecked(True)
+
             cb.stateChanged.connect(
                     functools.partial(self.markProbeForCELMA, cb, probe.name))
             table.setCellWidget(rowPos,colPos,cb)
