@@ -3,6 +3,7 @@
 *.un~
 *.svg
 *.pyc
+*.log
 
 Results
 Poster*
