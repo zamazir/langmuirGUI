@@ -655,6 +655,24 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                         "value at each step when playing:")
         if ok:
             self.playIncrement = int(incr)
+
+
+    def showCoordinates(self, plot, event):
+        """
+        Callback function that shows mouse pointer coordinates in statusbar.
+        """
+        if event.inaxes:
+            x = event.xdata
+            y = event.ydata
+            if plot.CELMAexists and not plot._CELMAnormalize:
+                x *= 1000
+            if plot.CELMAexists and plot._CELMAnormalize:
+                x *= 100
+            msg = 'x = {:.4f} | y = {:.2e}'.format(x, y)
+            logging.critical(msg)
+            self.statusbar.showMessage(msg)
+        else:
+            self.statusbar.clearMessage()
                         
 
     def actionToLabel(self, text):
@@ -3053,7 +3071,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def hideProgress(self):
         """ Removes progressbar widget from the statusbar and resets it to the value 0. """
-        self.statusbar.setVisible(False)
+        self.progBar.setVisible(False)
         self.progBar.setValue(0)
 
 
@@ -4109,6 +4127,7 @@ class Plot(QObject):
         self.fits = []
         self.LSCshot = gui.LSCshot
         self.saveDir = '.'
+        self._CELMAnormalize = False
 
         self.fig    = Figure(dpi=self.dpi)
         self.axes   = self.fig.add_subplot(111)
@@ -4124,6 +4143,9 @@ class Plot(QObject):
         self.canvas.optionsClicked.connect(self.toolbar.configure_subplots)
 
         self.axes.get_xaxis().get_major_formatter().set_useOffset(False)
+        self.canvas.mpl_connect('motion_notify_event',
+                                functools.partial(self.gui.showCoordinates,
+                                                  self))
 
     def test(self):
         print "!!!!!!!!!!! TEST !!!!!!!!!!!!!!!"
