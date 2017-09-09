@@ -1499,65 +1499,17 @@
     <property name="title">
      <string>View</string>
     </property>
-    <widget class="QMenu" name="menuCoherent_ELM_averaging_3">
-     <property name="title">
-      <string>Coherent ELM averaging</string>
-     </property>
-     <addaction name="menuShowAverages"/>
-     <addaction name="menuMarkPOIsInTemporal"/>
-     <addaction name="menuSimultaneousCELMAs"/>
-     <addaction name="menuCELMAmarkerSpatial"/>
-     <addaction name="menuSetTransparency"/>
-    </widget>
-    <widget class="QMenu" name="menuFitting">
-     <property name="title">
-      <string>Fitting</string>
-     </property>
-     <addaction name="menuFit"/>
-     <addaction name="menuDetachedFit"/>
-     <addaction name="menuFitEvaluationPoints"/>
-     <addaction name="menuFitColor"/>
-     <addaction name="separator"/>
-     <addaction name="separator"/>
-     <addaction name="menuFitMethodEich"/>
-     <addaction name="menuFitMethodLinear"/>
-     <addaction name="menuFitMethodNearest"/>
-     <addaction name="separator"/>
-     <addaction name="menuFitMethodSzero"/>
-     <addaction name="menuFitMethodSlinear"/>
-     <addaction name="menuFitMethodScubic"/>
-     <addaction name="menuFitMethodSquadratic"/>
-    </widget>
-    <widget class="QMenu" name="menuCoherent_ELM_averaging_4">
-     <property name="title">
-      <string>Coherent ELM averaging</string>
-     </property>
-     <addaction name="menuCELMAmarkerTemporal"/>
-     <addaction name="menuCELMApad"/>
-     <addaction name="menuEnableBinning"/>
-    </widget>
-    <widget class="QMenu" name="menuFitting_2">
-     <property name="title">
-      <string>Fitting</string>
-     </property>
-     <addaction name="menuBinNumber"/>
-     <addaction name="menuSetAvgMethod"/>
-    </widget>
     <addaction name="actionSpatial_Plot"/>
     <addaction name="menuFixxPlotyLim"/>
     <addaction name="menuSliderSnapping"/>
     <addaction name="menuIgnoreNaNsSpatial"/>
     <addaction name="menuShowLegend"/>
-    <addaction name="menuFitting"/>
-    <addaction name="menuCoherent_ELM_averaging_3"/>
     <addaction name="separator"/>
     <addaction name="actionTemporal_Plot"/>
     <addaction name="menuChangeMarkers"/>
     <addaction name="menuShowGaps"/>
     <addaction name="menuAutoscaling"/>
     <addaction name="menuLiveIndicators"/>
-    <addaction name="menuFitting_2"/>
-    <addaction name="menuCoherent_ELM_averaging_4"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuShot">
@@ -1614,11 +1566,71 @@
     <addaction name="menuRecord"/>
     <addaction name="menuSetIncrement"/>
    </widget>
+   <widget class="QMenu" name="menuCELMA">
+    <property name="title">
+     <string>CELMA</string>
+    </property>
+    <widget class="QMenu" name="menuCELMASpatial">
+     <property name="title">
+      <string>Spatial plots</string>
+     </property>
+     <addaction name="menuShowAverages"/>
+     <addaction name="menuSimultaneousCELMAs"/>
+     <addaction name="menuCELMAmarkerSpatial"/>
+     <addaction name="menuSetTransparency"/>
+    </widget>
+    <widget class="QMenu" name="menuCELMATemporal">
+     <property name="title">
+      <string>Temporal plots</string>
+     </property>
+     <addaction name="menuMarkPOIsInTemporal"/>
+     <addaction name="menuCELMAmarkerTemporal"/>
+     <addaction name="menuCELMApad"/>
+    </widget>
+    <addaction name="menuCELMASpatial"/>
+    <addaction name="menuCELMATemporal"/>
+   </widget>
+   <widget class="QMenu" name="menuFitting">
+    <property name="title">
+     <string>Fitting</string>
+    </property>
+    <widget class="QMenu" name="menuFittingSpatial">
+     <property name="title">
+      <string>Spatial plots</string>
+     </property>
+     <addaction name="menuFit"/>
+     <addaction name="menuDetachedFit"/>
+     <addaction name="menuFitEvaluationPoints"/>
+     <addaction name="menuFitColor"/>
+     <addaction name="separator"/>
+     <addaction name="separator"/>
+     <addaction name="menuFitMethodEich"/>
+     <addaction name="menuFitMethodLinear"/>
+     <addaction name="menuFitMethodNearest"/>
+     <addaction name="separator"/>
+     <addaction name="menuFitMethodSzero"/>
+     <addaction name="menuFitMethodSlinear"/>
+     <addaction name="menuFitMethodScubic"/>
+     <addaction name="menuFitMethodSquadratic"/>
+    </widget>
+    <widget class="QMenu" name="menuFittingTemporal">
+     <property name="title">
+      <string>Temporal plots</string>
+     </property>
+     <addaction name="menuEnableBinning"/>
+     <addaction name="menuBinNumber"/>
+     <addaction name="menuSetAvgMethod"/>
+    </widget>
+    <addaction name="menuFittingSpatial"/>
+    <addaction name="menuFittingTemporal"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
    <addaction name="menuPlay"/>
    <addaction name="menuShot"/>
    <addaction name="menuStatistis"/>
+   <addaction name="menuCELMA"/>
+   <addaction name="menuFitting"/>
    <addaction name="menuInfo"/>
   </widget>
   <widget class="QStatusBar" name="statusbar">
@@ -1812,7 +1824,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Mark POIs in temporal plots</string>
+    <string>Show POI markers</string>
    </property>
   </action>
   <action name="menuCalibrateJsat">
@@ -1907,7 +1919,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Show averaged curve</string>
+    <string>Activate fitting (CELMA only)</string>
    </property>
   </action>
   <action name="menuBinNumber">

@@ -5813,27 +5813,26 @@ class TemporalPlot(Plot):
         ELMtoELM  = self.ELMtoELM[ind]
         ELMends   = self.ELMends[ind]
         ELMmaxima = self.ELMmaxima[ind]
+        ELMdurations = ELMends - ELMonsets
 
         if compare == 'Start':
             shiftArray = ELMonsets
+            durationHandle = max(ELMdurations)
         elif compare == 'End':
             shiftArray = ELMends
+            durationHandle = -max(ELMdurations)
         elif compare == 'Maximum':
             shiftArray = ELMmaxima
+            durationHandle = None
         else:
             print "Unknown compare mode {}. Synchronizing by ELM start".format(compare)
             logging.warning("Unknown compare mode {}. Synchronizing by ELM start".format(compare))
             shiftArray = ELMonsets
 
-        ELMstartMarker = self.axes.axvline(
-                            0,0,1,ls='--',lw='4',color='grey', alpha=.7,
-                            label = 'ELM start')
-        self.CELMAs.append(ELMstartMarker)
-
         dataTotal = []
         timeTotal = []
         i = 0
-        logging.info("Found ELM starts: {}".format(ELMonsets))
+        logging.debug("Found ELM starts: {}".format(ELMonsets))
         for i, (ton, dt, shift) in enumerate(zip(ELMonsets, ELMtoELM, shiftArray)):
             ind = np.where((ton-dt - pad <= time) & (time <= ton+dt + pad))[0]
             if normalize:
@@ -5849,6 +5848,17 @@ class TemporalPlot(Plot):
             dataTotal.extend(list(dataELM))
             timeTotal.extend(list(timeELM))
             i += 1
+
+        if durationHandle is not None and not normalize:
+            durationSpan = self.axes.axvspan(durationHandle, 0,
+                                             color='grey', alpha=.3)
+            self.CELMAs.append(durationSpan)
+        else:
+            syncMarker = self.axes.axvline(
+                                0,0,1,ls='--',lw='4',color='grey', alpha=.3,
+                                label = 'ELM start')
+            self.CELMAs.append(syncMarker)
+
 
         if len(timeTotal) == 0 and len(dataTotal) == 0:
             print "ERROR: Retreived ELM data or time arrays contain no data"
