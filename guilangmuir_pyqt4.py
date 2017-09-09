@@ -1887,10 +1887,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         ELMfreqs = self.ELMfreqs[ind_selected][:ELMnum]
         self.lblELMsInRange.setText(str(len(ind[0])))
         self.lblELMnum.setText(str(len(ELMstarts)))
-        self.lblELMfreq.setText(u'{:.2f}\u00B1{:.2f}'.format(np.mean(ELMfreqs),
-                                                       np.std(ELMfreqs)))
-        self.lblELMdur.setText(u'{:.2f}\u00B1{:.2f}'.format(np.mean(ELMtoELM) * 1000,
-                                                      np.std(ELMtoELM) * 1000))
+        self.lblELMfreq.setText(u'{:.2f} \u00B1 {:.2f}'
+                                .format(np.mean(ELMfreqs),
+                                        np.std(ELMfreqs)))
+        self.lblELMdur.setText(u'{:.2f} \u00B1 {:.2f}'
+                               .format(np.mean(ELMtoELM) * 1000,
+                                       np.std(ELMtoELM) * 1000))
         self.lblELMmin.setText('{:.2f}'.format(np.min(ELMtoELM) * 1000))
         self.lblELMmax.setText('{:.2f}'.format(np.max(ELMtoELM) * 1000))
 
