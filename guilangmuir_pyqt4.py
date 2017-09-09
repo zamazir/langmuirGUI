@@ -3233,29 +3233,32 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def record(self):
-        import datetime
-        self._recDir = str(datetime.datetime.now())\
-                            .split('.')[0]\
-                            .replace(' ','_').replace(':','-')
+        if self.CELMAexists:
+            _start = float(self.editCELMAstartTime.text())
+            _stop = float(self.editCELMAendTime.text())
+        else:
+            _start = self.dtime[self.xTimeSlider.value()]
+            _stop = self.dtime[self.xTimeSlider.maximum()]
+            
+        self._recDir = ('{}_{:.0f}-{:.0f}'
+                        .format(self.shotnr, _start*100, _stop*100))
         self._tSavePlot = self.getPlotsByType('temporal','jsat')
         self._sSavePlot = self.getPlotsByType('spatial','jsat')
         path = os.path.join('recordings',self._recDir)
         if not os.path.isdir(path):
             os.makedirs(path)
         # Make sure directory exists before starting to record
-        while True:
-            if os.path.isdir(path):
-                self._record = True
-                self.btnRecord.setText('Stop recording')
-                try:
-                    self.btnRecord.clicked.disconnect(self.record)
-                    self.btnRecordCELMA.clicked.disconnect(self.record)
-                except TypeError: 
-                    pass
-                self.btnRecord.clicked.connect(self.stopRecording)
-                self.btnRecordCELMA.setText('Stop recording')
-                self.btnRecordCELMA.clicked.connect(self.stopRecording)
-                break
+        if os.path.isdir(path):
+            self._record = True
+            self.btnRecord.setText('Stop recording')
+            try:
+                self.btnRecord.clicked.disconnect(self.record)
+                self.btnRecordCELMA.clicked.disconnect(self.record)
+            except TypeError: 
+                pass
+            self.btnRecord.clicked.connect(self.stopRecording)
+            self.btnRecordCELMA.setText('Stop recording')
+            self.btnRecordCELMA.clicked.connect(self.stopRecording)
 
 
     def stopRecording(self):
