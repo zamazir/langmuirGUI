@@ -13,6 +13,7 @@ print "Loading shot", shotNumber
 
 
 fig, axes = subplots(3,1, sharex=True)
+fig.suptitle('#' + str(shotNumber))
 
 # Heating power
 ax = axes[0]

@@ -1,1 +1,0 @@
-Probe 8ua3 is deactivated, as no more pins are functional in the array. Equivalent position in sector 13 is also short-circuited. Instead, probes 3ua2 and 3ua3 have been installed. This are not in the same exact position as 8ua3. To mark this fact, their LSD data is not stored in ua3, but respectively in res1 and res2.
