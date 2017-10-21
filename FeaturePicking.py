@@ -1,8 +1,11 @@
 from __future__ import print_function
 import csv
 import functools
+import numpy as np
 
 from PyQt4 import QtGui, QtCore
+
+from windows import FigureWindow
 
 class FeaturePicker(object):
     def __init__(self, table):
@@ -40,7 +43,6 @@ class FeaturePicker(object):
         self.features.append(feature)
 
     def setFeatureValue(self, featName, value):
-        print('Setting {} to {}'.format(featName, value))
         table = self.table
         feature = next((feat for feat in self.features
                         if feat.name == featName), None)
@@ -50,8 +52,6 @@ class FeaturePicker(object):
 
         row = table.rowCount() - 1
         col = feature.column
-
-        print('Row: {}, Col: {}'.format(row, col))
 
         try:
             table.removeCellWidget(row, col)
@@ -188,8 +188,6 @@ class FeaturePicker(object):
             if quantCol is None:
                 print('Column specifying quantity could not be found. ' +
                       'Aborting')
-            print('"quantity" found in column {}'.format(quantCol))
-            print('Checking quantity in row {}'.format(row))
                 
             quantItem = table.item(row, quantCol)
             if quantItem is not None:
@@ -220,6 +218,7 @@ class Feature(object):
         self.column = column
         self.isSelectable = selectable
 
+
 class ConfirmDialog(QtGui.QDialog):
     def __init__(self, parent=None, action=None):
         super(ConfirmDialog, self).__init__(parent)
@@ -243,3 +242,112 @@ class ConfirmDialog(QtGui.QDialog):
         dialog = ConfirmDialog(parent, action)
         result = dialog.exec_()
         return result == QtGui.QDialog.Accepted
+
+
+class PlottingDialog(QtGui.QDialog):
+    def __init__(self, quantities, parent=None):
+        super(PlottingDialog, self).__init__(parent)
+        layout = QtGui.QFormLayout()
+        
+        xlbl = QtGui.QLabel('x-axis')
+        ylbl = QtGui.QLabel('y-axis')
+        self.comboX = QtGui.QComboBox()
+        self.comboX.addItems(quantities)
+        self.comboY = QtGui.QComboBox()
+        self.comboY.addItems(quantities)
+        layout.addRow(xlbl, self.comboX)
+        layout.addRow(ylbl, self.comboY)
+
+        buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok
+                | QtGui.QDialogButtonBox.Cancel, QtCore.Qt.Horizontal)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+        layout.addRow(buttonBox)
+
+        self.setLayout(layout)
+
+    def quantities(self):
+        x = self.comboX.currentText()
+        y = self.comboY.currentText()
+        return str(x), str(y)
+
+    @staticmethod
+    def getQuantities(quantities, parent=None):
+        dialog = PlottingDialog(quantities, parent)
+        result = dialog.exec_()
+        x, y = dialog.quantities()
+        return x, y, result == QtGui.QDialog.Accepted
+
+
+
+class Plotter(QtCore.QObject):
+    delete = QtCore.pyqtSignal()
+
+    def __init__(self, table):
+        super(Plotter, self).__init__(table)
+        self.table = table
+        self.window = FigureWindow()
+        self.xlabel, self.ylabel = self.chooseQuantities()
+        self.window.close.connect(self.__del__)
+
+    def chooseQuantities(self):
+        quantities = []
+        for col in range(self.table.columnCount()):
+            lbl = self.table.horizontalHeaderItem(col).text()
+            quantities.append(str(lbl))
+
+        x, y, ok = PlottingDialog.getQuantities(quantities,
+                                                self.table)
+        if not ok:
+            return None, None
+        return x, y
+
+    def __del__(self):
+        self.delete.emit()
+
+    def getTableData(self, xlabel, ylabel):
+        xcol = None
+        ycol = None
+        for col in range(self.table.columnCount()):
+            lbl = self.table.horizontalHeaderItem(col).text()
+            if lbl == xlabel:
+                xcol = col
+            elif lbl == ylabel:
+                ycol = col
+        
+        if xcol is None or ycol is None:
+            print('Invalid x or y column name')
+            return None, None
+        
+        xdata = []
+        ydata = []
+        for row in range(self.table.rowCount()):
+            xitem = self.table.item(row, xcol)
+            yitem = self.table.item(row, ycol)
+            if not xitem:
+                xval = np.nan
+            else:
+                try:
+                    xval = float(xitem.text())
+                except ValueError:
+                    xval = np.nan
+            if not yitem:
+                yval = np.nan
+            else:
+                try:
+                    yval = float(yitem.text())
+                except ValueError:
+                    yval = np.nan
+            xdata.append(xval)
+            ydata.append(yval)
+
+        # Sort by x
+        xdata, ydata = zip(*sorted(zip(xdata, ydata)))
+        return xdata, ydata
+
+    def plot(self):
+        xdata, ydata = self.getTableData(self.xlabel, self.ylabel)
+        self.window.feedData(xdata, ydata)
+        self.window.updatePlot()
+        self.window.setAxesLabels(self.xlabel, self.ylabel)
+        self.window.show()

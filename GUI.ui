@@ -1444,6 +1444,13 @@
                     </property>
                    </widget>
                   </item>
+                  <item>
+                   <widget class="QPushButton" name="btnFeatPlot">
+                    <property name="text">
+                     <string>Plot</string>
+                    </property>
+                   </widget>
+                  </item>
                  </layout>
                 </item>
                </layout>

@@ -63,7 +63,8 @@ import logging
 import dd
 from fitting import FitFunctions
 from slider import SchizoSlider
-from FeaturePicking import FeaturePicker
+from FeaturePicking import FeaturePicker, Plotter
+from windows import FigureWindow
 
 logging.basicConfig(
                 filename='langmuirAnalyzer.log', 
@@ -442,6 +443,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 'Vneg-Vpos': '2'}
         self.shotfiles = []
         self.stats = {}
+        self.plotter = None
 
         # Set up UI
         self.setupUi(self)
@@ -1569,6 +1571,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     self.featurePicker.removeRow)
                 self.btnFeatRemoveCol.clicked.connect(
                     self.featurePicker.removeColumn)
+                self.btnFeatPlot.clicked.connect(
+                    self.plotFeatures)
 
             self.statusbar.showMessage('Shot was fully loaded', 5000)
             logging.info( "\n\n+++++++++++++++++ ALL DONE! ++++++++++++++++++\n\n")
@@ -1613,6 +1617,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         for feat in self.stdFeatures:
             picker.setFeatureValue(feat, self.stats[feat])
 
+    def plotFeatures(self):
+        if self.plotter is None:
+            self.plotter = Plotter(self.tblFeatures)
+            self.plotter.delete.connect(self.removePlotter)
+        self.plotter.plot()
+
+    def removePlotter(self):
+        self.plotter = None
 
     def checkAFSToken(self):
         res, err = Tools.shellExecute('tokens')
@@ -4034,129 +4046,6 @@ class ToolFigureCanvas(FigureCanvas):
         th = self.toolButton.height()
         # QGeometry(x,y,w,h)
         self.toolButton.setGeometry(cx+cw-2*tw,cy,tw,th)
-
-
-class FigureWindow(QtGui.QMainWindow):
-    def __init__(self, parent=None, plot=None):
-        super(FigureWindow, self).__init__(parent)
-        self.subplots = []
-
-        if plot is None:
-            self.fig = Figure()
-            self._currentAxes = self.fig.add_subplot(111)
-            self.canvas = FigureCanvas(self.fig)
-            self._isBreakout = False
-        else:
-            self.fig = plot.fig
-            self._currentAxes = plot.axes
-            self.canvas = plot.canvas
-            self._isBreakout = True
-            self._container = plot.container
-
-        self.toolbar= NavigationToolbar(self.canvas, self)
-
-        container = QtGui.QWidget()
-        layout = QtGui.QVBoxLayout()
-        layout.addWidget(self.canvas)
-        layout.addWidget(self.toolbar)
-        container.setLayout(layout)
-        self.setCentralWidget(container)
-        self.setGeometry(QtCore.QRect(100,100,800,400))
-
-        self.plotSettings = {}
-        self.subplots.append(self._currentAxes)
-        self._plotFunc = self._currentAxes.plot
-        self._plotTypes = ('scatter','plot','axvline','axhline',
-                           'axvspan','axhspan')
-        self._plotType = 'plot'
-
-
-    def closeEvent(self, event):
-        if self._isBreakout:
-            self._returnFigure()
-        super(FigureWindow, self).closeEvent(event)
-
-
-    def _returnFigure(self):
-        if self._container is not None:
-            self._container.addWidget(self.canvas)
-            self._container.setGeometry(self.container.geometry())
-
-
-    def currentAxes(self):
-        return self._currentAxes
-
-    
-    def axes(self):
-        return self.subplots
-
-        
-    def addSubplot(self, xdata=None, ydata=None):
-        n = len(self.subplots)
-        for i, ax in enumerate(self.subplots):
-            ax.change_geometry(n+1,1,i+1)
-
-        axes = self.fig.add_subplot(n+1,1,n+1)
-        self.subplots.append(axes)
-
-        if xdata is not None and ydata is not None:
-            axes.plot(xdata, ydata)
-
-        return axes
-
-
-    def setAxesLabels(self,xlabel,ylabel):
-        self._currentAxes.set_xlabel(xlabel)
-        self._currentAxes.set_ylabel(ylabel)
-
-
-    def setCurrentAxes(self, ax):
-        self._currentAxes = ax
-
-
-    def setPlotType(self, type):
-        if type in self._plotTypes:
-            self._plotType = type
-        else:
-            print "Error: unrecognized plotting method passed"
-            logging.error("Unrecognized plotting method passed")
-        
-        
-    def feedSettings(self, overrule=False, **kwargs):
-        if overrule:
-            self.plotSettings = kwargs
-        else:
-            self.plotSettings.update(kwargs)
-        self._outdated = True
-
-
-    def updatePlot(self):
-        if self._outdated:
-            self.clearPlot()
-            self.plotData()
-
-
-    def update(self):
-        self.canvas.draw()
-
-
-    def feedData(self, xdata, ydata):
-        self.xdata = xdata
-        self.ydata = ydata
-        self._outdated = True
-
-
-    def clearPlot(self):
-        self.canvas.clear()
-
-    
-    def plotData(self):
-        self._plotFunc = getattr(self._currentAxes, self._plotType)
-        if self._plotType == 'axvline':
-            self._plotFunc(self.xdata, *self.ydata, **self.plotSettings)
-        else:
-            self._plotFunc(self.xdata, self.ydata, **self.plotSettings)
-
 
 
 class LimitsDialog(QtGui.QDialog):
