@@ -63,6 +63,7 @@ import logging
 import dd
 from fitting import FitFunctions
 from slider import SchizoSlider
+from FeaturePicking import FeaturePicker
 
 logging.basicConfig(
                 filename='langmuirAnalyzer.log', 
@@ -440,6 +441,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 'Vpos-Vfl': '1',
                 'Vneg-Vpos': '2'}
         self.shotfiles = []
+        self.stats = {}
 
         # Set up UI
         self.setupUi(self)
@@ -523,6 +525,19 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         header = self.probeTable.horizontalHeader()
         for i in range(header.count()):
             header.setResizeMode(i, QtGui.QHeaderView.Stretch)
+
+        # Prepare feature table
+        self.stdFeatures = ['Ptot', 'nbar', 'Tdiv', 'impN',
+                            'impNe', 'impAr', 'DWmhd', 'ELMdt',
+                            'EED']
+        self.tblFeatures.verticalHeader().hide()
+        self.featurePicker = FeaturePicker(self.tblFeatures)
+        self.featurePicker.addFeature('Shot', meta=True)
+        self.featurePicker.addFeature('CELMA start', meta=True)
+        self.featurePicker.addFeature('CELMA end', meta=True)
+        self.featurePicker.addFeature('quantity', meta=True)
+        for feat in self.stdFeatures:
+            self.featurePicker.addFeature(feat, meta=True)
 
         # Add progress bar to the status bar
         self.progBar = QtGui.QProgressBar()
@@ -1367,7 +1382,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             del plot
 
 
-    def load(self, reload=False):
+    def load(self, reloaded=False):
         """ 
             Loads specified shot, updates all plots on the GUI and implements
             interactivity 
@@ -1438,7 +1453,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.loadStatData()
 
             #Implement GUI logic
-            if not reload:
+            if not reloaded:
                 self.activateXtimeSlider()
                 self.comboSwitchxPlot.currentIndexChanged.connect(self.switchxPlot)
                 self.xTimeEdit.returnPressed.connect(self.setxTimeSlider)
@@ -1541,6 +1556,20 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.btnWmhd.clicked.connect(self.showWmhd)
                 #self.btnTdivNbar.clicked.connect(self.createTNplot)
 
+                self.btnFeatAddRow.clicked.connect(self.addFeatureRow)
+                self.btnFeatAdd.clicked.connect(
+                    self.featurePicker.addFeature)
+                self.btnFeatClearTbl.clicked.connect(
+                    self.featurePicker.clearTable)
+                self.btnFeatSaveTbl.clicked.connect(
+                    self.featurePicker.saveTable)
+                self.btnFeatLoadTbl.clicked.connect(
+                    self.featurePicker.loadTable)
+                self.btnFeatRemoveRow.clicked.connect(
+                    self.featurePicker.removeRow)
+                self.btnFeatRemoveCol.clicked.connect(
+                    self.featurePicker.removeColumn)
+
             self.statusbar.showMessage('Shot was fully loaded', 5000)
             logging.info( "\n\n+++++++++++++++++ ALL DONE! ++++++++++++++++++\n\n")
             print "\n\n+++++++++++++++++ ALL DONE! ++++++++++++++++++\n\n"
@@ -1568,6 +1597,21 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         QtGui.QApplication.restoreOverrideCursor()
         self.hideProgress()
+
+
+    def addFeatureRow(self):
+        settings = self.getCELMAsettings()
+        if settings is None:
+            return
+        start, end, _ = settings
+        picker = self.featurePicker
+        picker.addRow()
+        picker.setFeatureValue('Shot', self.shotnr)
+        picker.setFeatureValue('CELMA start', start)
+        picker.setFeatureValue('CELMA end', end)
+        print(self.stats)
+        for feat in self.stdFeatures:
+            picker.setFeatureValue(feat, self.stats[feat])
 
 
     def checkAFSToken(self):
@@ -1965,17 +2009,22 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         # N impurity density
         #shot = dd.shotfile('', self.shotnr)
-        impN = None
+        impN = 0
 
         # Ne impurity density
         #shot = dd.shotfile('', self.shotnr)
-        impNe = None
+        impNe = 0
 
-        self.statData = {self.lblStatN: [impN, 10**19],
-                         self.lblStatNe: [impNe, 10**19],
-                         self.lblStatTdiv: [Tdiv, 1],
-                         self.lblStatDens: [lineDens, 10**19],
-                         self.lblStatHeating: [heating, 10**6]}
+        # Ar impurity density
+        #shot = dd.shotfile('', self.shotnr)
+        impAr = 0
+
+        self.statData = {self.lblStatN: [impN, 10**19, 'impN'],
+                         self.lblStatNe: [impNe, 10**19, 'impNe'],
+                         self.lblStatAr: [impAr, 10**19, 'impAr'],
+                         self.lblStatTdiv: [Tdiv, 1, 'Tdiv'],
+                         self.lblStatDens: [lineDens, 10**19, 'nbar'],
+                         self.lblStatHeating: [heating, 10**6, 'Ptot']}
 
 
     def showStats(self, event=None):
@@ -1990,7 +2039,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         except ValueError:
             return
 
-        for lbl, (obj, cal) in self.statData.items():
+        for lbl, (obj, cal, name) in self.statData.items():
             try:
                 data = obj.data
                 time = obj.time
@@ -2000,6 +2049,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 avg = getAverage(data, time, start, end) / cal
                 avg = '{:.2f}'.format(avg)
             lbl.setText(avg)
+            self.stats[name] = avg
 
 
     def showELMstatistics(self, event=None):
@@ -2039,6 +2089,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         ELMELEC = self.ELMelec[ind_selected][:ELMnum]
         preELMWmhd = self.preELMWmhd[ind_selected][:ELMnum]
         preELMelec = self.preELMelec[ind_selected][:ELMnum]
+
+        self.stats['DWmhd'] = np.mean(ELMENER)
+        self.stats['ELMdt'] = np.mean(ELMdt)
+        self.stats['EED'] = np.mean(ELMtoELM)
 
         self.lblELMsInRange.setText(str(len(ind[0])))
         self.lblELMnum.setText(str(len(ELMstarts)))
@@ -2702,6 +2756,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         plot.canvas.collectiveSaveClicked.connect(self.collectiveSave)
         plot.canvas.popupRequested.connect(
                 functools.partial(self.createPopup, plot))
+
+        self.featurePicker.addCanvas(plot.quantity, plot.canvas)
 
         # This does not work with FuncFormatter
         #plot.axes.get_xaxis().get_major_formatter().set_useOffset(False)
