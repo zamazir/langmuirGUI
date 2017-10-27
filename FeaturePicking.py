@@ -9,6 +9,7 @@ from PyQt4 import QtGui, QtCore
 
 from windows import FigureWindow
 from conversion import Conversion
+from mplextensions import DraggableColorbar
 
 class FeaturePicker(object):
     def __init__(self, table):
@@ -256,9 +257,9 @@ class PlottingDialog(QtGui.QDialog):
     def __init__(self, quantities, parent=None):
         super(PlottingDialog, self).__init__(parent)
         self.quantities = quantities
-        self.rows = {'x': None, 'y': None}
-        self.combos = {'x': [], 'y': []}
-        self.operators = {'x': [], 'y': []}
+        self.rows = {'x': None, 'y': None, 'z': None}
+        self.combos = {'x': [], 'y': [], 'z': []}
+        self.operators = {'x': [], 'y': [], 'z': []}
         self.operatorMappings = {'-': operator.sub,
                                  '+': operator.add,
                                  '*': operator.mul,
@@ -297,9 +298,6 @@ class PlottingDialog(QtGui.QDialog):
             cbProbe.setChecked(True)
             row.addWidget(cbProbe)
             self.probes.append(cbProbe)
-        self.cbSplitProbes = QtGui.QCheckBox('Split probes')
-        self.cbSplitProbes.setTristate(False)
-        row.addWidget(self.cbSplitProbes)
         layout.addLayout(row)
 
         row = QtGui.QHBoxLayout()
@@ -310,6 +308,19 @@ class PlottingDialog(QtGui.QDialog):
         self.comboProbeIndex.addItems(inds)
         row.addWidget(lbl)
         row.addWidget(self.comboProbeIndex)
+
+        groups = ['None', 'Shot', 'seeding', 'probe',
+                  'sepProbe', 'probeIndex']
+        lbl = QtGui.QLabel('Group by')
+        self.comboGroup = QtGui.QComboBox()
+        self.comboGroup.addItems(groups)
+        row.addWidget(lbl)
+        row.addWidget(self.comboGroup)
+
+        lbl = QtGui.QLabel('Filter')
+        self.editFilter = QtGui.QLineEdit('{"Shot": [], "probe": []}')
+        row.addWidget(lbl)
+        row.addWidget(self.editFilter)
         layout.addLayout(row)
 
         # x-axis
@@ -320,13 +331,13 @@ class PlottingDialog(QtGui.QDialog):
         self.addCombo('x')
 
         self.xRadioGroup = QtGui.QButtonGroup()
-        self.xxradio = QtGui.QRadioButton('x')
-        self.xyradio = QtGui.QRadioButton('y')
-        self.xRadioGroup.addButton(self.xxradio, 0)
-        self.xRadioGroup.addButton(self.xyradio, 1)
-        self.xxradio.setChecked(True)
-        row.addWidget(self.xxradio)
-        row.addWidget(self.xyradio)
+        xxradio = QtGui.QRadioButton('x')
+        xyradio = QtGui.QRadioButton('y')
+        self.xRadioGroup.addButton(xxradio, 0)
+        self.xRadioGroup.addButton(xyradio, 1)
+        xxradio.setChecked(True)
+        row.addWidget(xxradio)
+        row.addWidget(xyradio)
 
         btnAdd = QtGui.QPushButton('Add')
         btnRemove = QtGui.QPushButton('Remove')
@@ -351,13 +362,13 @@ class PlottingDialog(QtGui.QDialog):
         self.addCombo('y')
 
         self.yRadioGroup = QtGui.QButtonGroup()
-        self.yxradio = QtGui.QRadioButton('x')
-        self.yyradio = QtGui.QRadioButton('y')
-        self.yRadioGroup.addButton(self.yxradio, 0)
-        self.yRadioGroup.addButton(self.yyradio, 1)
-        self.yxradio.setChecked(True)
-        row.addWidget(self.yxradio)
-        row.addWidget(self.yyradio)
+        yxradio = QtGui.QRadioButton('x')
+        yyradio = QtGui.QRadioButton('y')
+        self.yRadioGroup.addButton(yxradio, 0)
+        self.yRadioGroup.addButton(yyradio, 1)
+        yxradio.setChecked(True)
+        row.addWidget(yxradio)
+        row.addWidget(yyradio)
 
         btnAdd = QtGui.QPushButton('Add')
         btnRemove = QtGui.QPushButton('Remove')
@@ -374,12 +385,45 @@ class PlottingDialog(QtGui.QDialog):
         row.addWidget(self.editylabel)
         layout.addLayout(row)
         
+        # z-axis
+        row = QtGui.QHBoxLayout()
+        self.rows['z'] = row
+        ylbl = QtGui.QLabel('z-axis')
+        row.addWidget(ylbl)
+        self.cbUseColorbar = QtGui.QCheckBox('Active')
+        self.cbUseColorbar.setTristate(False)
+        row.addWidget(self.cbUseColorbar)
+        self.addCombo('z')
+
+        self.zRadioGroup = QtGui.QButtonGroup()
+        zxradio = QtGui.QRadioButton('x')
+        zyradio = QtGui.QRadioButton('y')
+        self.zRadioGroup.addButton(zxradio, 0)
+        self.zRadioGroup.addButton(zyradio, 1)
+        zxradio.setChecked(True)
+        row.addWidget(zxradio)
+        row.addWidget(zyradio)
+
+        btnAdd = QtGui.QPushButton('Add')
+        btnRemove = QtGui.QPushButton('Remove')
+        btnAdd.clicked.connect(functools.partial(self.addCombo, 'z'))
+        btnRemove.clicked.connect(functools.partial(self.removeCombo, 'z'))
+        row.addWidget(btnAdd)
+        row.addWidget(btnRemove)
+        layout.addLayout(row)
+
+        row = QtGui.QHBoxLayout()
+        lbl = QtGui.QLabel('z-axis label:')
+        self.editzlabel = QtGui.QLineEdit()
+        row.addWidget(lbl)
+        row.addWidget(self.editzlabel)
+        layout.addLayout(row)
+        
         # confirmation
         buttonLayout = QtGui.QHBoxLayout()
         buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok |
                                            QtGui.QDialogButtonBox.Cancel,
                                            QtCore.Qt.Horizontal)
-        #buttonBox.accepted.connect(self.accept)
         buttonBox.accepted.connect(self.broadcastUpdate)
         buttonBox.rejected.connect(self.reject)
         buttonLayout.addWidget(buttonBox)
@@ -422,18 +466,24 @@ class PlottingDialog(QtGui.QDialog):
     def parameters(self):
         axisx = str(self.xRadioGroup.checkedButton().text())
         axisy = str(self.yRadioGroup.checkedButton().text())
+        axisz = str(self.zRadioGroup.checkedButton().text())
         opx = self.operators['x']
         opy = self.operators['y']
+        opz = self.operators['z']
 
         x = []
         y = []
+        z = []
         for combo in self.combos['x']:
             x.append(str(combo.currentText()))
         for combo in self.combos['y']:
             y.append(str(combo.currentText()))
+        for combo in self.combos['z']:
+            z.append(str(combo.currentText()))
 
         xlabel = str(self.editxlabel.text())
         ylabel = str(self.editylabel.text())
+        zlabel = str(self.editzlabel.text())
         title = str(self.editTitle.text())
 
         plot = str(self.comboQuantity.currentText())
@@ -442,23 +492,22 @@ class PlottingDialog(QtGui.QDialog):
         if self.cbEmptyProbe.isChecked():
             probes.append('')
 
-        condense = not self.cbSplitProbes.isChecked()
-
         try:
             index = int(self.comboProbeIndex.currentText())
         except ValueError:
             index = False
+        
+        group = str(self.comboGroup.currentText())
+        filters = {}
+        try:
+            filters = eval(str(self.editFilter.text()))
+        except ValueError:
+            pass
+        colorbar = self.cbUseColorbar.isChecked()
 
-        return ([x, y], [opx, opy], [axisx, axisy],
-                [xlabel, ylabel, title], plot, probes, condense, index)
-
-    @staticmethod
-    def getQuantities(quantities, parent=None):
-        dialog = PlottingDialog(quantities, parent)
-        result = dialog.exec_()
-        quants, ops, axes, labels, plot, probes, condense, index = dialog.parameters()
-        return (quants, ops, axes, labels,
-                plot, probes, condense, index, result == QtGui.QDialog.Accepted)
+        return ([x, y, z], [opx, opy, opz], [axisx, axisy, axisz],
+                [xlabel, ylabel, zlabel, title], plot, probes, index,
+                group, filters, colorbar)
 
 
 class Plotter(QtCore.QObject):
@@ -481,83 +530,136 @@ class Plotter(QtCore.QObject):
             lbl = self.table.horizontalHeaderItem(col).text()
             quantities.append(str(lbl))
 
-        #result = PlottingDialog.getQuantities(quantities, self.table)
         dialog = PlottingDialog(quantities, self.table)
         dialog.updated.connect(self.update)
         dialog.show()
-        #quants, ops, axes, lbls, plot, probes, condense, index, ok = result
+        #quants, ops, axes, lbls, plot, probes, index, ok = result
         #if not ok:
         #    return
-        #return quants, ops, axes, lbls, plot, probes, condense, index
+        #return quants, ops, axes, lbls, plot, probes, index
 
     def __del__(self):
         self.delete.emit()
 
     def update(self, pars):
-        print("Updating with", pars)
         self.choice = pars
         self.plot()
 
     def getHeaderLabels(self, table):
         headerLabels = []
         for col in range(table.columnCount()):
-            lbl = table.horizontalHeaderItem(col).text()
+            lbl = str(table.horizontalHeaderItem(col).text())
             headerLabels.append(lbl)
         return headerLabels
 
     def getTableData(self, quants, ops, axes, labels,
-                     plot, probes, condense, index):
-        xquants, yquants = quants
-        xops, yops = ops
-        xaxisAx, yaxisAx = axes
-        self.xlabel, self.ylabel, self.title = labels
+                     plot, probes, index, group, filters, colorbar):
+        xquants, yquants, zquants = quants
+        xops, yops, zops = ops
+        xaxisAx, yaxisAx, zaxisAx = axes
+        self.xlabel, self.ylabel, self.zlabel, self.title = labels
 
         headerLabels = self.getHeaderLabels(self.table)
-
-        def getColumns(quantities, headerLabels):
-            cols = []
-            for lbl in quantities:
-                try:
-                    col = headerLabels.index(lbl)
-                except ValueError:
-                    print('Did not find quantity "{}" in header. '
-                          .format(lbl) +
-                          'Cannot proceed')
-                    return
-                else:
-                    cols.append(col)
-            return cols
-
-        def getItemValue(item, axis):
-            if not item:
-                val = np.nan
-            else:
-                cont = str(item.text()).split('|')
-                if len(cont) > 1:
-                    axis = (0 if axis == 'x' else 1)
-                    cont = cont[axis]
-                else:
-                    cont = cont[0]
-                try:
-                    val = float(cont)
-                except ValueError:
-                    val = np.nan
-            return val
+        df = self.table2DataFrame(self.table)
 
         def calculateRowValue(row, cols, ops, axis):
-            cols = list(cols)  # shallow copy
-            firstCol = cols.pop(0)
-            firstItem = self.table.item(row, firstCol)
-            accVal = getItemValue(firstItem, axis)
+            def getAxis(val, ax):
+                try:
+                    val = float(val)
+                except (ValueError, TypeError):
+                    if len(val) == 2 and not isinstance(val, basestring):
+                        ax = (0 if ax == 'x' else 1)
+                        val = val[ax]
+                    elif isinstance(val, basestring):
+                        try:
+                            val = float(val)
+                        except ValueError:
+                            val = val
+                    else:
+                        val = val
+                return val
 
-            for col, op in zip(cols, ops):
-                item = self.table.item(row, col)
-                val = getItemValue(item, axis)
+            accVal = row[cols[0]]
+            accVal = getAxis(accVal, axis)
+
+            for col, op in zip(cols[1:], ops):
+                val = row[col]
+                val = getAxis(val, axis)
                 opstr = str(op.currentText())
                 func = self.operatorMappings[opstr]
                 accVal = func(accVal, val)
             return accVal
 
+        xdata = {}
+        ydata = {}
+        zdata = {}
+        xargs = (xquants, xops, xaxisAx)
+        yargs = (yquants, yops, yaxisAx)
+        zargs = (zquants, zops, zaxisAx)
+
+        # Filtering
+        filters['probeIndex'] = [el for el in range(-2, 9)
+                                 if str(el) == str(index)]
+        for column, exclude in filters.items():
+            # Convert both to string before comparing
+            exclude = [str(el) for el in exclude]
+            ind = ~df[column].astype(str).isin(exclude)
+            df = df.loc[ind]
+
+        # Grouping
+        if group in list(df):
+            grouped = df.groupby(group)
+        else:
+            grouped = [['all', df]]
+        for group, groupdf in grouped:
+            xdata[group] = groupdf.apply(calculateRowValue, args=xargs, axis=1)
+            ydata[group] = groupdf.apply(calculateRowValue, args=yargs, axis=1)
+            zdata[group] = groupdf.apply(calculateRowValue, args=zargs, axis=1)
+            if group != 'all':
+                xdata[group] = xdata[group].tolist()
+                ydata[group] = ydata[group].tolist()
+                zdata[group] = zdata[group].tolist()
+            else:
+                xdata[group] = xdata[group].values.tolist()
+                ydata[group] = ydata[group].values.tolist()
+                zdata[group] = zdata[group].values.tolist()
+            if not colorbar:
+                zdata[group] = None
+        return xdata, ydata, zdata
+
+    def table2DataFrame(self, table):
+        rowCount = table.rowCount()
+        headerLabels = self.getHeaderLabels(table)
+
+        df = pd.DataFrame(columns=headerLabels,
+                          index=range(rowCount))
+
+        for i in range(rowCount):
+            for j, colName in enumerate(headerLabels):
+                item = table.item(i, j)
+                try:
+                    cont = str(item.text())
+                except ValueError, AttributeError:
+                    vals = np.nan
+                else:
+                    if cont == '':
+                        vals = np.nan
+                    else:
+                        vals = cont.split('|')
+                        vals = tuple(vals)
+                df.iloc[i, j] = vals
+
+        # Unpack single values for easier filtering and plotting
+        for i in range(rowCount):
+            for j, colName in enumerate(headerLabels):
+                val = df.iloc[i, j]
+                try:
+                    df.iloc[i, j], = val
+                except (TypeError, ValueError):
+                    pass
+        
+        # Add probe indices based on where they are located relative to
+        # strikeline
         def getProbeIndex(probe, sepProbe):
             try:
                 probeNumber = int(probe[-1])
@@ -565,95 +667,17 @@ class Plotter(QtCore.QObject):
                 index = probeNumber - sepProbeNumber
             except ValueError, IndexError:
                 index = np.nan
+            #print("Index for {} ({}) relative to {} ({}): {}".
+            #      format(probe, probeNumber, sepProbe, sepProbeNumber, index))
             return index
 
-        xcols = getColumns(xquants, headerLabels)
-        ycols = getColumns(yquants, headerLabels)
-
-        if xcols is None or ycols is None:
-            return
-
-        plotCol, = getColumns(['quantity'], headerLabels)
-        probeCol, = getColumns(['probe'], headerLabels)
-        sepProbeCol, = getColumns(['sepProbe'], headerLabels)
-        seedCol, = getColumns(['seeding'], headerLabels)
-        xdata = {}
-        ydata = {}
-        meta = {}
-        for row in range(self.table.rowCount()):
-            pltItem = self.table.item(row, plotCol)
-            probeItem = self.table.item(row, probeCol)
-            sepProbeItem = self.table.item(row, sepProbeCol)
-            seedItem = self.table.item(row, seedCol)
-            try:
-                plt = str(pltItem.text())
-            except AttributeError:
-                plt = ''
-            try:
-                probe = str(probeItem.text())
-            except AttributeError:
-                probe = ''
-            try:
-                sepProbe = str(sepProbeItem.text())
-            except AttributeError:
-                sepProbe = ''
-            try:
-                seed = str(seedItem.text())
-            except AttributeError:
-                seed = None
-
-            if index:
-                probeIndex = getProbeIndex(probe, sepProbe)
-                if not probeIndex == index:
-                    continue
-
-            if (plot == 'all' or plt == plot) and probe in probes:
-                xval = calculateRowValue(row, xcols, xops, xaxisAx)
-                yval = calculateRowValue(row, ycols, yops, yaxisAx)
-                if probe not in xdata:
-                    xdata[probe] = []
-                    ydata[probe] = []
-                xdata[probe].append(xval)
-                ydata[probe].append(yval)
-                if probe not in meta:
-                    meta[probe] = {'seeding': []}
-                meta[probe]['seeding'].append(seed)
-
-        if condense:
-            totx = []
-            toty = []
-            for probe in xdata:
-                x = xdata[probe]
-                y = ydata[probe]
-                totx.extend(x)
-                toty.extend(y)
-            xdata = {'all': totx}
-            ydata = {'all': toty}
-
-        #xdata, ydata = Conversion.removeNansMutually(xdata, ydata)
-        for probe in xdata:
-            x = xdata[probe]
-            y = ydata[probe]
-            if len(x) == 0 or len(x) != len(y):
-                continue
-            x, y = zip(*sorted(zip(x, y)))
-            xdata[probe] = x
-            ydata[probe] = y
-            
-        return xdata, ydata
-
-    def table2DataFrame(self, table):
-        rowCount = table.rowCount()
-        colCount = table.columnCount()
-        headerLabels = self.getHeaderLabels(table)
-
-        df = pd.DataFrame(columns=headerLabels,
-                          index=range(rowCount))
-
+        indices = []
         for i in range(rowCount):
-            for j in range(colCount):
-                df.iloc[i, j] = table.item(i, j).data()
-
+            probe = str(df.loc[i, 'probe'])
+            sepProbe = str(df.loc[i, 'sepProbe'])
+            index = getProbeIndex(probe, sepProbe)
+            indices.append(index)
+        df['probeIndex'] = pd.Series(indices)
         return df
 
     def plot(self):
@@ -662,17 +686,33 @@ class Plotter(QtCore.QObject):
         data = self.getTableData(*self.choice)
         if data is None:
             return
-        xdata, ydata = data
+        xdata, ydata, zdata = data
+        markers = ['d', 'o', 's', 'P', 'X', '^', 'v', '<', '>',
+                   '.', '8', 'p', '*', '+', 'h', 'H', 'D']
+
+        print("Z data:", zdata)
         
         self.window.clearPlot()
-        for probe in xdata:
-            x = xdata[probe]
-            y = ydata[probe]
-            self.window.feedData(x, y)
+        if not None in zdata.values():
+            ztot = [el for li in zdata.values() for el in li]
+            zmax = max(ztot)
+            zmin = min(ztot)
+            self.window.feedSettings(vmin=zmin, vmax=zmax)
+        for group, marker in zip(xdata, markers):
+            x = xdata[group]
+            y = ydata[group]
+            z = zdata[group]
+            self.window.feedData(x, y, z)
             self.window.setPlotType('scatter')
-            self.window.feedSettings(marker='d', label=probe)
-            plt = self.window.plotData(stale=True)
-        self.window.setAxesLabels(self.xlabel, self.ylabel)
+            self.window.feedSettings(marker=marker, label=group)
+            self.window.plotData(stale=True)
+        self.window.setAxesLabels(self.xlabel, self.ylabel, self.zlabel)
         self.window.fig.suptitle(self.title)
+        leg = self.window._currentAxes.legend(loc='best')
+        if not None in zdata.values():
+            for hdl in leg.legendHandles:
+                hdl.set_color('black')
+        leg.draggable(True)
+        self.window._currentAxes.grid(linestyle='--', color='lightgrey')
         self.window.updateCanvas()
         self.window.show()
