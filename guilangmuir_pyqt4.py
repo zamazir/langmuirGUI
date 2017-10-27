@@ -65,6 +65,7 @@ from fitting import FitFunctions
 from slider import SchizoSlider
 from FeaturePicking import FeaturePicker, Plotter
 from windows import FigureWindow
+from conversion import Conversion
 
 logging.basicConfig(
                 filename='langmuirAnalyzer.log', 
@@ -444,6 +445,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.shotfiles = []
         self.stats = {}
         self.plotter = None
+        self.interactive = False
 
         # Set up UI
         self.setupUi(self)
@@ -467,9 +469,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.btnCELMAupdate.setVisible(False)
         self.btnShotUpdate.setVisible(False)
         self.radioDistancesNoAveraging.setChecked(True)
-        self.setWindowTitle('Langmuir Data Analyzer')
         self.insertLinks()
         self.journalLink = None
+        self.windowTitle = 'Langmuir Data Analyzer'
+        self.setWindowTitle(self.windowTitle)
 
         # Logger
         logTextBox = QPlainTextEditLogger(self)
@@ -538,6 +541,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.featurePicker.addFeature('CELMA start', meta=True)
         self.featurePicker.addFeature('CELMA end', meta=True)
         self.featurePicker.addFeature('quantity', meta=True)
+        self.featurePicker.addFeature('probe', meta=True)
         for feat in self.stdFeatures:
             self.featurePicker.addFeature(feat, meta=True)
 
@@ -581,6 +585,20 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.comboExpEqu.activated.connect(
                         functools.partial(self.addUser, self.comboExpEqu))
         self.comboLogLevel.currentIndexChanged.connect(self.setLoggerLevel)
+        self.btnFeatAdd.clicked.connect(
+            self.featurePicker.addFeature)
+        self.btnFeatClearTbl.clicked.connect(
+            self.featurePicker.clearTable)
+        self.btnFeatSaveTbl.clicked.connect(
+            self.featurePicker.saveTable)
+        self.btnFeatLoadTbl.clicked.connect(
+            self.featurePicker.loadTable)
+        self.btnFeatRemoveRow.clicked.connect(
+            self.featurePicker.removeRow)
+        self.btnFeatRemoveCol.clicked.connect(
+            self.featurePicker.removeColumn)
+        self.btnFeatPlot.clicked.connect(
+            self.plotFeatures)
 
         self.shotNumberEdit.setFocus()
 
@@ -689,7 +707,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if plot.CELMAexists and plot._CELMAnormalize:
                 x *= 100
             msg = 'x = {:.4f} | y = {:.2e}'.format(x, y)
-            logging.critical(msg)
             self.statusbar.showMessage(msg)
         else:
             self.statusbar.clearMessage()
@@ -1422,6 +1439,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         if success:
             logging.info("+++++++++Data retrieval was successful+++++++++")
             print("Data retrieval was successful")
+            newTitle = (self.windowTitle.split(' -')[0] +
+                        ' - #' + str(self.shotnr))
+            self.setWindowTitle(newTitle)
+            self.windowTitle = newTitle
             self.plots = []
 
             quantity = self.getSpatialPlotQuantity()
@@ -1455,7 +1476,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.loadStatData()
 
             #Implement GUI logic
-            if not reloaded:
+            if not self.interactive:
+                self.interactive = True
                 self.activateXtimeSlider()
                 self.comboSwitchxPlot.currentIndexChanged.connect(self.switchxPlot)
                 self.xTimeEdit.returnPressed.connect(self.setxTimeSlider)
@@ -1467,6 +1489,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 self.spinTWidth.editingFinished.connect(self.updateTWindow)
                 self.btnReset.clicked.connect(self.resetPlots)
                 self.btnCELMA.clicked.connect(self.toggleCELMAs)
+                self.btnCELMAgotoInterval.clicked.connect(self.showInterval)
 
                 self.POISlider.valueChanged.connect(self.showCELMAupdateButton)
                 self.comboPOIunit.currentIndexChanged.connect(self.showCELMAupdateButton)
@@ -1559,20 +1582,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 #self.btnTdivNbar.clicked.connect(self.createTNplot)
 
                 self.btnFeatAddRow.clicked.connect(self.addFeatureRow)
-                self.btnFeatAdd.clicked.connect(
-                    self.featurePicker.addFeature)
-                self.btnFeatClearTbl.clicked.connect(
-                    self.featurePicker.clearTable)
-                self.btnFeatSaveTbl.clicked.connect(
-                    self.featurePicker.saveTable)
-                self.btnFeatLoadTbl.clicked.connect(
-                    self.featurePicker.loadTable)
-                self.btnFeatRemoveRow.clicked.connect(
-                    self.featurePicker.removeRow)
-                self.btnFeatRemoveCol.clicked.connect(
-                    self.featurePicker.removeColumn)
-                self.btnFeatPlot.clicked.connect(
-                    self.plotFeatures)
 
             self.statusbar.showMessage('Shot was fully loaded', 5000)
             logging.info( "\n\n+++++++++++++++++ ALL DONE! ++++++++++++++++++\n\n")
@@ -1613,17 +1622,17 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         picker.setFeatureValue('Shot', self.shotnr)
         picker.setFeatureValue('CELMA start', start)
         picker.setFeatureValue('CELMA end', end)
-        print(self.stats)
         for feat in self.stdFeatures:
             picker.setFeatureValue(feat, self.stats[feat])
 
     def plotFeatures(self):
         if self.plotter is None:
             self.plotter = Plotter(self.tblFeatures)
-            self.plotter.delete.connect(self.removePlotter)
+            self.plotter.window.close.connect(self.removePlotter)
         self.plotter.plot()
 
     def removePlotter(self):
+        print("Deleting plotter")
         self.plotter = None
 
     def checkAFSToken(self):
@@ -1703,7 +1712,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         _tmax = self.editCELMAendTime.text()
         _celma= self.CELMAexists
 
-        self.load(reload=True)
+        self.load(reloaded=True)
 
         #self.updateColors(_colors)
 
@@ -1717,7 +1726,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             pass
         else:
             for plot in self.getTemporalPlots():
-                plot.axes.set_xlim((_tmin,_tmax), emit=False)
+                plot.axes.set_xlim((_tmin, _tmax), emit=False)
 
         if _celma:
             self.toggleCELMAs()
@@ -1795,6 +1804,18 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def showCELMAupdateButton(self):
         if self.CELMAexists:
             self.btnCELMAupdate.setVisible(True)
+
+
+    def showInterval(self):
+        settings = self.getCELMAsettings()
+        if settings:
+            start, end, _ = settings
+            for plot in self.getTemporalPlots():
+                plot.axes.set_xlim([start, end], emit=False)
+                plot.canvas.draw()
+        self.populateELMtable()
+        self.showELMstatistics()
+        self.showStats()
 
 
     def activateXtimeSlider(self):
@@ -3660,7 +3681,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     logging.warning("Could not convert axes limits")
                     pass
                 else:
-                    plot.axes.set_xlim((_start,_end),emit=False)
+                    plot.axes.set_xlim((_start,_end), emit=False)
                     plot.draw()
         
         if not self.multiplePOIs:
@@ -3685,6 +3706,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.deactivateXtimeSlider()
 
             for plot in self.plots:
+                # For temporal plots, memorizeView is not suitable since if
+                # CELMA start and end times were entered manually, they are
+                # supposed to show that inverval after reinstating, not the
+                # interval that they showed before the CELMA.
+                # Instead, plot._view is set manually below
                 plot.memorizeView()
 
             self.createSpatialCELMA()
@@ -3698,6 +3724,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 _end = self.editCELMAendTime.text()
 
                 for plot in self.getTemporalPlots():
+                    plot._view[0] = [float(_start), float(_end)]
                     if plot.pertinent:
                         plot.canvas.callbacks.disconnect(plot._timeUpdtID)
                     self.statusbar.showMessage(
@@ -3710,7 +3737,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     # Each temporal plot will experience a change in xlim and
                     # therefore change the CELMA time range in the GUI that the
                     # next plot relies on. The disconnect above this does not
-                    # seem to work
+                    # seem to work -> of course it doesn't! It diconnects the
+                    # first plot but the other two still update the CELMA times
+                    # incorrectly
                     self.editCELMAstartTime.setText(_start)
                     self.editCELMAendTime.setText(_end)
 
@@ -4273,42 +4302,6 @@ class Indicator():
 
 
 
-class Conversion():
-    @staticmethod
-    def valtoind(realtime, timearray):
-        """ 
-        Converts a real time value to an index in a given array with time
-        values. This is achieved by comparing the real time value to the array
-        elements and returning the index of the closest one.
-        """
-        return np.abs((timearray - realtime)).argmin()
-
-    @staticmethod
-    def removeNans(array, refarray=None):
-        """ 
-        Removes values from array based on the indices of NaN values in
-        refarray. If refarray is not specified, NaN values are removed from
-        array. Returns a numpy array. 
-        """ 
-        # If refarray was passed, comparing it to None would be deprecated
-        if refarray is None:
-            refarray = array
-
-        # Convert to numpy arrays
-        array = np.array(array)
-        refarray = np.array(refarray)
-
-        # Arrays must have same dimensions
-        if array.size != refarray.size:
-            raise ValueError('Arrays must be the same size. Array with size {}'
-            'cannot be filtered based on array with size {}'.format(array.size,
-            refarray.size))
-            return array
-
-        return array[~np.isnan(refarray)]
-
-
-
 class Plot(QObject):
     progressed = QtCore.pyqtSignal(int)
     processEvent = QtCore.pyqtSignal(str)
@@ -4440,7 +4433,7 @@ class Plot(QObject):
     def memorizeView(self):
         _xlim = self.axes.get_xlim()
         _ylim = self.axes.get_ylim()
-        self._view = (_xlim,_ylim)
+        self._view = [_xlim, _ylim]
 
 
     def reinstateView(self):
@@ -6058,7 +6051,7 @@ class TemporalPlot(Plot):
         i = 0
         logging.debug("Found ELM starts: {}".format(ELMonsets))
         for i, (ton, dt, shift) in enumerate(zip(ELMonsets, ELMtoELM, shiftArray)):
-            ind = np.where((ton-dt - pad <= time) & (time <= ton+dt + pad))[0]
+            ind = np.where((ton-dt - 0.001 <= time) & (time <= ton+dt + pad))[0]
             if normalize:
                 timeELM = (time[ind] - shift)/dt
             else:

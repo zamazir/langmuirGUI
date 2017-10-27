@@ -108,7 +108,7 @@ class FigureWindow(QtGui.QMainWindow):
             self._outdated = False
 
 
-    def update(self):
+    def updateCanvas(self):
         self.canvas.draw()
 
 
@@ -122,11 +122,12 @@ class FigureWindow(QtGui.QMainWindow):
         self._currentAxes.clear()
 
 
-    def plotData(self):
-        print("Plotting data")
+    def plotData(self, stale=False):
         self._plotFunc = getattr(self._currentAxes, self._plotType)
         if self._plotType == 'axvline':
             self._plotFunc(self.xdata, *self.ydata, **self.plotSettings)
         else:
             self._plotFunc(self.xdata, self.ydata, **self.plotSettings)
-        self.canvas.draw()
+
+        if not stale:
+            self.canvas.draw()

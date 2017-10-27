@@ -233,12 +233,12 @@
                      </property>
                      <item>
                       <property name="text">
-                       <string>AUGD</string>
+                       <string>zamaz</string>
                       </property>
                      </item>
                      <item>
                       <property name="text">
-                       <string>zamaz</string>
+                       <string>AUGD</string>
                       </property>
                      </item>
                      <item>
@@ -525,7 +525,7 @@
                </size>
               </property>
               <property name="currentIndex">
-               <number>5</number>
+               <number>1</number>
               </property>
               <property name="tabsClosable">
                <bool>false</bool>
@@ -1028,7 +1028,7 @@
                     </property>
                    </widget>
                   </item>
-                  <item row="1" column="6">
+                  <item row="1" column="7">
                    <widget class="QPushButton" name="btnCELMAupdate">
                     <property name="text">
                      <string>Update</string>
@@ -1042,7 +1042,7 @@
                     </property>
                    </widget>
                   </item>
-                  <item row="1" column="7">
+                  <item row="1" column="8">
                    <widget class="QPushButton" name="btnCELMA">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -1083,6 +1083,13 @@
                      </size>
                     </property>
                    </spacer>
+                  </item>
+                  <item row="1" column="6">
+                   <widget class="QPushButton" name="btnCELMAgotoInterval">
+                    <property name="text">
+                     <string>Go to interval</string>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </item>

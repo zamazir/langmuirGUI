@@ -18,11 +18,11 @@ fig.suptitle('#' + str(shotNumber))
 # Heating power
 ax = axes[0]
 try:
-    shot = dd.shotfile('TOT', shotNumber)
-    t = shot('P_TOT').time
-    y = shot('P_TOT').data / 10**6
+shot = dd.shotfile('TOT', shotNumber)
+t = shot('P_TOT').time
+y = shot('P_TOT').data / 10**6
 except:
-    print "No heating power data"
+print "No heating power data"
 else:
     ax.plot(t,y)
 ax.grid(True)
