@@ -8,8 +8,6 @@ import pandas as pd
 from PyQt4 import QtGui, QtCore
 
 from windows import FigureWindow
-from conversion import Conversion
-from mplextensions import DraggableColorbar
 
 class FeaturePicker(object):
     def __init__(self, table):
@@ -253,8 +251,10 @@ class ConfirmDialog(QtGui.QDialog):
 
 class PlottingDialog(QtGui.QDialog):
     updated = QtCore.pyqtSignal('PyQt_PyObject')
+    addsubplot = QtCore.pyqtSignal()
+    changeaxes = QtCore.pyqtSignal('PyQt_PyObject')
 
-    def __init__(self, quantities, parent=None):
+    def __init__(self, quantities, plotter, parent=None):
         super(PlottingDialog, self).__init__(parent)
         self.quantities = quantities
         self.rows = {'x': None, 'y': None, 'z': None}
@@ -274,6 +274,9 @@ class PlottingDialog(QtGui.QDialog):
         self.editTitle = QtGui.QLineEdit()
         row.addWidget(xlbl)
         row.addWidget(self.editTitle)
+
+        self.cbShowGrid = QtGui.QCheckBox('Show grid')
+        row.addWidget(self.cbShowGrid)
         layout.addLayout(row)
 
         # quantity
@@ -291,7 +294,8 @@ class PlottingDialog(QtGui.QDialog):
         self.cbEmptyProbe.setTristate(False)
         self.cbEmptyProbe.setChecked(True)
         row.addWidget(self.cbEmptyProbe)
-        probes = ['ua1', 'ua2', 'ua3', 'ua4', 'ua5', 'ua6', 'ua7', 'ua8', 'ua9']
+        probes = ['ua1', 'ua2', 'ua3', 'ua4', 'ua5',
+                  'ua6', 'ua7', 'ua8', 'ua9']
         for probe in probes:
             cbProbe = QtGui.QCheckBox(probe)
             cbProbe.setTristate(False)
@@ -309,11 +313,9 @@ class PlottingDialog(QtGui.QDialog):
         row.addWidget(lbl)
         row.addWidget(self.comboProbeIndex)
 
-        groups = ['None', 'Shot', 'seeding', 'probe',
-                  'sepProbe', 'probeIndex']
         lbl = QtGui.QLabel('Group by')
         self.comboGroup = QtGui.QComboBox()
-        self.comboGroup.addItems(groups)
+        self.comboGroup.addItems(self.quantities)
         row.addWidget(lbl)
         row.addWidget(self.comboGroup)
 
@@ -346,7 +348,7 @@ class PlottingDialog(QtGui.QDialog):
         row.addWidget(btnAdd)
         row.addWidget(btnRemove)
         layout.addLayout(row)
-        
+
         row = QtGui.QHBoxLayout()
         self.editxlabel = QtGui.QLineEdit()
         lbl = QtGui.QLabel('x-axis label:')
@@ -384,7 +386,7 @@ class PlottingDialog(QtGui.QDialog):
         row.addWidget(lbl)
         row.addWidget(self.editylabel)
         layout.addLayout(row)
-        
+
         # z-axis
         row = QtGui.QHBoxLayout()
         self.rows['z'] = row
@@ -392,7 +394,10 @@ class PlottingDialog(QtGui.QDialog):
         row.addWidget(ylbl)
         self.cbUseColorbar = QtGui.QCheckBox('Active')
         self.cbUseColorbar.setTristate(False)
+        self.cbSharedColorbar = QtGui.QCheckBox('Share colorbar')
+        self.cbSharedColorbar.setTristate(False)
         row.addWidget(self.cbUseColorbar)
+        row.addWidget(self.cbSharedColorbar)
         self.addCombo('z')
 
         self.zRadioGroup = QtGui.QButtonGroup()
@@ -418,7 +423,26 @@ class PlottingDialog(QtGui.QDialog):
         row.addWidget(lbl)
         row.addWidget(self.editzlabel)
         layout.addLayout(row)
-        
+
+        # subplots
+        row = QtGui.QHBoxLayout()
+        lbl = QtGui.QLabel('Current subplot')
+        self.lblCurrentSubplot = QtGui.QLabel('1')
+        row.addWidget(lbl)
+        row.addWidget(self.lblCurrentSubplot)
+
+        self.btnAddSubplot = QtGui.QPushButton('Add subplot')
+        self.btnAddSubplot.clicked.connect(self.addSubplot)
+        row.addWidget(self.btnAddSubplot)
+
+        lbl = QtGui.QLabel('Switch to subplot')
+        self.comboAxes = QtGui.QComboBox()
+        self.comboAxes.addItem('1')
+        self.comboAxes.currentIndexChanged.connect(self.changeAxes)
+        row.addWidget(lbl)
+        row.addWidget(self.comboAxes)
+        layout.addLayout(row)
+
         # confirmation
         buttonLayout = QtGui.QHBoxLayout()
         buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok |
@@ -430,6 +454,18 @@ class PlottingDialog(QtGui.QDialog):
         layout.addLayout(buttonLayout)
 
         self.setLayout(layout)
+
+    def changeAxes(self):
+        i = self.comboAxes.currentIndex()
+        self.changeaxes.emit(i)
+        txt = self.comboAxes.currentText()
+        self.lblCurrentSubplot.setText(txt)
+
+    def addSubplot(self):
+        self.addsubplot.emit()
+        i = self.comboAxes.count() + 1
+        self.comboAxes.addItem(str(i))
+        self.comboAxes.setCurrentIndex(i - 1)
 
     def addCombo(self, axis):
         # Add after last combo at index 1 + #combos + #operators =
@@ -488,7 +524,7 @@ class PlottingDialog(QtGui.QDialog):
 
         plot = str(self.comboQuantity.currentText())
         probes = [str(cb.text()) for cb in self.probes
-                  if cb.isChecked()]
+                  if not cb.isChecked()]
         if self.cbEmptyProbe.isChecked():
             probes.append('')
 
@@ -496,7 +532,7 @@ class PlottingDialog(QtGui.QDialog):
             index = int(self.comboProbeIndex.currentText())
         except ValueError:
             index = False
-        
+
         group = str(self.comboGroup.currentText())
         filters = {}
         try:
@@ -504,10 +540,12 @@ class PlottingDialog(QtGui.QDialog):
         except ValueError:
             pass
         colorbar = self.cbUseColorbar.isChecked()
+        shared_cbar = self.cbSharedColorbar.isChecked()
+        grid = self.cbShowGrid.isChecked()
 
         return ([x, y, z], [opx, opy, opz], [axisx, axisy, axisz],
                 [xlabel, ylabel, zlabel, title], plot, probes, index,
-                group, filters, colorbar)
+                group, filters, colorbar, shared_cbar, grid)
 
 
 class Plotter(QtCore.QObject):
@@ -516,7 +554,7 @@ class Plotter(QtCore.QObject):
     def __init__(self, table):
         super(Plotter, self).__init__(table)
         self.table = table
-        self.window = FigureWindow()
+        self.window = FigureWindow(self.table)
         self.window.close.connect(self.__del__)
         self.operatorMappings = {'-': operator.sub,
                                  '+': operator.add,
@@ -530,13 +568,11 @@ class Plotter(QtCore.QObject):
             lbl = self.table.horizontalHeaderItem(col).text()
             quantities.append(str(lbl))
 
-        dialog = PlottingDialog(quantities, self.table)
+        dialog = PlottingDialog(quantities, self, self.table)
         dialog.updated.connect(self.update)
+        dialog.addsubplot.connect(self.addSubplot)
+        dialog.changeaxes.connect(self.changeAxes)
         dialog.show()
-        #quants, ops, axes, lbls, plot, probes, index, ok = result
-        #if not ok:
-        #    return
-        #return quants, ops, axes, lbls, plot, probes, index
 
     def __del__(self):
         self.delete.emit()
@@ -544,6 +580,14 @@ class Plotter(QtCore.QObject):
     def update(self, pars):
         self.choice = pars
         self.plot()
+
+    def addSubplot(self):
+        sharex = self.window.axes[-1]
+        self.window.addSubplot(sharex=sharex)
+
+    def changeAxes(self, axNum):
+        ax = self.window.axes[axNum]
+        self.window.setCurrentAxes(ax)
 
     def getHeaderLabels(self, table):
         headerLabels = []
@@ -553,13 +597,15 @@ class Plotter(QtCore.QObject):
         return headerLabels
 
     def getTableData(self, quants, ops, axes, labels,
-                     plot, probes, index, group, filters, colorbar):
+                     plot, probes, index, group, filters, colorbar,
+                     shared_cbar, grid):
         xquants, yquants, zquants = quants
         xops, yops, zops = ops
         xaxisAx, yaxisAx, zaxisAx = axes
         self.xlabel, self.ylabel, self.zlabel, self.title = labels
+        self.shared_cbar = shared_cbar
+        self.grid = grid
 
-        headerLabels = self.getHeaderLabels(self.table)
         df = self.table2DataFrame(self.table)
 
         def calculateRowValue(row, cols, ops, axis):
@@ -570,13 +616,12 @@ class Plotter(QtCore.QObject):
                     if len(val) == 2 and not isinstance(val, basestring):
                         ax = (0 if ax == 'x' else 1)
                         val = val[ax]
-                    elif isinstance(val, basestring):
                         try:
                             val = float(val)
-                        except ValueError:
-                            val = val
+                        except (ValueError, TypeError):
+                            val = np.nan
                     else:
-                        val = val
+                        val = np.nan
                 return val
 
             accVal = row[cols[0]]
@@ -600,6 +645,10 @@ class Plotter(QtCore.QObject):
         # Filtering
         filters['probeIndex'] = [el for el in range(-2, 9)
                                  if str(el) == str(index)]
+        filters['probe'].extend(probes)
+        if str(plot) != 'all':
+            filters['quantity'] = [q for q in ['te', 'ne', 'jsat']
+                                   if q != str(plot)]
         for column, exclude in filters.items():
             # Convert both to string before comparing
             exclude = [str(el) for el in exclude]
@@ -639,7 +688,7 @@ class Plotter(QtCore.QObject):
                 item = table.item(i, j)
                 try:
                     cont = str(item.text())
-                except ValueError, AttributeError:
+                except (ValueError, AttributeError):
                     vals = np.nan
                 else:
                     if cont == '':
@@ -657,7 +706,7 @@ class Plotter(QtCore.QObject):
                     df.iloc[i, j], = val
                 except (TypeError, ValueError):
                     pass
-        
+
         # Add probe indices based on where they are located relative to
         # strikeline
         def getProbeIndex(probe, sepProbe):
@@ -665,7 +714,7 @@ class Plotter(QtCore.QObject):
                 probeNumber = int(probe[-1])
                 sepProbeNumber = int(sepProbe[-1])
                 index = probeNumber - sepProbeNumber
-            except ValueError, IndexError:
+            except (ValueError, IndexError):
                 index = np.nan
             #print("Index for {} ({}) relative to {} ({}): {}".
             #      format(probe, probeNumber, sepProbe, sepProbeNumber, index))
@@ -690,10 +739,8 @@ class Plotter(QtCore.QObject):
         markers = ['d', 'o', 's', 'P', 'X', '^', 'v', '<', '>',
                    '.', '8', 'p', '*', '+', 'h', 'H', 'D']
 
-        print("Z data:", zdata)
-        
         self.window.clearPlot()
-        if not None in zdata.values():
+        if len(zdata) and None not in zdata.values():
             ztot = [el for li in zdata.values() for el in li]
             zmax = max(ztot)
             zmin = min(ztot)
@@ -705,14 +752,16 @@ class Plotter(QtCore.QObject):
             self.window.feedData(x, y, z)
             self.window.setPlotType('scatter')
             self.window.feedSettings(marker=marker, label=group)
-            self.window.plotData(stale=True)
+            self.window.plotData(stale=True, shared_cbar=self.shared_cbar)
         self.window.setAxesLabels(self.xlabel, self.ylabel, self.zlabel)
         self.window.fig.suptitle(self.title)
         leg = self.window._currentAxes.legend(loc='best')
-        if not None in zdata.values():
+        if None not in zdata.values() and leg:
             for hdl in leg.legendHandles:
                 hdl.set_color('black')
         leg.draggable(True)
-        self.window._currentAxes.grid(linestyle='--', color='lightgrey')
+        if self.grid:
+            self.window._currentAxes.grid(linestyle='--',
+                                          color='lightgrey')
         self.window.updateCanvas()
         self.window.show()

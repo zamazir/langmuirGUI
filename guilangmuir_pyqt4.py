@@ -81,6 +81,9 @@ sys.setrecursionlimit(10000)
 #mpl.rcParams.update({'figure.autolayout': True})
 # Render text as text so it can be changed by graphics programs
 mpl.rcParams['svg.fonttype'] = 'none'
+# Don't render with latex so it's left for includesvg and doesn't get messed
+# up
+#mpl.rc('text', usetex=True)
 
 # Load UI
 Ui_MainWindow, QMainWindow = loadUiType('GUI.ui')
