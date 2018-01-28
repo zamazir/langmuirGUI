@@ -4,6 +4,8 @@
 *.svg
 *.pyc
 *.log
+*.png
+*.svg
 
 Results
 Poster*
