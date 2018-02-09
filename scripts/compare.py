@@ -55,6 +55,7 @@ class DumpfilePlotter(object):
         self.params = []
         self.db = None
         self.cmap = 'plasma'
+        self.path = '.'
 
     def parse_file_name(self, fname):
         parts = fname.split('/')[-1].split('_')
@@ -102,7 +103,7 @@ class DumpfilePlotter(object):
         return first
 
     def cycle_dfiles(self, probes):
-        dfiles = glob.glob('{}*.npz'.format(path))
+        dfiles = glob.glob('{}*.npz'.format(self.path))
         grouped_dfiles = self.group_dumpfiles_by_shot(dfiles)
         for shot, files in grouped_dfiles.items():
             self.plot_dumpfiles(files, probes)
@@ -114,7 +115,7 @@ class DumpfilePlotter(object):
         """
         dfiles = []
         for shot in shots:
-            pattern = "{}{}*.npz".format(path, shot)
+            pattern = "{}{}*.npz".format(self.path, shot)
             if not shared_fig:
                 dfiles = glob.glob(pattern)
                 self.plot_dumpfiles(dfiles, probes)
@@ -132,7 +133,7 @@ class DumpfilePlotter(object):
             for i in xrange(0, len(ranges), n):
                 yield ranges[i:i + n]
         for _range in next_range(ranges):
-            pattern = "{}{:.0f}*{:.4f}*{:.4f}*.npz".format(path, *_range)
+            pattern = "{}{:.0f}*{:.4f}*{:.4f}*.npz".format(self.path, *_range)
             if not shared_fig:
                 dfiles = glob.glob(pattern)
                 self.plot_dumpfiles(dfiles, probes)
@@ -323,6 +324,7 @@ if __name__ == '__main__':
     plotter.params = params
     plotter.db = database
     plotter.cmap = cmap
+    plotter.path = path
     if cycle:
         plotter.cycle_dfiles(probes)
 

@@ -205,7 +205,7 @@ class AFSutils(QtCore.QObject):
         if user and 'Tokens for afs' in res:
             logger.debug('AFS token exists')
             token = True
-        elif not silent and not self._afs_warning_active:
+        elif not silent:
             Warnings.noShotfileAccess(prompt=console)
             if console and user:
                 AFSutils.getToken()
@@ -678,6 +678,7 @@ class AFSchecker(threading.Thread, QtCore.QObject):
         # Passing parent is only save way of terminating the thread when parent
         # terminates
         self.parent = parent
+        self._warning_active = False
 
     def stop(self):
         self._stop_event.set()
@@ -692,11 +693,14 @@ class AFSchecker(threading.Thread, QtCore.QObject):
         while self.parent.isVisible() and main_exists and not self._stop_event.is_set():
             time.sleep(1)
             logger.debug("Thread checking for token")
-            token = AFSutils.checkAFSToken(console=False)
+            token = AFSutils.checkAFSToken(silent=self._warning_active,
+                                           console=False)
             if not token:
                 self.losttoken.emit()
+                self._warning_active = True
             else:
                 self.foundtoken.emit()
+                self._warning_active = False
 
             # Set exit flag if main process crashed
             running = threading.enumerate()
@@ -854,11 +858,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.shotnr = None
         self.CELMAupdateDisabled = False
         self.recentsFilename = 'recentShots.npy'
-        self.ELMCache = 'elms.p'
+        self.ELMCache = os.path.join(self.cacheDir, 'elms.p')
         self.shotCache = 'shotcache.npy'
         self.featurePicker = None
         self.miner = None
         self._afs_warning_active = False
+        self.afschecker = None
 
         self.currentLimPlot = {}
         self.limits = {}
@@ -904,11 +909,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.menuAFSCheck.toggled.connect(self.toggleAFSChecker)
         self.menuRefreshAFS.triggered.connect(self.immediateAFScheck)
 
-        self.afschecker = AFSchecker(self)
-        self.afschecker.losttoken.connect(
-            functools.partial(self.refreshWindowTitle, token=False))
-        self.afschecker.foundtoken.connect(self.foundToken)
-        self.afschecker.start()
+        self.toggleAFSChecker()
 
         # Logger
         self.logTextBox = QPlainTextEditLogger(self)
@@ -1203,7 +1204,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 event.ignore()
                 return
         logger.info("Terminating threads...")
-        self.afschecker.stop()
+        if self.afschecker:
+            self.afschecker.stop()
         if self.miner:
             self.miner.stop()
         event.accept()
@@ -2314,9 +2316,16 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     @pyqtSlot()
     def toggleAFSChecker(self):
         if self.menuAFSCheck.isChecked():
-            self.afschecker.start()
+            if not self.afschecker or (self.afschecker and
+                                    not self.afschecker.is_alive()):
+                self.afschecker = AFSchecker(self)
+                self.afschecker.losttoken.connect(
+                    functools.partial(self.refreshWindowTitle, token=False))
+                self.afschecker.foundtoken.connect(self.foundToken)
+                self.afschecker.start()
         else:
             self.afschecker.stop()
+            self.afschecker = None
 
     @pyqtSlot()
     def lostToken(self):
@@ -3893,6 +3902,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         
         exp = str(self.comboExpEqu.currentText())
         diag = self.sldiag
+        logger.debug('Fetching strikeline data from {}:{}...'
+                     .format(diag, exp))
         try:
             shot = dd.shotfile( diag, self.shotnr, exp)
         except Exception, e:
@@ -3906,14 +3917,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 "No jsat shotfile could be found at {}:{} for this shot.".format(diag,exp),
                 details=str(e))
                 return False
-        self.EQUshot = shot
         self.shotfiles.append(shot)
 
         # Strikeline coordinates
         self.ssl = {}
         self.Rsl = {}
         self.zsl = {}
-        
         try:
             self.ssl['data'] = shot('Suna2b').data
             self.ssl['time'] = shot('Suna2b').time
@@ -3929,6 +3938,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             details=str(e))
             self.hideProgress()
             return False
+        logger.debug("Strikeline data: {}".format(self.ssl))
+        logger.debug("Strikeline times direct: {}".format(shot('Suna2b').time))
         return True
 
     
@@ -3951,7 +3962,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 details=str(e))
                 self.hideProgress()
                 return False
-        self.ELMshot = shot
         self.shotfiles.append(shot)
          
         self.ELMonsets = shot('t_begELM')
@@ -6129,6 +6139,8 @@ class SpatialPlot(Plot):
         and returns it in a dictionary.
         """
         ds = {}
+        logger.debug("Strikeline times: {}".format(self.ssl['time']))
+        logger.debug("Strikeline data: {}".format(self.ssl['data']))
         for probe in self.probes:
             probeName = probe.name
             ds[probeName] = []
@@ -6223,7 +6235,10 @@ class SpatialPlot(Plot):
 
 
     def initPlot(self, data, positions):
-        """ Populates canvas with initial plot. Creates PathCollection objects that will be updated when plot has to change based on GUI interaction."""
+        """
+        Populates canvas with initial plot. Creates PathCollection objects that
+        will be updated when plot has to change based on GUI interaction.
+        """
         if data is None:
             data = self.data
         if positions is None:
@@ -6238,9 +6253,11 @@ class SpatialPlot(Plot):
 
             # Use different color for each probe if wished
             if self.coloring:
-                color = next((p.color for p in self.probes if p.name == probeName), None)
+                color = next((p.color for p in self.probes
+                              if p.name == probeName), None)
             else:
                 color = self.defaultColor
+            logger.debug("{} color: {}".format(probeName, color))
 
             # Plot
             self.scatters[probeName] = self.axes.scatter(x, y, color=color,

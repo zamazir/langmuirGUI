@@ -25,8 +25,9 @@ r'/media/Storage/OneDrive/Uni/TUM/Masterarbeit/Thesis/img/results/equal'
 
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument('input', action='store', help='CSV file')
-argparser.add_argument('-i', action='store', dest='directory',
+argparser.add_argument('input', help='CSV file with similar shot ranges ' +
+                       'produced by similarity.py')
+argparser.add_argument('dumpdir',
                        help='Directory containing dump files')
 argparser.add_argument('-l', '--loglevel', dest='loglevel', default='info',
                        help='Logging level')
@@ -40,7 +41,7 @@ args = argparser.parse_args()
 infile = args.input
 params = args.parameters
 loglevel = args.loglevel
-directory = args.directory or '.'
+directory = args.dumpdir
 
 try:
     loglevel = getattr(logging, loglevel.upper())
@@ -324,7 +325,7 @@ class CompareApp(QWidget):
                     values = values / np.array(magnitudes)
                     self.axes_param.bar(ind, values, self.bar_width)
                     for x, y, s in zip(ind, values, values):
-                        s = "{:.2f}".format(s)
+                        s = "{:.1f}".format(s)
                         self.axes_param.text(x, y, s)
             else:
                 if signal == 'Signal 2':
@@ -332,7 +333,7 @@ class CompareApp(QWidget):
                 self.axes_param.bar(ind, relative_values, self.bar_width,
                                     color=color)
                 for x, y, s in zip(ind, relative_values, values):
-                    s = "{:.2f}".format(s)
+                    s = "{:.1f}".format(s)
                     self.axes_param.text(x, y, s)
 
     def update_plot(self):
@@ -340,7 +341,7 @@ class CompareApp(QWidget):
         self._update_timetrace('te', self.axes_te)
         self._update_timetrace('jsat', self.axes_jsat)
         self.axes_te.set_ylabel(r'\te [eV]')
-        self.axes_jsat.set_ylabel(r'\jsat [\SI{\kilo\ampere\per\square\meter}]')
+        self.axes_jsat.set_ylabel(r'\jsat [\si{\kilo\ampere\per\square\meter}]')
         self.axes_jsat.set_xlabel(r'Time since \elm onset [ms]')
 
         # Parameters

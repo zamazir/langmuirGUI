@@ -1,3 +1,6 @@
+"""
+Combine n elm cache files into one
+"""
 import sys
 import pickle
 import argparse
