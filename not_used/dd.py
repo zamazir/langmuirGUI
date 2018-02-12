@@ -12,7 +12,8 @@ import datetime
 # instructs doxygen to ignore everything except the shotfile class itself
 
 print "Loading libddww8.so"
-__libddww__ = ctypes.cdll.LoadLibrary('./libddww8.so')
+here = os.path.dirname(os.path.abspath(__file__))
+__libddww__ = ctypes.cdll.LoadLibrary(os.path.join(here, 'libddww8.so'))
 
 __type__ = {numpy.int32:1, numpy.float32:2, numpy.float64:3, numpy.complex:4, numpy.bool:5,
             numpy.byte:6, numpy.int64:10, numpy.int16:11, numpy.uint16:12, numpy.uint32:13,

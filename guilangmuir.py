@@ -68,8 +68,9 @@ loglevel = args.loglevel
 
 import sys
 import time
-sys.path.insert(0, '/afs/ipp/aug/ads-diags/common/python/lib')
+#sys.path.insert(0, '/afs/ipp/aug/ads-diags/common/python/lib')
 sys.path.insert(0, 'modules')
+sys.path.insert(0, 'not_used')
 import os
 import pickle
 import functools
@@ -273,7 +274,8 @@ def loadDD():
         import dd
         global dd
         lib = True
-    except:
+    except Exception, e:
+        logger.critical("Could not import dd: {}".format(str(e)))
         lib = False
 if lib:
     loadDD()
@@ -2069,7 +2071,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if not ok:
                 return
             self.progBar.setValue(70)
-            ok = self.createPlot(self.PlotContainer22,'temporal','p')
+            ok = self.createPlot(self.PlotContainer22,'temporal','wmhd')
             if not ok:
                 return
             self.progBar.setValue(80)
@@ -3602,6 +3604,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                         'jsat': TemporalCurrentPlot,
                         'te':   TemporalPlot,
                         'ne':   TemporalPlot,
+                        'wmhd':   WmhdPlot,
                         'p':   TemporalPressurePlot}
                     }
 
@@ -3622,7 +3625,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         self.clearPlotContainer(container)
 
-        plot = PlotClass(self, quantity)
+        if quantity == 'wmhd':
+            plot = PlotClass(self)
+        else:
+            plot = PlotClass(self, quantity)
         self.plots.append(plot)
         #plot.progressed.connect(self.onProgress)
         #plot.processEvent.connect(self.onProcessEvent)
@@ -3653,8 +3659,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         else:
             currentTime = float(currentTime)
         self.attributeColorsToProbes()
-        plot.init(currentTime, self.Dt)
-
+        
+        if quantity == 'wmhd':
+            plot.init()
+        else:
+            plot.init(currentTime, self.Dt)
         container.addWidget(plot.canvas)
         
         ###################################################################
