@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0, '/afs/ipp/aug/ads-diags/common/python/lib')
+#sys.path.insert(0, '/afs/ipp/aug/ads-diags/common/python/lib')
+sys.path.insert(0, '../not_used')
 import dd
 from matplotlib.pyplot import *
 import matplotlib as mpl
