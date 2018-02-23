@@ -104,7 +104,7 @@
                       </size>
                      </property>
                      <property name="text">
-                      <string>Langmuir interpreted</string>
+                      <string>LSD</string>
                      </property>
                     </widget>
                    </item>
@@ -142,7 +142,7 @@
                       </size>
                      </property>
                      <property name="text">
-                      <string>Strikeline</string>
+                      <string>FPG</string>
                      </property>
                     </widget>
                    </item>
@@ -171,7 +171,7 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="2" column="5">
+                   <item row="2" column="4">
                     <widget class="QLabel" name="label_5">
                      <property name="maximumSize">
                       <size>
@@ -180,7 +180,7 @@
                       </size>
                      </property>
                      <property name="text">
-                      <string>ELMs</string>
+                      <string>ELM</string>
                      </property>
                     </widget>
                    </item>
@@ -193,7 +193,7 @@
                       </size>
                      </property>
                      <property name="text">
-                      <string>Langmuir raw</string>
+                      <string>LSF</string>
                      </property>
                     </widget>
                    </item>
@@ -210,7 +210,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="6">
+                   <item row="2" column="5">
                     <widget class="QLabel" name="label_8">
                      <property name="maximumSize">
                       <size>
@@ -219,11 +219,11 @@
                       </size>
                      </property>
                      <property name="text">
-                      <string>Mapping</string>
+                      <string>LSC</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="4" column="5">
+                   <item row="4" column="4">
                     <widget class="QComboBox" name="comboExpELM">
                      <property name="maximumSize">
                       <size>
@@ -248,7 +248,7 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="4" column="6">
+                   <item row="4" column="5">
                     <widget class="QComboBox" name="comboExpLSC">
                      <property name="maximumSize">
                       <size>
@@ -435,7 +435,7 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="1" column="5">
+                   <item row="1" column="4">
                     <widget class="QPushButton" name="btnShotUpdate">
                      <property name="text">
                       <string>Update</string>
@@ -447,38 +447,6 @@
                      <property name="editable">
                       <bool>true</bool>
                      </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="4">
-                    <widget class="QLabel" name="label_23">
-                     <property name="text">
-                      <string>Wmhd</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="4" column="4">
-                    <widget class="QComboBox" name="comboExpWmhd">
-                     <property name="maximumSize">
-                      <size>
-                       <width>90</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                     <item>
-                      <property name="text">
-                       <string>AUGD</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>zamaz</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string>- add new user -</string>
-                      </property>
-                     </item>
                     </widget>
                    </item>
                   </layout>
