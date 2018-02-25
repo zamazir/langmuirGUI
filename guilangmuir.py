@@ -868,6 +868,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self._afs_warning_active = False
         self.afschecker = None
         self.map = {}
+        self.calib = {}
 
         self.currentLimPlot = {}
         self.limits = {}
@@ -971,6 +972,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         reg = self.config['Plots']['region']
         self.addSegment(seg)
         self.addRegion(reg)
+        self.segment = str(self.comboSegment.currentText())
 
         # Resize columns to fit table width
         header = self.probeTable.horizontalHeader()
@@ -2103,21 +2105,24 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
             logger.debug("Creating plots")
             quantity = self.getSpatialPlotQuantity()
-            ok = self.createPlot(self.PlotContainer11, 'spatial', quantity)
+            ok = self.createPlot(self.PlotContainer11, 'spatial', 'te')
             if not ok:
+                logger.error("Failed to create spatial {} plot".format('te'))
                 return
             self.progBar.setValue(60)
             ok = self.createPlot(self.PlotContainer21, 'temporal', 'te')
             if not ok:
+                logger.error("Failed to create temporal {} plot".format('te'))
                 return
             self.progBar.setValue(70)
             ok = self.createPlot(self.PlotContainer22, 'temporal', 'ne')
             if not ok:
+                logger.error("Failed to create temporal {} plot".format('ne'))
                 return
             self.progBar.setValue(80)
-            ok = self.createPlot(self.PlotContainer23, 'temporal', 'jsat')
-            if not ok:
-                return
+            #ok = self.createPlot(self.PlotContainer23, 'temporal', 'jsat')
+            #if not ok:
+            #    return
             self.progBar.setValue(100)
 
             self.attributeColorsToProbes()
@@ -2628,49 +2633,49 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.btnShotUpdate.setVisible(True)
 
     
-    def getProbeVoltages(self):
-        shot = self.LSFshot
-        map = self.getVoltageMapping()
-        data = {}
-        time = {}
-        for objName in shot.getObjectNames().values():
-            if objName.startswith('CH'):
-                for probe, (channel, ind) in map.iteritems():
-                    if channel == objName:
-                        try:
-                            data[probe] = shot(channel).data[ind]
-                            time[probe] = shot(channel).time
-                        except TypeError, e:
-                            logger.warn("Could not retrieve voltage data for probe {}".format(probe)+\
-                                    " @channel {} ({}), {} ({}): {}".format(channel,
-                                            type(channel), ind, type(ind),
-                                            str(e)))
-        return time, data
+    #def getProbeVoltages(self):
+    #    shot = self.LSFshot
+    #    map = self.getVoltageMapping()
+    #    data = {}
+    #    time = {}
+    #    for objName in shot.getObjectNames().values():
+    #        if objName.startswith('CH'):
+    #            for probe, (channel, ind) in map.iteritems():
+    #                if channel == objName:
+    #                    try:
+    #                        data[probe] = shot(channel).data[ind]
+    #                        time[probe] = shot(channel).time
+    #                    except TypeError, e:
+    #                        logger.warn("Could not retrieve voltage data for probe {}".format(probe)+\
+    #                                " @channel {} ({}), {} ({}): {}".format(channel,
+    #                                        type(channel), ind, type(ind),
+    #                                        str(e)))
+    #    return time, data
 
 
-    def getVoltageMapping(self):
-        shot = self.LSCshot
-        map = []
-        for vname,i in self.voltageNames.iteritems():
-            signalName = 'ZSV' + i
-            for obj in shot.getObjectNames().values():
-                if obj.startswith(self.region):
-                    probe = obj
-                    data = shot(obj)[signalName].data 
-                    info = ''.join([el for el in data if el.split() != []])
-                    try:
-                        channel, ind = info.split('_')
-                    except:
-                        logger.warn("Could not retrieve LSC data for probe {}".format(probe))
-                    else:
-                        # Actual LSC data starts with 'ch' while shotfile object
-                        # names start with 'CH'.
-                        channel = 'CH' + channel[2:]
-                        # Indices are saved as numbers 1-6 but must serve as
-                        # indexes 0-5
-                        ind = int(ind) - 1
-                        map[probe] = (channel, ind)
-        return map
+    #def getVoltageMapping(self):
+    #    shot = self.LSCshot
+    #    map = []
+    #    for vname,i in self.voltageNames.iteritems():
+    #        signalName = 'ZSV' + i
+    #        for obj in shot.getObjectNames().values():
+    #            if obj.startswith(self.region):
+    #                probe = obj
+    #                data = shot(obj)[signalName].data 
+    #                info = ''.join([el for el in data if el.split() != []])
+    #                try:
+    #                    channel, ind = info.split('_')
+    #                except:
+    #                    logger.warn("Could not retrieve LSC data for probe {}".format(probe))
+    #                else:
+    #                    # Actual LSC data starts with 'ch' while shotfile object
+    #                    # names start with 'CH'.
+    #                    channel = 'CH' + channel[2:]
+    #                    # Indices are saved as numbers 1-6 but must serve as
+    #                    # indexes 0-5
+    #                    ind = int(ind) - 1
+    #                    map[probe] = (channel, ind)
+    #    return map
 
 
 
@@ -2877,15 +2882,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         except ValueError:
             return
         del self.ignoreELMs[ind]
-        self.updateCache()
+        self.updateELMcache()
             
 
     def addIgnoreELM(self, time):
         self.ignoreELMs.append(time)
-        self.updateCache()
+        self.updateELMcache()
 
 
-    def updateCache(self):
+    def updateELMcache(self):
         try:
             with open(self.ELMCache, 'rb') as f:
                 cdata = pickle.load(f)
@@ -3164,27 +3169,42 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         try:
             diag = diags[quantity]
         except KeyError:
+            logger.error("Trying to get shot data of unknown quantity {}. "
+                         .format(quantity) + "Aborting...")
             return
 
         try:
             data = self.cache[self.shotnr][quantity]
         except KeyError, TypeError:
+            data = None
+        else:
+            logger.debug("{} data retrieved from cache".format(quantity))
+        if not data:
+            logger.debug("Data is invalid. " +
+                         "Trying to get {} data from {} shotfile"
+                         .format(quantity, diag))
             data = self.getShotfileData(diag, quantity)
-            if self.use_cache:
-                self.cache[self.shotnr][quantity] = data
-                self.saveCache()
+            if data:
+                logger.debug("{} data retrieved from {} shotfile"
+                             .format(quantity, diag))
+                if self.use_cache:
+                    self.cache[self.shotnr][quantity] = data
+                    self.saveCache()
+        if not data:
+            logger.error("Failed to get {} data".format(quantity))
         return data
 
     def getExperiment(self, diag):
         experiment = self.experiment_combos[diag]
         return str(experiment.currentText())
 
-    def getShotfile(self, diag):
+    def getShotfile(self, diag, shot=None):
         self.statusbar.showMessage('Fetching {} data...'.format(diag))
         exp = self.getExperiment(diag)
 
+        shot = shot or self.shotnr
         try:
-            shot = dd.shotfile(diag, self.shotnr, exp)
+            shot = dd.shotfile(diag, shot, exp)
         except Exception, e:
             logger.critical("Could not find {} shotfile for user {}."
                             .format(diag, exp))
@@ -3206,9 +3226,10 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.timeArray = self.getTimeArray(shot)
         return shot
 
-    def getShotfileData(self, diag, quantity=None):
-        shot = self.getShotfile(diag)
+    def getShotfileData(self, diag, quantity=None, shot=None):
+        shot = self.getShotfile(diag, shot)
         if not shot:
+            logger.error("Could not get {} shotfile".format(diag))
             return
     
         if diag == 'LSD':
@@ -3229,7 +3250,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def getLSFdata(self, shotfile):
         """ Loads jsat data from shotfile. """
         if len(self.map) < 1:
-            hasMapping = self.getMapping()
+            hasMapping = self.getMapping(shotfile)
         
         if not hasMapping:
             logger.critical("No mapping found")
@@ -3273,10 +3294,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         return self.calib
     
-
     def getCalibrations(self, path=None):
         """ Loads probe dimensions from file so current can be converted to current density. """
-        if self.gui.menuUseLSC.isChecked():
+        if self.menuUseLSC.isChecked():
             self.getCalibrationsFromShotfile()
         else:
             if path is None:
@@ -3300,18 +3320,22 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.ELMmaxima = shotfile('t_maxELM').data
         self.ELMfreqs = shotfile('freq_ELM').data
         self.ELMtoELM = np.append(np.diff(self.ELMonsets),0)
+        self.ELMENER = shotfile('ELMENER').data
+        self.preELMWmhd = shotfile('Wmhd').data
+        self.ELMelec = shotfile('ELMPART').data
+        self.preELMelec = shotfile('ELECTRNS').data
 
     def getSLdata(self, shotfile):
         self.ssl = {}
         self.Rsl = {}
         self.zsl = {}
         try:
-            self.ssl['data'] = shot('Suna2b').data
-            self.ssl['time'] = shot('Suna2b').time
-            self.Rsl['data'] = shot('Runa2b').data
-            self.Rsl['time'] = shot('Runa2b').time
-            self.zsl['data'] = shot('Zuna2b').data
-            self.zsl['time'] = shot('Zuna2b').time
+            self.ssl['data'] = shotfile('Suna2b').data
+            self.ssl['time'] = shotfile('Suna2b').time
+            self.Rsl['data'] = shotfile('Runa2b').data
+            self.Rsl['time'] = shotfile('Runa2b').time
+            self.zsl['data'] = shotfile('Zuna2b').data
+            self.zsl['time'] = shotfile('Zuna2b').time
         except Exception, e:
             self.showShotWarning(
             "Strikeline positions not readable",
@@ -3321,31 +3345,24 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.hideProgress()
             return False
         logger.debug("Strikeline data: {}".format(self.ssl))
-        logger.debug("Strikeline times direct: {}".format(shot('Suna2b').time))
+        logger.debug("Strikeline times direct: {}"
+                     .format(shotfile('Suna2b').time))
         return True
 
     def getFPGdata(self, shotfile):
         self.getSLdata(shotfile)
-
-        self.WmhdELMonsets = shotfile('t_begELM')
-        self.WmhdELMends = shotfile('t_endELM').data
-        self.WmhdELMmaxima = shotfile('t_maxELM').data
-        self.WmhdELMfreqs = shotfile('freq_ELM').data
-        self.WmhdELMtoELM = np.append(np.diff(self.WmhdELMonsets), 0)
-        self.ELMENER = shotfile('ELMENER').data
-        self.preELMWmhd = shotfile('Wmhd').data
-        self.ELMelec = shotfile('ELMPART').data
-        self.preELMelec = shotfile('ELECTRNS').data
         return True
 
     def getLSDdata(self, shotfile, quantity):
         signalNames = shotfile.getSignalNames()
-        region = 8
+        region = 'ua'
 
         # Count number of signals to be loaded to accurately show progress in widget
         probes = [s.split('-')[-1] for s in signalNames 
                                     if s.startswith(quantity) 
                                     and s.split('-')[-1][:2] == region]
+
+        logger.debug("{} probes: {}".format(quantity, probes))
 
         # Load signals into array
         rawdata = {}
@@ -3366,7 +3383,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         return rawdata
 
     def getMappingFromShotfile(self, shot):
-        self.statusbar.showMessage("Trying to get probe-channel mapping from LSC")
+        self.statusbar.showMessage("Trying to get probe-channel " +
+                                   "mapping from LSC")
         map = {}
         signalName = 'ZSI' + self.segment
 
@@ -3378,7 +3396,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 try:
                     channel, ind = info.split('_')
                 except:
-                    logger.warn("Could not retrieve LSC data for probe {}".format(probe))
+                    logger.warn("Could not retrieve LSC data for probe {}"
+                                .format(probe))
                 else:
                     # Actual LSC data starts with 'ch' while shotfile object
                     # names start with 'CH'.
@@ -3390,6 +3409,57 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                         
         return map
 
+    def getMappingFromFile(self):
+        logger.info("Getting mapping from text file {}"\
+                    .format(self.mapFilePath))
+        # File load dialog if mapFilePath was set to None during runtime
+        specified = self.mapFilePath != ''
+        exists = os.path.isfile(self.mapFilePath)
+        if self.mapFilePath is None or not specified or not exists:
+            while True:
+                self.mapFilePath = \
+                    QtGui.QFileDialog.getOpenFileName(
+                        self,
+                        directory=self.mapDir,
+                        caption='Load mapping file'
+                    )
+                # If cancelled, abort
+                if self.mapFilePath == '':
+                    return False
+                # If filename valid, leave loop
+                elif not os.path.isfile(self.mapFilePath):
+                    self.gui.statusbar.showMessage('Could not find mapping file', 3000)
+                    continue
+                else:
+                    break
+        
+        with open(self.mapFilePath) as f:
+            lines = f.readlines()
+            for i, line in enumerate(lines):
+                try:
+                    probe, quantity, channel, ind = line.split()
+                except:
+                    logger.error("Failed to read probe-channel mapping file" +\
+                            " {} at line {}: {}".format(self.mapFilePath, i, line))
+                    break
+        
+                # If channel doesn't start with "CH", add the prefix so LSF
+                # shotfile can be read with it
+                if not channel.startswith('CH'): channel = 'CH' + channel
+        
+                # ind is saved as str from 1-6 but must serve as an index
+                # from 0-5
+                ind = int(ind) - 1
+        
+                # Only care about probes in this segment and region and the
+                # saturation current
+                if probe.startswith(self.segment + self.region) and quantity == 'Isat':
+                    # Cut off probe segment
+                    probe = probe[1:].lower()
+                    logger.info("Found Isat for probe {} on channel {}-{}"\
+                        .format(probe,channel, ind))
+                    self.map[probe] = (channel, ind)
+
     def getMapping(self, shotfile):
         """ 
         Loads probe-channel mapping.
@@ -3397,59 +3467,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         logger.info("\n++++++++++++++++ Getting mappings +++++++++++++++++++++++++\n")
 
         # Try to get mapping from LSC shotfile
-        if self.menuUseLSC.isChecked():
-            self.map = self.getMappingFromShotfile(shotfile)
+        #if self.menuUseLSC.isChecked():
+        self.map = self.getMappingFromShotfile(shotfile)
 
-        if len(self.map) == 0:
-            logger.info("Getting mapping from text file {}"\
-                        .format(self.mapFilePath))
-            # File load dialog if mapFilePath was set to None during runtime
-            specified = self.mapFilePath != ''
-            exists = os.path.isfile(self.mapFilePath)
-            if self.mapFilePath is None or not specified or not exists:
-                while True:
-                    self.mapFilePath = \
-                        QtGui.QFileDialog.getOpenFileName(
-                            self,
-                            directory=self.mapDir,
-                            caption='Load mapping file'
-                        )
-                    # If cancelled, abort
-                    if self.mapFilePath == '':
-                        return False
-                    # If filename valid, leave loop
-                    elif not os.path.isfile(self.mapFilePath):
-                        self.gui.statusbar.showMessage('Could not find mapping file', 3000)
-                        continue
-                    else:
-                        break
-            
-            with open(self.mapFilePath) as f:
-                lines = f.readlines()
-                for i, line in enumerate(lines):
-                    try:
-                        probe, quantity, channel, ind = line.split()
-                    except:
-                        logger.error("Failed to read probe-channel mapping file" +\
-                                " {} at line {}: {}".format(self.mapFilePath, i, line))
-                        break
-            
-                    # If channel doesn't start with "CH", add the prefix so LSF
-                    # shotfile can be read with it
-                    if not channel.startswith('CH'): channel = 'CH' + channel
-            
-                    # ind is saved as str from 1-6 but must serve as an index
-                    # from 0-5
-                    ind = int(ind) - 1
-            
-                    # Only care about probes in this segment and region and the
-                    # saturation current
-                    if probe.startswith(self.segment + self.region) and quantity == 'Isat':
-                        # Cut off probe segment
-                        probe = probe[1:].lower()
-                        logger.info("Found Isat for probe {} on channel {}-{}"\
-                            .format(probe,channel, ind))
-                        self.map[probe] = (channel, ind)
+        #if len(self.map) == 0:
+        #    self.getMappingFromFile()
         
         if len(self.map) > 0:
             logger.info( "\n\nProbe mappings:")
@@ -3967,11 +3989,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.clearPlotContainer(container)
 
         data = self.getShotData(quantity)
+        if not data:
+            logger.error("Cannot create {} {} plot. ".format(_type, quantity) +
+                         "Invalid data.")
+            return
         self.getShotfileData('ELM')
         self.getShotfileData('FPG')
         if quantity == 'jsat':
-            mapping = self.getShotfileData('LSC')
-        return
+            mapping = self.getShotfileData('LSC', shot=self.latestLSCshotnr)
         if quantity == 'wmhd':
             plot = PlotClass(self)
         else:
@@ -4239,10 +4264,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         return shotNumberLSC
         
 
-    def getELMdata(self):
-        return True
-
-
     def showShotWarning(self, title, msg, text, details=''):
         logger.critical(msg)
         self.statusbar.showMessage(msg)
@@ -4314,7 +4335,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             .format(diag,exp),
             details=str(e))
             return False
-        self.LSCshot = shot
         return True
 
 
@@ -5302,7 +5322,6 @@ class Plot(QObject):
 
         # Attributes
         self.region = str(gui.comboRegion.currentText())
-        self.segment = str(gui.comboSegment.currentText())
         self.quantity = quantity
         self.ELMonsets = gui.ELMonsets
         self.ELMends = gui.ELMends
@@ -5324,7 +5343,6 @@ class Plot(QObject):
         self.probes = []
         self.CELMAexists = False
         self.fits = []
-        self.LSCshot = gui.LSCshot
         self._CELMAnormalize = False
         self.pertinent = False
 
@@ -5373,12 +5391,15 @@ class Plot(QObject):
                 logger.debug("Invalid ylim")
 
 
-    def attributeProbePositions(self):
-        for probe in self.probes:
-            probeName = probe.name
-            pos = self.LSCshot(probeName)['Ort'].data/1000.
-            logger.info("\nProbe {} has position s = {}".format(probeName, pos))
+    def attributeProbePositions(self, probeNames):
+        #LSCshot(probeName)['Ort'].data/1000.
+        for probeName in probeNames:
+            probe = relf.createProbe()
+            pos = self.gui.probepositions[probe]
+            logger.info("\nProbe {} has position s = {}"
+                         .format(probeName, pos))
             probe.position = pos
+            self.probes.append(probe)
         
 
     def memorizeView(self):
@@ -5853,7 +5874,7 @@ class SpatialPlot(Plot):
         saved to self.rawdata.
         """
         self.rawdata = rawdata
-        self.attributeProbePositions()
+        self.attributeProbePositions(self.rawdata)
         if isinstance(self, CurrentPlot):
             self.rawdata= self.calibrateData(self.rawdata)
         data, timeRange = self.getDataInTimeWindow(self.rawdata, time, range)
@@ -7012,13 +7033,13 @@ class WmhdPlot(TemporalPlot):
         if not self.CELMAexists:
             self.axes.callbacks.disconnect(self._lossID)
             tmin, tmax = self.axes.get_xlim()
-            ind = np.where((self.gui.WmhdELMonsets > tmin) &
-                           (self.gui.WmhdELMends < tmax))
+            ind = np.where((self.gui.ELMonsets > tmin) &
+                           (self.gui.ELMends < tmax))
             if len(ind[0]) == 0:
                 logger.info('Wmhd: No ELMs in this range')
                 return
-            ELMstarts = self.gui.WmhdELMonsets[ind]
-            ELMends = self.gui.WmhdELMends[ind]
+            ELMstarts = self.gui.ELMonsets[ind]
+            ELMends = self.gui.ELMends[ind]
             preELMWmhd = self.gui.preELMWmhd[ind]
             ELMENER = self.gui.ELMENER[ind]
 
@@ -7103,13 +7124,13 @@ class WmhdPlot(TemporalPlot):
 
         # If Wmhd and ELM experiments differ, ignoreELMs will most certainly
         # not work
-        ind = np.where((start <= self.gui.WmhdELMonsets) &
-                       (self.gui.WmhdELMonsets <= end) &
-                       ~np.in1d(self.gui.WmhdELMonsets, self.gui.ignoreELMs))
+        ind = np.where((start <= self.gui.ELMonsets) &
+                       (self.gui.ELMonsets <= end) &
+                       ~np.in1d(self.gui.ELMonsets, self.gui.ignoreELMs))
 
-        ELMstarts = self.gui.WmhdELMonsets[ind][:ELMnum]
-        ELMends = self.gui.WmhdELMends[ind][:ELMnum]
-        ELMtoELM = self.gui.WmhdELMtoELM[ind][:ELMnum]
+        ELMstarts = self.gui.ELMonsets[ind][:ELMnum]
+        ELMends = self.gui.ELMends[ind][:ELMnum]
+        ELMtoELM = self.gui.ELMtoELM[ind][:ELMnum]
         normalize = self.gui.cbCELMAnormalize.isChecked()
         binning = self.gui.menuEnableBinning.isChecked()
         binNumber = self.CELMAbinNumber
