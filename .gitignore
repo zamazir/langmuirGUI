@@ -14,3 +14,6 @@ recordings
 *.log
 changeLog.txt
 recentShotnumbers.txt
+
+cache/shotcache.npy
+cache/shotdata/*

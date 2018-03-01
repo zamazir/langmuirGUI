@@ -78,6 +78,7 @@ import threading
 import gc
 import datetime
 import logging
+import copy
 
 import matplotlib as mpl
 mpl.use('Qt4Agg')
@@ -110,13 +111,13 @@ from conversion import Conversion
 import mpl_interactive
 
 # Set up logging
+logger = logging.getLogger(__name__)
 try:
     loglevel = getattr(logging, loglevel.upper())
 except AttributeError:
-    logging.error("{} is not a valid logging level".format(loglevel))
+    logger.error("{} is not a valid logging level".format(loglevel))
     loglevel = logging.INFO
 
-logger = logging.getLogger(__name__)
 stdout_hdlr = logging.StreamHandler(sys.stdout)
 file_hdlr = logging.FileHandler('langmuirAnalyzer.log', 'a')
 logger.setLevel(loglevel)
@@ -134,6 +135,17 @@ logger.addHandler(file_hdlr)
 
 class Warnings():
     @staticmethod
+    def generic(text):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setWindowTitle('Attention')
+        msg.setText(text)
+        msg.setStandardButtons(QtGui.QMessageBox.Ok)
+        msg.setDefaultButton(QtGui.QMessageBox.Ok)
+        msg.setEscapeButton(QtGui.QMessageBox.Ok)
+        msg.exec_()
+
+    @staticmethod
     def noShotfileAccess(prompt=True):
         logger.critical("No shotfile access")
         if prompt:
@@ -141,8 +153,10 @@ class Warnings():
             msg.setIcon(QMessageBox.Critical)
             msg.setWindowTitle('No shotfile access')
             msg.setText('Shotfiles are not accessible since no AFS token ' +
-                        'was found')
-            msg.setInformativeText('Obtain a token with kinit and aklog ' +
+                        'was found and the cache is disabled or ' +
+                        'does not contain this shot.')
+            msg.setInformativeText('Enable cacheing or obtain a token with ' +
+                                   'kinit and aklog ' +
                                    'and try again.\n\nTip: You can tell when ' +
                                    'shotfiles are not accessible from the ' +
                                    'note in the program header.')
@@ -344,7 +358,7 @@ class Probe():
     def __init__(self, name=None):
         self.type = 'GenericProbe'
         self.name = name
-        self.position = (0.,0.)
+        self.position = None
         self._plotted = {}
         self._visible = {}
         self._selected = {}
@@ -767,6 +781,73 @@ class DataMiner(threading.Thread, QtCore.QObject):
             self._mineRawCELMA()
 
 
+class ValidatorEdit(QtGui.QPlainTextEdit):
+    def __init__(self):
+        super(ValidatorEdit, self).__init__()
+
+    def valid(self):
+        self.set_background_color((255, 255, 255))
+
+    def invalid(self):
+        self.set_background_color((240, 0, 0, 100))
+
+    def set_background_color(self, color):
+        pal = QtGui.QPalette()
+        bgc = QtGui.QColor(*color)
+        pal.setColor(QtGui.QPalette.Base, bgc)
+        self.setPalette(pal)
+
+
+class CrawlerDialog(QtGui.QDialog):
+    def __init__(self):
+        super(CrawlerDialog, self).__init__()
+
+        self.shotnumbers = None
+        label = QtGui.QLabel("Comma-separated list of shots to be crawled:")
+        self.editShotnumbers = ValidatorEdit()
+        self.buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok |
+                                                QtGui.QDialogButtonBox.Cancel,
+                                                QtCore.Qt.Horizontal)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(label)
+        layout.addWidget(self.editShotnumbers)
+        layout.addWidget(self.buttonBox)
+        self.setLayout(layout)
+
+        self.editShotnumbers.textChanged.connect(self._parse_shotnumbers)
+
+    def _parse_shotnumbers(self):
+        btn = self.buttonBox.button(QtGui.QDialogButtonBox.Ok)
+        text = str(self.editShotnumbers.toPlainText())
+        shotnumbers = text.split(',')
+        input_valid = True
+        for i in range(len(shotnumbers)):
+            try:
+                shotnumbers[i] = int(shotnumbers[i])
+            except ValueError:
+                input_valid = False
+            else:
+                input_valid *= True
+        if not input_valid:
+            self.editShotnumbers.invalid()
+            self.shotnumbers = None
+            btn.setEnabled(False)
+        else:
+            self.editShotnumbers.valid()
+            self.shotnumbers = shotnumbers
+            btn.setEnabled(True)
+
+    @staticmethod
+    def getShotNumbers():
+        dialog = CrawlerDialog()
+        result = dialog.exec_()
+        shotnumbers = dialog.shotnumbers
+        return shotnumbers, result == QtGui.QDialog.Accepted
+
+
 class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
         super(ApplicationWindow, self).__init__()
@@ -867,8 +948,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.miner = None
         self._afs_warning_active = False
         self.afschecker = None
+        self.cache = {}
         self.map = {}
         self.calib = {}
+        self.probePositions = {}
+        self.timeArray = None
+        self._pan_active = False
+        self._zoom_active = False
 
         self.currentLimPlot = {}
         self.limits = {}
@@ -888,9 +974,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         #self.setLayout(layout)
 
         self.menuAFSCheck.setChecked(config["enable_afs_checker"])
+        self.menuUseCache.setChecked(self.use_cache)
 
         self.createAppFolders([self.saveDir, self.saveDir_raw,
-                               self.recDir, self.cacheDir])
+                               self.recDir, self.cacheDir,
+                               os.path.join(self.cacheDir, 'shotdata')])
         
         self.btnRecord.setVisible(False)
         self.btnRecordCELMA.setVisible(False)
@@ -915,6 +1003,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.menuFillTable.triggered.connect(self.fillData)
         self.menuAFSCheck.toggled.connect(self.toggleAFSChecker)
         self.menuRefreshAFS.triggered.connect(self.immediateAFScheck)
+        self.menuCrawlShots.triggered.connect(self.crawlShots)
 
         if self.menuAFSCheck.isChecked():
             self.toggleAFSChecker()
@@ -972,7 +1061,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         reg = self.config['Plots']['region']
         self.addSegment(seg)
         self.addRegion(reg)
-        self.segment = str(self.comboSegment.currentText())
 
         # Resize columns to fit table width
         header = self.probeTable.horizontalHeader()
@@ -1068,7 +1156,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         self.menuMineCELMArawdata.triggered.connect(self.mineCELMAs)
         self.menuStopMining.triggered.connect(self.stopMining)
-
+        self.menuUseCache.toggled.connect(self._update_cache_state)
 
         self.shotNumberEdit.setFocus()
 
@@ -1108,14 +1196,54 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         
         self.shotNumberEdit.selectAll()
 
+    def crawlShots(self):
+        if not self.use_cache:
+            Warnings.generic("Crawling is only sensible with cacheing enabled.")
+            return
+        
+        shotnumbers, ok = CrawlerDialog.getShotNumbers()
+        result = {}
+        if ok and shotnumbers:
+            size = len(shotnumbers)
+            for i, shotnr in enumerate(shotnumbers):
+                logger.info("Crawling shot {} ({} out of {})"
+                            .format(shotnr, i, size))
+                self.shotNumberEdit.setText(str(shotnr))
+                ok = self.load(dryrun=True)
+                if ok:
+                    logger.info("Successfully crawled shot {}".format(shotnr))
+                else:
+                    logger.info("Error while crawling shot {}".format(shotnr))
+                result[shotnr] = ok
+        logger.info("Crawling result:")
+        logger.info("{:>7}{:>7}".format("Shot", "ok"))
+        for shotnr, ok in result.items():
+            logger.info("{:>7}{:>7}".format(shotnr, ok))
+        return result
+
     def loadCache(self):
-        path = os.path.join(self.cacheDir, self.shotCache)
-        try:
-            cache = np.load(path)
-        except IOError:
-            self.cache = {}
-        else:
-            self.cache = cache.item()
+        path = os.path.join(self.cacheDir, 'shotdata')
+        logger.debug("Loading cache from '{}'".format(path))
+        logger.debug("Files in cache: {}".format(os.listdir(path)))
+        for fname in os.listdir(path):
+            if os.path.isfile(os.path.join(path, fname)):
+                logger.debug("Found file '{}'".format(fname))
+                try:
+                    shotnr = int(fname.split('.')[0])
+                except ValueError:
+                    logger.debug("File name is not valid shot number")
+                    continue
+                fpath = os.path.join(path, fname)
+                try:
+                    cache = np.load(fpath)
+                except IOError:
+                    logger.debug("File cannot be read")
+                    continue
+                else:
+                    logger.debug("Read cache for shot {}".format(shotnr))
+                    self.cache[shotnr] = cache.item()
+        if not len(self.cache):
+            logger.warning("Empty cache")
 
     @pyqtSlot()
     def saveRawData(self):
@@ -1179,10 +1307,11 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 if value is not None:
                     self.featurePicker.insertData(row, label, value, overwrite=False)
 
-    def getMissingData(self, diagnostic, signal, shot, start, end, factor=1):
+    def getMissingData(self, diagnostic, signal, shot,
+                       start, end, factor=1):
         try:
-            data = self.cache[shot][diagnostic][signal]['data']
-            time = self.cache[shot][diagnostic][signal]['time']
+            data = copy.deepcopy(self.cache[shot][diagnostic][signal]['data'])
+            time = copy.deepcopy(self.cache[shot][diagnostic][signal]['time'])
         except KeyError:
             global dd
             shotfile = dd.shotfile(diagnostic, shot)
@@ -1237,8 +1366,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                              "Key not initialized").with_traceback(tb)
 
     def saveCache(self):
-        path = os.path.join(self.cacheDir, self.shotCache)
-        np.save(path, self.cache)
+        for shotnr in self.cache:
+            path = os.path.join(self.cacheDir, 'shotdata', str(shotnr))
+            np.save(path, self.cache[shotnr])
 
     def closeEvent(self, event):
         if not self.saved:
@@ -1364,7 +1494,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def actionToLabel(self, text):
         action = self.findActionByText(text)
         if action is None:
-            logger.warn("Could not find action {}".format(text))
+            logger.debug("Could not find action {}".format(text))
             return
         action.setEnabled(False)
         font = QtGui.QFont()
@@ -1575,14 +1705,29 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     self.createSpatialCELMA()
 
 
-    def getTimeArray(self, shot):
+    def getTimeArray(self):
+        if self.timeArray is not None:
+            return
+
+        # Try to get from cache
+        if self.use_cache:
+            try:
+                self.timeArray = copy.deepcopy(self.cache[self.shotnr]["timeArray"])
+            except KeyError:
+                pass
+            else:
+                logger.debug("Retrieved timeArray from cache")
+                return
+
+        # Get from shotfile
+        shot = self.getShotfile("LSD")
         timeArrays = []
         for obj in shot.getSignalNames():
             isRightQuantity = obj.startswith(('te','ne'))
-            isRightRegime = obj.split('-')[1][:2]==\
+            isRightRegion = obj.split('-')[1][:2]==\
                     str(self.comboRegion.currentText())
 
-            if isRightQuantity and isRightRegime:
+            if isRightQuantity and isRightRegion:
                 try:
                     timeArrays.append(shot.getTimeBase(obj))
                 except:
@@ -1590,6 +1735,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                                     .format(obj))
         if len(timeArrays) == 0:
             logger.error( "Failed to find time array")
+            return
 
         equal = (np.diff(
                     np.vstack(timeArrays).reshape(len(timeArrays), -1),
@@ -1598,7 +1744,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         if not equal:
             logger.error("Time base arrays fetched from shotfile are not"+\
             " equal! Proceed with caution.")
-        return timeArrays[0]
+
+        timeArray = timeArrays[0]
+        self.timeArray = timeArray
+
+        # Save to cache
+        if self.use_cache:
+            self.cache[self.shotnr]["timeArray"] = timeArray
+            self.saveCache()
+        return timeArray
 
 
     def moveToNextPOI(self, ):
@@ -1987,11 +2141,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def attributeColorsToProbes(self):
         # Attribute colors to probes
-        logger.info("\nAttributing colors to probes")
+        logger.debug("Attributing colors to probes")
         probeNames = []
         for plot in self.plots:
             probeNames.extend([p.name for p in plot.probes 
                                         if p.name not in probeNames])
+        probeNames = list(set(probeNames))
         
         cm = plt.get_cmap(self.colorScheme)
         colors = cm(np.linspace(0, 1, len(probeNames)))
@@ -2002,7 +2157,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 probe = next((p for p in plot.probes
                                 if p.name == probeName), None)
                 if probe is None:
-                    logger.info("Probe {} does not exist in "
+                    logger.debug("Probe {} does not exist in "
                                  .format(probeName) +
                                  "{} {} plot."
                                  .format(plot.type, plot.quantity))
@@ -2020,6 +2175,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             # next time the plots are reloaded (see switchxPlot or toggleLSC)
             if probeName not in self.defaultProbeColors:
                 self.probeColors[probeName] = color
+        logger.debug("Probe colors: {}".format(self.probeColors))
 
 
     def clearPlots(self):
@@ -2030,20 +2186,26 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             del plot
 
 
-    def load(self, reloaded=False):
+    def load(self, reloaded=False, dryrun=False):
         """ 
             Loads specified shot, updates all plots on the GUI and implements
             interactivity 
+
+            dryrun: Data is loaded but plots are not created. For testing
+                    and crawling.
         """
-        token = AFSutils.checkAFSToken(console=True)#console=False)
+        token = AFSutils.checkAFSToken(silent=self.use_cache)
         if not token:
             self.refreshWindowTitle(token=token)
-            return
+            if not self.use_cache:
+                return
         logger.info('Loading shot')
         QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         self.btnShotUpdate.setVisible(False)
         self.clearCELMAs()
         self.CELMAexists = False
+        self.segment = str(self.comboSegment.currentText())
+        self.region = str(self.comboRegion.currentText())
         self.patches = {}
         self.probeColors = self.config['Application']['probeColors']
         try:
@@ -2060,14 +2222,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         # Save as default colors so they are not overwritten when reloading
         # plots (see attributeProbeColors)
         self.defaultProbeColors = self.probeColors
-        
         self.clearPlots()
-
         self.progBar.setVisible(True)
-        self.region = str(self.comboRegion.currentText())
-
         success = self.getShotNumbers()
-
 
         if success:
             logger.info("+++++++++Data retrieval was successful+++++++++")
@@ -2105,25 +2262,36 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
             logger.debug("Creating plots")
             quantity = self.getSpatialPlotQuantity()
-            ok = self.createPlot(self.PlotContainer11, 'spatial', 'te')
+            ok = self.createPlot(self.PlotContainer11, 'spatial', quantity,
+                                 dryrun)
             if not ok:
-                logger.error("Failed to create spatial {} plot".format('te'))
+                logger.error("Failed to create spatial {} plot"
+                             .format(quantity))
                 return
-            self.progBar.setValue(60)
-            ok = self.createPlot(self.PlotContainer21, 'temporal', 'te')
+            self.progBar.setValue(25)
+            ok = self.createPlot(self.PlotContainer21, 'temporal', 'te',
+                                 dryrun)
             if not ok:
                 logger.error("Failed to create temporal {} plot".format('te'))
                 return
-            self.progBar.setValue(70)
-            ok = self.createPlot(self.PlotContainer22, 'temporal', 'ne')
+            self.progBar.setValue(50)
+            ok = self.createPlot(self.PlotContainer22, 'temporal', 'ne',
+                                 dryrun)
             if not ok:
                 logger.error("Failed to create temporal {} plot".format('ne'))
                 return
-            self.progBar.setValue(80)
-            #ok = self.createPlot(self.PlotContainer23, 'temporal', 'jsat')
-            #if not ok:
-            #    return
+            self.progBar.setValue(75)
+            ok = self.createPlot(self.PlotContainer23, 'temporal', 'jsat',
+                                 dryrun)
+            if not ok:
+                logger.error("Failed to create temporal {} plot".format('jsat'))
+                return
             self.progBar.setValue(100)
+
+            if dryrun:
+                QtGui.QApplication.restoreOverrideCursor()
+                self.hideProgress()
+                return True
 
             self.attributeColorsToProbes()
             self.populateProbeTable()
@@ -2308,13 +2476,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.comboPOIunit.setCurrentIndex(
                 self.comboPOIunit.findText('0.1 ms'))
 
-            try:
-                self.afschecker.losttoken.disconnect()
-                self.afschecker.foundtoken.disconnect()
-            except:
-                pass
-            self.afschecker.losttoken.connect(self.lostToken)
-            self.afschecker.foundtoken.connect(self.foundToken)
+            if self.afschecker:
+                try:
+                    self.afschecker.losttoken.disconnect()
+                    self.afschecker.foundtoken.disconnect()
+                except:
+                    pass
+                self.afschecker.losttoken.connect(self.lostToken)
+                self.afschecker.foundtoken.connect(self.foundToken)
 
         # If shot data was not loaded successfully
         else:
@@ -2930,7 +3099,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         start, end, ELMnum = settings
         ind = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end))
         if len(ind[0]) == 0:
-            logger.critical("No ELMs in specified range {}s-{}s".format(start,end))
+            logger.info("No ELMs in specified range {}s-{}s".format(start,end))
             return
         ind_select = np.where((start <= self.ELMonsets) & (self.ELMonsets <= end))
         ELMstarts= self.ELMonsets[ind][:ELMnum]
@@ -3165,7 +3334,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def getShotData(self, quantity):
         diags = {'te': 'LSD',
                  'ne': 'LSD',
-                 'jsat': 'LSF'}
+                 'jsat': 'LSF',
+                 'elms': 'ELM',
+                 'strikeline': 'FPG'}
         try:
             diag = diags[quantity]
         except KeyError:
@@ -3173,12 +3344,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                          .format(quantity) + "Aborting...")
             return
 
-        try:
-            data = self.cache[self.shotnr][quantity]
-        except KeyError, TypeError:
-            data = None
-        else:
-            logger.debug("{} data retrieved from cache".format(quantity))
+        data = None
+        if self.use_cache:
+            try:
+                data = copy.deepcopy(self.cache[self.shotnr][quantity])
+            except KeyError, TypeError:
+                pass
+            else:
+                logger.debug("{} data retrieved from cache".format(quantity))
         if not data:
             logger.debug("Data is invalid. " +
                          "Trying to get {} data from {} shotfile"
@@ -3190,9 +3363,17 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 if self.use_cache:
                     self.cache[self.shotnr][quantity] = data
                     self.saveCache()
-        if not data:
+        if data:
+            if quantity == "elms":
+                self.publicizeELMdata(data)
+            elif quantity == "strikeline":
+                self.publicizeSLdata(data)
+        else:
             logger.error("Failed to get {} data".format(quantity))
         return data
+
+    def _update_cache_state(self):
+        self.use_cache = self.menuUseCache.isChecked()
 
     def getExperiment(self, diag):
         experiment = self.experiment_combos[diag]
@@ -3202,12 +3383,16 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.statusbar.showMessage('Fetching {} data...'.format(diag))
         exp = self.getExperiment(diag)
 
-        shot = shot or self.shotnr
+        if diag == "LSC":
+            shot = shot or self.latestLSCshotnr
+        else:
+            shot = shot or self.shotnr
+
         try:
             shot = dd.shotfile(diag, shot, exp)
         except Exception, e:
-            logger.critical("Could not find {} shotfile for user {}."
-                            .format(diag, exp))
+            logger.critical("Could not load {} shotfile for user {}: {}"
+                            .format(diag, exp, str(e)))
             if exp == 'AUGD':
                 return
             logger.critical("Trying AUGD...")
@@ -3222,8 +3407,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                                      "for this shot",
                                      details=str(e))
                 return
-        if diag == 'LSD':
-            self.timeArray = self.getTimeArray(shot)
         return shot
 
     def getShotfileData(self, diag, quantity=None, shot=None):
@@ -3231,7 +3414,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         if not shot:
             logger.error("Could not get {} shotfile".format(diag))
             return
-    
+
         if diag == 'LSD':
             data = self.getLSDdata(shot, quantity)
         elif diag == 'LSF':
@@ -3244,20 +3427,47 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             data = self.getFPGdata(shot)
         else:
             data = None
+
+        logger.debug("{} data: {}".format(diag, data))
         shot.close()
         return data
+
+    def getProbePositions(self, data):
+        # Try to load form cache
+        if self.use_cache:
+            try:
+                self.probePositions = copy.deepcopy(self.cache[self.latestLSCshotnr]['probePositions'])
+            except KeyError:
+                pass
+            else:
+                logger.debug("Retrieved probe positions from cache")
+                for probeName, pos in self.probePositions.items():
+                    logger.debug("{} position: {}".format(probeName, pos))
+
+        # If any probe's position is not known yet, get it from shotfile
+        if all([probeName in self.probePositions for probeName in data]):
+            logger.debug("All probe positions already known")
+            return
+        shotfile = self.getShotfile('LSC')
+        for probeName in data:
+            pos = shotfile(probeName)['Ort'].data/1000.
+            logger.debug("{} position: {}".format(probeName, pos))
+            self.probePositions[probeName] = pos
+
+        # Save to cache
+        if self.use_cache:
+            self.cache[self.latestLSCshotnr]['probePositions'] = self.probePositions
+            self.saveCache()
 
     def getLSFdata(self, shotfile):
         """ Loads jsat data from shotfile. """
         if len(self.map) < 1:
-            hasMapping = self.getMapping(shotfile)
-        
-        if not hasMapping:
-            logger.critical("No mapping found")
-            return
+            hasMapping = self.getMapping()
+            if not hasMapping:
+                logger.critical("No mapping found")
+                return
 
-        shot = self.shot
-        timeArrays = []
+        shot = shotfile
         rawdata = {}
         for key, objName in shot.getObjectNames().iteritems():
             if objName.startswith('CH'):
@@ -3273,46 +3483,74 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                                     " @channel {} ({}), {} ({}): {}".format(channel,
                                             type(channel), ind, type(ind),
                                             str(e)))
-                        timeArrays.append(shot(channel).time)
-        self.timeArray = self.getTimeArray(timeArrays=timeArrays)
+        #self.timeArray = self.getTimeArray(timeArrays=timeArrays)
         return rawdata
 
-    def getCalibrationsFromShotfile(self, shot):
+    def getCalibrationsFromShotfile(self):
         logger.info( "Getting calibrations from shotfile...")
+        shot = self.getShotfile("LSC")
         for obj in shot.getObjectNames().values():
-            probeInLSF = obj in [p.name for p in self.probes]
-            if obj.startswith(self.region) and probeInLSF:
+            #probeInLSF = obj in [p.name for p in self.probes]
+            if obj.startswith(self.region):# and probeInLSF:
                 probe = obj
-                data = shot(obj)['Geom'].data 
+                data = shot(probe)['Geom'].data 
                 try:
                     l, w = data[:2]
                 except:
-                    logger.critical("Could not retrieve geometry of probe {} from LSC".format(probe))
-                    return False
-
+                    logger.critical("Could not retrieve geometry of probe {}"
+                                    .format(probe))
+                    continue
                 self.calib[probe] = (float(l), float(w))
-
         return self.calib
     
     def getCalibrations(self, path=None):
         """ Loads probe dimensions from file so current can be converted to current density. """
+        if self.use_cache:
+            # Try to get from cache
+            try:
+                self.calib = copy.deepcopy(self.cache[self.latestLSCshotnr]["probeDimensions"])
+            except KeyError:
+                pass
+            else:
+                logger.debug("Retrieved probe dimensions from cache")
+                return self.calib
+
+        # Get from shotfile
         if self.menuUseLSC.isChecked():
             self.getCalibrationsFromShotfile()
+        # Get from file
         else:
             if path is None:
                 path = self.calibFile
-
             with open(path) as f:
                 lines = f.readlines()[1:]
                 for line in lines:
                     probe, l, w = line.split()
                     self.calib[probe] = (float(l), float(w))
-                
-        logger.info("\n\nProbe dimensions:")
-        for probe in self.calib:
-            logger.info("Probe: {:5s} Geometry: {}".format(probe,self.calib[probe]))
+        
+        # Save to cache
+        if self.use_cache:
+            self.cache[self.latestLSCshotnr]["probeDimensions"] = self.calib
+            self.saveCache()
 
+        logger.debug("\n\nProbe dimensions:")
+        for probe in self.calib:
+            logger.debug("Probe: {:5s} Geometry: {}".format(probe,self.calib[probe]))
         return self.calib
+
+    def publicizeELMdata(self, data):
+        self.ELMonsets = data["onsets"]
+        self.ELMends = data["ends"]
+        self.ELMmaxima = data["maxima"]
+        self.ELMfreqs = data["frequencies"]
+        self.ELMtoELM = data["ELMtoELM"]
+        self.ELMENER = data["ELMenergy"]
+        self.preELMWmhd = data["preELMWmhd"]
+        self.ELMelec = data["electrons"]
+        self.preELMelec = data["preELMelectrons"]
+    
+    def publicizeSLdata(self, data):
+        self.ssl = data
 
     def getELMdata(self, shotfile):
         self.ELMonsets = shotfile('t_begELM')
@@ -3325,17 +3563,28 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.ELMelec = shotfile('ELMPART').data
         self.preELMelec = shotfile('ELECTRNS').data
 
+        ELMdata = {"onsets": self.ELMonsets,
+                   "ends": self.ELMends,
+                   "maxima": self.ELMmaxima,
+                   "frequencies": self.ELMfreqs,
+                   "ELMtoELM": self.ELMtoELM,
+                   "ELMenergy": self.ELMENER,
+                   "preELMWmhd": self.preELMWmhd,
+                   "electrons": self.ELMelec,
+                   "preELMelectrons": self.preELMelec}
+        return ELMdata
+
     def getSLdata(self, shotfile):
         self.ssl = {}
-        self.Rsl = {}
-        self.zsl = {}
+        #self.Rsl = {}
+        #self.zsl = {}
         try:
             self.ssl['data'] = shotfile('Suna2b').data
             self.ssl['time'] = shotfile('Suna2b').time
-            self.Rsl['data'] = shotfile('Runa2b').data
-            self.Rsl['time'] = shotfile('Runa2b').time
-            self.zsl['data'] = shotfile('Zuna2b').data
-            self.zsl['time'] = shotfile('Zuna2b').time
+            #self.Rsl['data'] = shotfile('Runa2b').data
+            #self.Rsl['time'] = shotfile('Runa2b').time
+            #self.zsl['data'] = shotfile('Zuna2b').data
+            #self.zsl['time'] = shotfile('Zuna2b').time
         except Exception, e:
             self.showShotWarning(
             "Strikeline positions not readable",
@@ -3343,15 +3592,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             "Invalid shotfile found for this shot.",
             details=str(e))
             self.hideProgress()
-            return False
+            return
         logger.debug("Strikeline data: {}".format(self.ssl))
         logger.debug("Strikeline times direct: {}"
                      .format(shotfile('Suna2b').time))
-        return True
+        return self.ssl
 
     def getFPGdata(self, shotfile):
-        self.getSLdata(shotfile)
-        return True
+        data = self.getSLdata(shotfile)
+        return data
 
     def getLSDdata(self, shotfile, quantity):
         signalNames = shotfile.getSignalNames()
@@ -3387,7 +3636,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                                    "mapping from LSC")
         map = {}
         signalName = 'ZSI' + self.segment
-
         for obj in shot.getObjectNames().values():
             if obj.startswith(self.region):
                 probe = obj
@@ -3406,7 +3654,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     # indexes 0-5
                     ind = int(ind) - 1
                     map[probe] = (channel, ind)
-                        
+                    logger.debug("{} channel: {}-{}"
+                                 .format(probe, channel, ind))
         return map
 
     def getMappingFromFile(self):
@@ -3460,23 +3709,36 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                         .format(probe,channel, ind))
                     self.map[probe] = (channel, ind)
 
-    def getMapping(self, shotfile):
+    def getMapping(self):
         """ 
         Loads probe-channel mapping.
         """
         logger.info("\n++++++++++++++++ Getting mappings +++++++++++++++++++++++++\n")
+        self.map = {}
 
-        # Try to get mapping from LSC shotfile
-        #if self.menuUseLSC.isChecked():
-        self.map = self.getMappingFromShotfile(shotfile)
+        if self.use_cache:
+            try:
+                self.map = copy.deepcopy(self.cache[self.latestLSCshotnr]['mapping'])
+            except KeyError:
+                pass
+            else:
+                logger.debug("Retrieved mapping from cache")
+                return self.map
 
-        #if len(self.map) == 0:
-        #    self.getMappingFromFile()
-        
+        if self.menuUseLSC.isChecked():
+            shotfile = self.getShotfile("LSC")
+            self.map = self.getMappingFromShotfile(shotfile)
+        else:
+            self.getMappingFromFile()
+
         if len(self.map) > 0:
             logger.info( "\n\nProbe mappings:")
             for probe in self.map:
                 logger.info("Probe: {:5s}Channel: {}".format(probe,self.map[probe]))
+
+            if self.use_cache:
+                self.cache[self.latestLSCshotnr]['mapping'] = self.map
+                self.saveCache()
             return True
         else:
             logger.critical( "Failed to get probe-channel mapping. jsat will not be plotted")
@@ -3850,16 +4112,16 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         # performance. If this is not done, indicator.slide() will call
         # canvas.update() each time it hits the xlimits additionally to
         # the under-the-hood panning
-        panning = next((True for p in self.plots if hasattr(p.axes,'_pan_start')), False)
+        panning = next((True for p in self.plots
+                        if hasattr(p.axes,'_pan_start')), False)
         if panning:
             return
 
         pos = self.xTimeSlider.value()
         realtime = self.dtime[pos]
-        for p in self.plots:
-            if p.type == 'spatial':
-                p.update(realtime)
-                self.indicator_range = p.realdtrange
+        for p in self.getSpatialPlots():
+            p.update(realtime)
+            self.indicator_range = p.realdtrange
 
 
     def findTWindow(self, Dt, avgNum):
@@ -3942,7 +4204,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.lblRealTWidth.setText("= {:.2f}us".format(dt*10**6))
 
 
-    def createPlot(self, container, _type=None, quantity=None):
+    def createPlot(self, container, _type=None, quantity=None, dry_run=False):
         """
         Creates a Plot object of the specified type and quantity at the
         specified location on the GUI.
@@ -3988,15 +4250,22 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
         self.clearPlotContainer(container)
 
+        # Get shot data
         data = self.getShotData(quantity)
         if not data:
             logger.error("Cannot create {} {} plot. ".format(_type, quantity) +
                          "Invalid data.")
             return
-        self.getShotfileData('ELM')
-        self.getShotfileData('FPG')
-        if quantity == 'jsat':
-            mapping = self.getShotfileData('LSC', shot=self.latestLSCshotnr)
+        self.getProbePositions(data)
+        self.getCalibrations()
+        self.getShotData('elms')
+        self.getShotData('strikeline')
+        self.getTimeArray()
+
+        if dry_run:
+            return True
+
+        # Plotting
         if quantity == 'wmhd':
             plot = PlotClass(self)
         else:
@@ -4084,6 +4353,12 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.interact.set_highlight(True)
         if self.menuDimOtherPlots.isChecked():
             self.interact.set_dimming(True)
+
+        # If pan or zoom active, activate it for the new plot as well
+        if self._pan_active:
+            self.activatePan()
+        elif self._zoom_active:
+            self.activateZoom()
         return True
 
 
@@ -4203,6 +4478,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if plot.toolbar._active == 'ZOOM':
                 return
             plot.toolbar.zoom()
+        self._pan_active = False
+        self._zoom_active = True
 
 
     def activatePan(self):
@@ -4210,6 +4487,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if plot.toolbar._active == 'PAN':
                 return
             plot.toolbar.pan()
+        self._pan_active = True
+        self._zoom_active = False
             
     @QtCore.pyqtSlot(int)
     def onProgress(self, prog):
@@ -4225,12 +4504,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def getLatestLSC(self, shotNumber):
-        try:
-            self.latestLSCshotnr = self.cache[shotNumber]['latestLSC']
-        except KeyError:
-            pass
-        else:
-            return 1
+        if self.use_cache:
+            try:
+                self.latestLSCshotnr = copy.deepcopy(self.cache[shotNumber]['latestLSC'])
+            except KeyError:
+                pass
+            else:
+                return self.latestLSCshotnr
         
         self.statusbar.showMessage("Getting LSC shotfile...")
 
@@ -4260,7 +4540,9 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             return 0
 
         self.latestLSCshotnr = shotNumberLSC
-        self.cache[shotNumber]['latestLSC'] = shotNumberLSC
+        if self.use_cache:
+            self.cache[shotNumber]['latestLSC'] = shotNumberLSC
+            self.saveCache()
         return shotNumberLSC
         
 
@@ -4298,66 +4580,82 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         return True
 
 
-    def getRawLangmuirData(self, diag=None):
-        self.statusbar.showMessage('Fetching LSF shot...')
-        diag = 'LSF'
-        exp = str(self.comboExpRaw.currentText())
-        try:
-            shot = dd.shotfile(diag, self.shotnr, exp)
-        except:
-            logger.critical("Could not find {} shotfile for user {}.  Trying AUGD...".format(diag,exp))
-            try:
-                shot = dd.shotfile(diag, self.shotnr)
-            except Exception, e:
-                self.showShotWarning(
-                "Shotfile not found",
-                "{} shotfile could not be loaded".format(diag),
-                "No jsat shotfile could be found at {}:{} for this shot."
-                .format(diag,exp),
-                details=str(e))
-                return False
-        self.LSFshot = shot
-        return True
+    #def getRawLangmuirData(self, diag=None):
+    #    self.statusbar.showMessage('Fetching LSF shot...')
+    #    diag = 'LSF'
+    #    exp = str(self.comboExpRaw.currentText())
+    #    try:
+    #        shot = dd.shotfile(diag, self.shotnr, exp)
+    #    except:
+    #        logger.critical("Could not find {} shotfile for user {}.  Trying AUGD...".format(diag,exp))
+    #        try:
+    #            shot = dd.shotfile(diag, self.shotnr)
+    #        except Exception, e:
+    #            self.showShotWarning(
+    #            "Shotfile not found",
+    #            "{} shotfile could not be loaded".format(diag),
+    #            "No jsat shotfile could be found at {}:{} for this shot."
+    #            .format(diag,exp),
+    #            details=str(e))
+    #            return False
+    #    self.LSFshot = shot
+    #    return True
 
 
-    def getConfigurationData(self):
-        self.statusbar.showMessage('Getting probe configuration from LSC...')
-        diag = 'LSC'
-        exp = str(self.comboExpLSC.currentText())
-        logger.info("Latest LSC shot number: {}".format(self.latestLSCshotnr))
-        try:
-            shot = dd.shotfile(diag, self.latestLSCshotnr, exp)
-        except Exception, e:
-            self.showShotWarning(
-            "Shotfile not found",
-            "{} shotfile could not be loaded".format(diag),
-            "No jsat shotfile could be found at {}:{} for this shot."
-            .format(diag,exp),
-            details=str(e))
-            return False
-        return True
+    #def getConfigurationData(self):
+    #    self.statusbar.showMessage('Getting probe configuration from LSC...')
+    #    diag = 'LSC'
+    #    exp = str(self.comboExpLSC.currentText())
+    #    logger.info("Latest LSC shot number: {}".format(self.latestLSCshotnr))
+    #    try:
+    #        shot = dd.shotfile(diag, self.latestLSCshotnr, exp)
+    #    except Exception, e:
+    #        self.showShotWarning(
+    #        "Shotfile not found",
+    #        "{} shotfile could not be loaded".format(diag),
+    #        "No jsat shotfile could be found at {}:{} for this shot."
+    #        .format(diag,exp),
+    #        details=str(e))
+    #        return False
+    #    return True
 
 
     def getShotNumbers(self):
         """
-        Retrieves shot number from GUI and latest LSC shot number from cache or 
-        shotfile.
+        Retrieves shot number from GUI and latest LSC shot number
+        from cache or shotfile.
         """
         if not self.readShotNumber():
             logger.critical( "Could not read shotnumber")
             return False
+        # If the shot hasn't been cached, shotfiles must be loadable
+        logger.debug("use_cache: {}".format(self.use_cache))
+        logger.debug("shot cached: {}".format(self.shotnr in self.cache))
+        logger.debug("cached shots: {}".format(self.cache.keys()))
+        if self.use_cache and not self.shotnr in self.cache:
+            token = AFSutils.checkAFSToken()
+            if not token:
+                return
+        if self.use_cache:
+            self.initCacheEntry(self.shotnr)
 
         logger.info("Getting last LSC shot number")
         ok = self.getLatestLSC(self.shotnr)
         if not ok:
-            logger.critical( "Failed to get latest LSC. Returned {}".format(ok))
+            logger.critical( "Failed to get latest LSC. " +
+                             "Returned {}".format(ok))
             return False
+
+        if self.use_cache:
+            self.initCacheEntry(self.latestLSCshotnr)
+
         self.progBar.setValue(5)
         return True
 
 
     def hideProgress(self):
         """ Removes progressbar widget from the statusbar and resets it to the value 0. """
+        time.sleep(1)
         self.progBar.setVisible(False)
         self.progBar.setValue(0)
 
@@ -4845,8 +5143,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
            plot.changeTickLabels('milliseconds')
            plot._CELMAnormalize = False
 
-        logger.info("Creating CELMAs for these probes: {}"
-                    .format([p.name for p in probes]))
+        logger.debug("Creating CELMAs for these probes: {}"
+                     .format([p.name for p in probes]))
         for probe in probes:
             probeName = probe.name
             color = probe.color
@@ -5322,6 +5620,7 @@ class Plot(QObject):
 
         # Attributes
         self.region = str(gui.comboRegion.currentText())
+        self.type = type
         self.quantity = quantity
         self.ELMonsets = gui.ELMonsets
         self.ELMends = gui.ELMends
@@ -5366,6 +5665,15 @@ class Plot(QObject):
                                 functools.partial(self.gui.showCoordinates,
                                                   self))
 
+    def getProbes(self, data):
+        probes = []
+        for probeName in data:
+            logger.debug("Creating probe {} for {} {} plot"
+                         .format(probeName, self.type, self.quantity))
+            probe = self.createProbe(probeName)
+            probes.append(probe)
+        return probes
+
     def applyDefaultLims(self):
         logger.debug("Applying default limits ({} {})"
                      .format(self.type, self.quantity))
@@ -5390,17 +5698,6 @@ class Plot(QObject):
             except ValueError:
                 logger.debug("Invalid ylim")
 
-
-    def attributeProbePositions(self, probeNames):
-        #LSCshot(probeName)['Ort'].data/1000.
-        for probeName in probeNames:
-            probe = relf.createProbe()
-            pos = self.gui.probepositions[probe]
-            logger.info("\nProbe {} has position s = {}"
-                         .format(probeName, pos))
-            probe.position = pos
-            self.probes.append(probe)
-        
 
     def memorizeView(self):
         _xlim = self.axes.get_xlim()
@@ -5736,48 +6033,17 @@ class Plot(QObject):
                     p.setSelected(self.canvas, True)
                 return
 
-        # If probe does not exist yet, create it and select it if it's supposed
-        # to be
         p = LangmuirProbe(probeName)
         if isDefault:
             p.setSelected(self.canvas, True)
+        p.position = self.gui.probePositions[probeName]
+        logger.debug("{} attributed position {}".format(p.name, p.position))
         self.probes.append(p)
         self.probeNames.append(p.name)
 
 
-    def getTimeArray(self, shot=None, timeArrays=None):
-        if shot is None and timeArrays is None:
-            logger.critical( "Either shot or an array of time arrays must be provided")
-            return
-        if timeArrays is None or len(timeArrays) == 0:
-            # This will NOT work for LSF since getSignalNames returns an empty
-            # list -.-  --> provide array of time arrays in this case
-            timeArrays = []
-            for obj in shot.getSignalNames():
-                isRightQuantity = obj.startswith(self.quantity)
-                isRightRegion = obj.split('-')[1][:2] == self.region
-
-                if isRightQuantity and isRightRegion:
-                    try:
-                        timeArrays.append(shot.getTimeBase(obj))
-                    except:
-                        logger.warn("Failed to retrieve time base for signal", obj)
-            if len(timeArrays) == 0:
-                logger.critical( "Failed to find any time arrays for these signals")
-                return
-
-        equal = (np.diff(
-                    np.vstack(timeArrays).reshape(len(timeArrays), -1),
-                    axis = 0) == 0).all()
-
-        if not equal:
-            logger.error("Warning: time base arrays fetched from shotfile are not"+\
-                    " equal! Proceed with caution.")
-        return timeArrays[0]
-
-
 class SpatialPlot(Plot):
-    """ Class for spatial temperature and density plots. Subclass of Plot. Needs the application object as an argument to be able to manipulate GUI elements. """
+    """ Class for spatial temperature and density plots. Subclass of Plot. """
     ### TO DO
     #
     # - rztods should save relative positions with timestamps to rule out
@@ -5805,6 +6071,7 @@ class SpatialPlot(Plot):
         self.CELMAalpha = config['CELMA']['alpha']
         self.detachedFit = config['detachedFit']
         self.rawdata = data
+        self.getProbes(data)
 
         self.axes.autoscale(self.fixlims)
 
@@ -5827,10 +6094,6 @@ class SpatialPlot(Plot):
         self.type = 'spatial'
         self.timeRange = []
         self.fits = []
-
-        self.Rsl = self.gui.Rsl
-        self.ssl = self.gui.ssl
-        self.zsl = self.gui.zsl
 
         self.strikeline = self.axes.axvline(
                             0,0,1,ls='--',lw='4',color='grey', alpha=.7,
@@ -5860,9 +6123,6 @@ class SpatialPlot(Plot):
             return "{}".format(val*100)
         fmt = mpl.ticker.FuncFormatter(centimeter)
         self.axes.xaxis.set_major_formatter(fmt)
-        
-        if not isinstance(self, CurrentPlot):
-            self.shot = gui.LSDshot
 
         self.axes.set_xlim(config['xlim'])
         self.axes.set_ylim(config['ylim'])
@@ -5873,10 +6133,8 @@ class SpatialPlot(Plot):
         If this is a CurrentPlot, data is calibrated once when it is loaded and
         saved to self.rawdata.
         """
-        self.rawdata = rawdata
-        self.attributeProbePositions(self.rawdata)
         if isinstance(self, CurrentPlot):
-            self.rawdata= self.calibrateData(self.rawdata)
+            self.rawdata = self.calibrateData(self.rawdata)
         data, timeRange = self.getDataInTimeWindow(self.rawdata, time, range)
         self.timeRange = timeRange
         positions = self.getDeltaS(timeRange)
@@ -6075,7 +6333,7 @@ class SpatialPlot(Plot):
 
         result = self.findFit(xdata, ydata, method, detached=detached)
         if result is None:
-            logger.error("Fit could not be determined")
+            logger.info("Fit could not be determined")
             return
 
         xft, yft = result
@@ -6155,7 +6413,7 @@ class SpatialPlot(Plot):
             try:
                 ft = FitFunctions.fit(locs, y, detachment=detached)
             except RuntimeError:
-                logger.error("Could not find fit parameters")
+                logger.debug("Could not find fit parameters")
                 return
             else:
                 if detached:
@@ -6271,6 +6529,8 @@ class SpatialPlot(Plot):
                 # NaN filtering must occur before averaging instead of using
                 # nanmean or location will not know which values got filtered
                 # by nanmean
+                logger.debug("probe positions: {}".format(probePositions))
+                logger.debug("probe data: {}".format(probeData))
                 probePositions = Conversion.removeNans(probePositions, probeData)
                 probeData = Conversion.removeNans(probeData)
             else:
@@ -6341,99 +6601,104 @@ class SpatialPlot(Plot):
         and returns it in a dictionary.
         """
         ds = {}
-        logger.debug("Strikeline times: {}".format(self.ssl['time']))
-        logger.debug("Strikeline data: {}".format(self.ssl['data']))
+        logger.debug("Strikeline times: {}".format(self.gui.ssl['time']))
+        logger.debug("Strikeline data: {}".format(self.gui.ssl['data']))
         for probe in self.probes:
             probeName = probe.name
             ds[probeName] = []
+            logger.debug("{} time range: {}"
+                         .format(probeName, timeRange[probeName]))
+            logger.debug("{} absolute position: {}"
+                         .format(probeName, probe.position))
             for time in timeRange[probeName]:
-                ind = np.abs((self.ssl['time'] - time)).argmin()
-                ssl = self.ssl['data'][ind]
+                ind = np.abs((self.gui.ssl['time'] - time)).argmin()
+                ssl = self.gui.ssl['data'][ind]
                 _ds = probe.position - ssl
 
                 ds[probeName].append(_ds)
+            logger.debug("{} positions: {}".format(probeName, ds[probeName]))
         return ds
 
 
-    def getProbePositions(self):
-        """ 
-        Gets positions of probes in the specified region in terms of R,z
-        coordinates. Saves the coordinates as tuples in a class parameter array
-        "probePositions" with the probe names as keys. 
-        """
-        # Read probe name and R and z coordinates of each probe
-        probePositions = {}
-        with open(self.posFile) as f:
-            lines = f.readlines()
-            for line in lines:
-                probeName = line.split()[0][1:]                 # Probe name
-                R = float(line.split()[1].replace(",","."))     # R
-                z = float(line.split()[2].replace(",","."))     # z
-                 
-                probePositions[probeName] = (R,z)
+    #def getProbePositions(self):
+    #    """ 
+    #    Gets positions of probes in the specified region in terms of R,z
+    #    coordinates. Saves the coordinates as tuples in a class parameter array
+    #    "probePositions" with the probe names as keys. 
+    #    """
+    #    # Read probe name and R and z coordinates of each probe
+    #    probePositions = {}
+    #    with open(self.posFile) as f:
+    #        lines = f.readlines()
+    #        for line in lines:
+    #            probeName = line.split()[0][1:]                 # Probe name
+    #            R = float(line.split()[1].replace(",","."))     # R
+    #            z = float(line.split()[2].replace(",","."))     # z
+    #             
+    #            probePositions[probeName] = (R,z)
 
-        self.probePositions = probePositions
+    #    self.probePositions = probePositions
 
-        logger.info("Probe positions:")
-        for probe, position in probePositions.iteritems():
-            logger.info("{}: {}".format(probe, position))
+    #    logger.info("Probe positions:")
+    #    for probe, position in probePositions.iteritems():
+    #        logger.info("{}: {}".format(probe, position))
 
-        return probePositions
+    #    return probePositions
 
 
-    def rztods(self, positions=None, timeRange=None):
-        """ 
-        Converts probe positions from (R,z) coordinates to delta-s coordinate
-        based on current strikeline position. This enables plots in units of
-        delta-s along the x-axis. It is implicitly assumed that the divertor
-        tile is flat.
-        """
-        if positions is None:
-            positions = self.probePositions
-        if timeRange is None:
-            timeRange = self.timeRange
+    #def rztods(self, positions=None, timeRange=None):
+    #    """ 
+    #    Converts probe positions from (R,z) coordinates to delta-s coordinate
+    #    based on current strikeline position. This enables plots in units of
+    #    delta-s along the x-axis. It is implicitly assumed that the divertor
+    #    tile is flat.
+    #    """
+    #    if positions is None:
+    #        positions = self.probePositions
+    #    if timeRange is None:
+    #        timeRange = self.timeRange
 
-        plotPositions = {}
-        for probe in self.probes:
-            probeName = probe.name
-            plotPositions[probeName] = []
+    #    plotPositions = {}
+    #    for probe in self.probes:
+    #        probeName = probe.name
+    #        plotPositions[probeName] = []
 
-            # Get R and z coordinates of probe
-            R_p = positions[probeName][0]
-            z_p = positions[probeName][1]
+    #        # Get R and z coordinates of probe
+    #        R_p = positions[probeName][0]
+    #        z_p = positions[probeName][1]
 
-            for time in timeRange[probeName]:
-                # Get R and z coordinates of strikeline at this point in time
-                # Finding the index of the time value closest to the current
-                # time is less prone to errors than trying to find the exact
-                # value
-                ind_R = np.abs((self.Rsl['time'] - time)).argmin()
-                R_sl = self.Rsl['data'][ind_R]
-                ind_z = np.abs((self.zsl['time'] - time)).argmin()
-                z_sl = self.zsl['data'][ind_z]
+    #        for time in timeRange[probeName]:
+    #            # Get R and z coordinates of strikeline at this point in time
+    #            # Finding the index of the time value closest to the current
+    #            # time is less prone to errors than trying to find the exact
+    #            # value
+    #            ind_R = np.abs((self.Rsl['time'] - time)).argmin()
+    #            R_sl = self.Rsl['data'][ind_R]
+    #            ind_z = np.abs((self.zsl['time'] - time)).argmin()
+    #            z_sl = self.zsl['data'][ind_z]
 
-                # Throw error if timestamps don't match
-                if self.zsl['time'][ind_z] != self.Rsl['time'][ind_R]:
-                    logger.critical('\n\nTried to find timestamps of\
-                            strikeline R and z measurements at times closest\
-                            to {} in the respective shot file data but the\
-                            found values for R and z don\'t match! Data\
-                            evaluation will not be reliable.')
+    #            # Throw error if timestamps don't match
+    #            if self.zsl['time'][ind_z] != self.Rsl['time'][ind_R]:
+    #                logger.critical('\n\nTried to find timestamps of\
+    #                        strikeline R and z measurements at times closest\
+    #                        to {} in the respective shot file data but the\
+    #                        found values for R and z don\'t match! Data\
+    #                        evaluation will not be reliable.')
 
-                # Calculate delta-s
-                # Assumption: divertor tile is flat
-                ds = np.sqrt( (R_sl-R_p)**2 + (z_sl-z_p)**2 ) 
-                # If the z coordinate of the probe is smaller than that of the
-                # strikeline, 
-                # then the delta-s associated with this probe at this time is
-                # negative
-                if z_p < z_sl: ds = -ds
+    #            # Calculate delta-s
+    #            # Assumption: divertor tile is flat
+    #            ds = np.sqrt( (R_sl-R_p)**2 + (z_sl-z_p)**2 ) 
+    #            # If the z coordinate of the probe is smaller than that of the
+    #            # strikeline, 
+    #            # then the delta-s associated with this probe at this time is
+    #            # negative
+    #            if z_p < z_sl: ds = -ds
 
-                plotPositions[probeName].append(ds)
+    #            plotPositions[probeName].append(ds)
 
-        self.plotPositions = plotPositions
+    #    self.plotPositions = plotPositions
 
-        return plotPositions
+    #    return plotPositions
 
 
     def initPlot(self, data, positions):
@@ -6546,7 +6811,6 @@ class SpatialPlot(Plot):
         pos = self.getDeltaS(timeRange)
         data, pos = self.averageData(data, pos)
         self.data = data
-        self.pos = pos
 
         xtot = []
         ytot = []
@@ -6576,17 +6840,14 @@ class SpatialPlot(Plot):
                 self.axes.draw_artist(scatter)
             self.canvas.update()
             self.canvas.flush_events()
-
-        if not self.fixlims:
-            self.applyDefaultLims()
-            self.gui.interact.update(self.axes)
-
         # Re-draw everything if axes are not fixed
         else:
             plot, = self.axes.plot(xtot,ytot, label='Dummy for rescaling')
             #self.axes.relim()
             #self.axes.autoscale()
             #self.axes.set_xlim(-0.07,0.3)
+            self.applyDefaultLims()
+            self.gui.interact.update(self.axes)
             plot.remove()
             self.updateAxesLabels()
             self.canvas.draw()
@@ -6635,10 +6896,10 @@ class TemporalPlot(Plot):
         self.CELMAnormalize = False
         self.type = 'temporal'
         self.ELMmarkers = {}
-        self.shot = gui.LSDshot
         self.POImarkers = []
         self._CELMAnormalize = False
         self.rawdata = data
+        self.getProbes(data)
         try:
             self.defaultLims = eval(config['defaultLims'])[self.quantity]
         except KeyError:
@@ -6804,7 +7065,8 @@ class TemporalPlot(Plot):
 
 
     def update(self, showGaps=None, marker=None):
-        """ Plots temporal data if it hasn't been plotted yet. If it has been plotted, it is set to visible. """
+        """ Plots temporal data if it hasn't been plotted yet.
+        If it has been plotted, it is set to visible. """
         if marker is None:
             marker = self.marker
         if showGaps is None:
@@ -7209,8 +7471,6 @@ class CurrentPlot(Plot):
         # Attributes
         self.shotnr = gui.shotnr
         self.hasMapping = False
-        self.calib = {}
-        self.shot = gui.LSFshot
         self.gui = gui
         self.rawdata = data
 
@@ -7262,17 +7522,16 @@ class CurrentPlot(Plot):
         calibrate = self.gui.menuCalibrateJsat.isChecked()
         if not calibrate:
             logger.info("\n++++ JSAT NOT CALIBRATED ++++\n")
-            return
+            return rawdata
 
         for probe, probeData in rawdata.iteritems():
             data = probeData['data']
             l, w = self.gui.calib[probe]
-            if l*w == 0:
+            if not l*w:
                 logger.error("Caution! Invalid dimensions for probe {}.".format(probe)+\
                         " No calibration possible.")
                 continue
             rawdata[probe]['data'] = data/(l*w)
-        
         return rawdata
 
 
@@ -7297,7 +7556,6 @@ class SpatialHeatFluxPlot(SpatialPlot):
         
         dummyPlot = SpatialPlot(gui, 'te')
         tempRawdata = dummyPlot.getShotData()
-        dummyPlot.attributeProbePositions()
         self.probes = dummyPlot.probes
         
         dummyPlot = SpatialCurrentPlot(gui, quantity)
@@ -7353,7 +7611,6 @@ class SpatialPressurePlot(SpatialPlot):
         tempRawdata = dummyPlot.getShotData()
         dummyPlot = SpatialPlot(gui, 'ne')
         densRawdata = dummyPlot.getShotData()
-        dummyPlot.attributeProbePositions()
         self.probes = dummyPlot.probes
         
         self.rawdata = {}
@@ -7454,9 +7711,9 @@ class TemporalPressurePlot(TemporalPlot):
 
 
 class TemporalCurrentPlot(CurrentPlot, TemporalPlot):
-    def __init__(self, gui, quantity):
-        TemporalPlot.__init__(self, gui, 'jsat')
-        super(TemporalCurrentPlot, self).__init__(gui, quantity)
+    def __init__(self, gui, quantity, data):
+        TemporalPlot.__init__(self, gui, 'jsat', data)
+        super(TemporalCurrentPlot, self).__init__(gui, quantity, data)
 
     def getShotData(self):
         # This is necessary due to TemporalPlot being initialized first

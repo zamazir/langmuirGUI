@@ -1957,30 +1957,6 @@
     <property name="title">
      <string>File</string>
     </property>
-    <widget class="QMenu" name="menuSaveFigure">
-     <property name="title">
-      <string>Save figures</string>
-     </property>
-     <addaction name="menuSaveSpatialFigures"/>
-     <addaction name="menuSaveTemporalFigures"/>
-     <addaction name="menuSaveAllFigures"/>
-    </widget>
-    <widget class="QMenu" name="menuSave_data">
-     <property name="title">
-      <string>Save data</string>
-     </property>
-     <addaction name="menuSaveShotfiles"/>
-     <addaction name="menuSaveSpatialData"/>
-    </widget>
-    <widget class="QMenu" name="menuRestore">
-     <property name="title">
-      <string>Restore</string>
-     </property>
-     <addaction name="menuRestoreShot"/>
-    </widget>
-    <addaction name="menuSaveFigure"/>
-    <addaction name="menuSave_data"/>
-    <addaction name="menuRestore"/>
     <addaction name="menuExport"/>
     <addaction name="menuImport"/>
     <addaction name="separator"/>
@@ -2011,6 +1987,7 @@
      <string>Shot</string>
     </property>
     <addaction name="menuUseLSC"/>
+    <addaction name="menuUseCache"/>
    </widget>
    <widget class="QMenu" name="menuStatistis">
     <property name="title">
@@ -2127,6 +2104,7 @@
     <addaction name="menuMineCELMArawdata"/>
     <addaction name="menuStopMining"/>
     <addaction name="menuFillTable"/>
+    <addaction name="menuCrawlShots"/>
    </widget>
    <widget class="QMenu" name="menuAFS">
     <property name="title">
@@ -2569,11 +2547,17 @@
    </property>
   </action>
   <action name="actionSpatial_Plot">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Spatial Plot</string>
    </property>
   </action>
   <action name="actionTemporal_Plot">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Temporal Plot</string>
    </property>
@@ -2735,6 +2719,22 @@
   <action name="menuRefreshAFS">
    <property name="text">
     <string>Check now</string>
+   </property>
+  </action>
+  <action name="menuUseCache">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Use cache</string>
+   </property>
+  </action>
+  <action name="menuCrawlShots">
+   <property name="text">
+    <string>Crawl shots</string>
+   </property>
+   <property name="toolTip">
+    <string>Retrieve and cache data for a list of shots</string>
    </property>
   </action>
  </widget>
