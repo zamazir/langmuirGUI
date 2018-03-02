@@ -135,8 +135,8 @@ logger.addHandler(file_hdlr)
 
 class Warnings():
     @staticmethod
-    def generic(text):
-        msg = QMessageBox()
+    def generic(parent, text):
+        msg = QMessageBox(parent)
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle('Attention')
         msg.setText(text)
@@ -146,10 +146,10 @@ class Warnings():
         msg.exec_()
 
     @staticmethod
-    def noShotfileAccess(prompt=True):
+    def noShotfileAccess(parent, prompt=True):
         logger.critical("No shotfile access")
         if prompt:
-            msg = QMessageBox()
+            msg = QMessageBox(parent)
             msg.setIcon(QMessageBox.Critical)
             msg.setWindowTitle('No shotfile access')
             msg.setText('Shotfiles are not accessible since no AFS token ' +
@@ -220,7 +220,7 @@ class AFSutils(QtCore.QObject):
             logger.debug('AFS token exists')
             token = True
         elif not silent:
-            Warnings.noShotfileAccess(prompt=console)
+            Warnings.noShotfileAccess(self, prompt=console)
             if console and user:
                 AFSutils.getToken()
                 token = AFSutils.checkAFSToken(console=False)
@@ -799,8 +799,8 @@ class ValidatorEdit(QtGui.QPlainTextEdit):
 
 
 class CrawlerDialog(QtGui.QDialog):
-    def __init__(self):
-        super(CrawlerDialog, self).__init__()
+    def __init__(self, parent=None):
+        super(CrawlerDialog, self).__init__(parent)
 
         self.shotnumbers = None
         label = QtGui.QLabel("Comma-separated list of shots to be crawled:")
@@ -841,8 +841,8 @@ class CrawlerDialog(QtGui.QDialog):
             btn.setEnabled(True)
 
     @staticmethod
-    def getShotNumbers():
-        dialog = CrawlerDialog()
+    def getShotNumbers(parent=None):
+        dialog = CrawlerDialog(parent)
         result = dialog.exec_()
         shotnumbers = dialog.shotnumbers
         return shotnumbers, result == QtGui.QDialog.Accepted
@@ -950,6 +950,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.probePositions = {}
         self._pan_active = False
         self._zoom_active = False
+        self.crawling = False
 
         self.currentLimPlot = {}
         self.limits = {}
@@ -1191,12 +1192,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     def crawlShots(self):
         if not self.use_cache:
-            Warnings.generic("Crawling is only sensible with cacheing enabled.")
+            Warnings.generic(self,
+                             "Crawling is only sensible with cacheing enabled.")
             return
         
-        shotnumbers, ok = CrawlerDialog.getShotNumbers()
+        shotnumbers, ok = CrawlerDialog.getShotNumbers(self)
         result = {}
         if ok and shotnumbers:
+            self.crawling = True
             size = len(shotnumbers)
             for i, shotnr in enumerate(shotnumbers):
                 logger.info("Crawling shot {} ({} out of {})"
@@ -1208,10 +1211,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 else:
                     logger.info("Error while crawling shot {}".format(shotnr))
                 result[shotnr] = ok
-        logger.info("Crawling result:")
+            self.crawling = False
+        success_rate = len([ok for ok in result.values() if ok]) / float(len(result))
+        logger.info("Crawling result: {:.1f}% successful"
+                    .format(success_rate * 100))
         logger.info("{:>7}{:>7}".format("Shot", "ok"))
         for shotnr, ok in result.items():
-            logger.info("{:>7}{:>7}".format(shotnr, ok))
+            logger.info("{:>7}{:>7}".format(shotnr, ok == True))
         return result
 
     def loadCache(self, shotnr):
@@ -1233,7 +1239,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                         logger.debug("Read cache for shot {}".format(shotnr))
                         self.cache[shotnr] = cache.item()
         if not len(self.cache):
-            logger.warning("Empty cache")
+            logger.info("Shot {} has not been cached yet".format(shotnr))
 
     @pyqtSlot()
     def saveRawData(self):
@@ -1269,7 +1275,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def fillData(self):
-        ok, reply = FillDataDialog.getShotfileDetails()
+        ok, reply = FillDataDialog.getShotfileDetails(self)
         if not ok:
             return
         for details in reply:
@@ -2248,6 +2254,8 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.progBar.setValue(100)
 
             if not any(oks):
+                QtGui.QApplication.restoreOverrideCursor()
+                self.hideProgress()
                 logger.error("Could not create any plots")
                 return
 
@@ -2257,7 +2265,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             if dryrun:
                 QtGui.QApplication.restoreOverrideCursor()
                 self.hideProgress()
-                return True
+                return all(oks)
 
             self.attributeColorsToProbes()
             self.populateProbeTable()
@@ -2523,10 +2531,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.refreshWindowTitle(token=True)
 
     def updateLimits(self, ptype, lim, edit):
-        """
-        Sets ptype plot limit lim to val. If it is a temporal plot, only
-        CELMAs are affected by xlim changes.
-        """
         val = str(edit.text())
         logger.debug("Changing limits for {} plot: {} = {}"
                       .format(ptype, lim, val))
@@ -3164,7 +3168,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             impN = None
             impNe = None
             try:
-                shot = dd.shotfile('UVS', shotNumber)
+                shot = dd.shotfile('UVS', self.shotnr)
             except:
                 logger.debug("No seeding shotfile available")
             else:
@@ -3202,7 +3206,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.statData = {self.lblStatN: [statData['N_rate'], 10**21, 'impN'],
                          self.lblStatNe: [statData['Ne_rate'], 10**21, 'impNe'],
                          self.lblStatTdiv: [statData['Tdiv'], 1, 'Tdiv'],
-                         self.lblStatFuel: [statData['D_rate'], 10**19, 'D'],
+                         self.lblStatFuel: [statData['D_rate'], 10**21, 'D'],
                          self.lblStatDens: [statData['n_H-1'], 10**19, 'nbar'],
                          self.lblStatHeating: [statData['Ptot'], 10**6, 'Ptot']}
 
@@ -3408,17 +3412,17 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         experiment = self.experiment_combos[diag]
         return str(experiment.currentText())
 
-    def getShotfile(self, diag, shot=None):
+    def getShotfile(self, diag, shotnr=None):
         self.statusbar.showMessage('Fetching {} data...'.format(diag))
         exp = self.getExperiment(diag)
 
         if diag == "LSC":
-            shot = shot or self.latestLSCshotnr
+            shotnr = shotnr or self.latestLSCshotnr
         else:
-            shot = shot or self.shotnr
+            shotnr = shotnr or self.shotnr
 
         try:
-            shot = dd.shotfile(diag, shot, exp)
+            shot = dd.shotfile(diag, shotnr, exp)
         except Exception, e:
             logger.critical("Could not load {} shotfile for user {}: {}"
                             .format(diag, exp, str(e)))
@@ -3428,13 +3432,18 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             try:
                 shot = dd.shotfile(diag, self.shotnr)
             except Exception, e:
-                self.showShotWarning("Shotfile not found",
-                                     "{} shotfile could not be loaded"
-                                     .format(diag),
-                                     "No shotfile could be found at {}:{} "
-                                     .format(diag,exp) +
-                                     "for this shot",
-                                     details=str(e))
+                if not self.crawling:
+                    self.showShotWarning("Shotfile not found",
+                                         "{} shotfile could not be loaded"
+                                         .format(diag),
+                                         "No shotfile could be found at {}:{} "
+                                         .format(diag, exp) +
+                                         "nor at {}:AUGD ".format(diag) +
+                                         "for shot {}".format(shotnr),
+                                         details=str(e))
+                else:
+                    logger.error("{} shotfile could not be loaded: {}"
+                                 .format(diag, str(e)))
                 return
         return shot
 
@@ -3581,25 +3590,28 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.ssl = data
 
     def getELMdata(self, shotfile):
-        self.ELMonsets = shotfile('t_begELM')
-        self.ELMends = shotfile('t_endELM').data
-        self.ELMmaxima = shotfile('t_maxELM').data
-        self.ELMfreqs = shotfile('freq_ELM').data
-        self.ELMtoELM = np.append(np.diff(self.ELMonsets),0)
-        self.ELMENER = shotfile('ELMENER').data
-        self.preELMWmhd = shotfile('Wmhd').data
-        self.ELMelec = shotfile('ELMPART').data
-        self.preELMelec = shotfile('ELECTRNS').data
-
-        ELMdata = {"onsets": self.ELMonsets,
-                   "ends": self.ELMends,
-                   "maxima": self.ELMmaxima,
-                   "frequencies": self.ELMfreqs,
-                   "ELMtoELM": self.ELMtoELM,
-                   "ELMenergy": self.ELMENER,
-                   "preELMWmhd": self.preELMWmhd,
-                   "electrons": self.ELMelec,
-                   "preELMelectrons": self.preELMelec}
+        try:
+            self.ELMonsets = shotfile('t_begELM')
+            self.ELMends = shotfile('t_endELM').data
+            self.ELMmaxima = shotfile('t_maxELM').data
+            self.ELMfreqs = shotfile('freq_ELM').data
+            self.ELMtoELM = np.append(np.diff(self.ELMonsets),0)
+            self.ELMENER = shotfile('ELMENER').data
+            self.preELMWmhd = shotfile('Wmhd').data
+            self.ELMelec = shotfile('ELMPART').data
+            self.preELMelec = shotfile('ELECTRNS').data
+        except:
+            ELMdata = None
+        else:
+            ELMdata = {"onsets": self.ELMonsets,
+                       "ends": self.ELMends,
+                       "maxima": self.ELMmaxima,
+                       "frequencies": self.ELMfreqs,
+                       "ELMtoELM": self.ELMtoELM,
+                       "ELMenergy": self.ELMENER,
+                       "preELMWmhd": self.preELMWmhd,
+                       "electrons": self.ELMelec,
+                       "preELMelectrons": self.preELMelec}
         return ELMdata
 
     def getSLdata(self, shotfile):
@@ -4237,7 +4249,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.lblRealTWidth.setText("= {:.2f}us".format(dt*10**6))
 
 
-    def createPlot(self, container, _type=None, quantity=None, dry_run=False):
+    def createPlot(self, container, _type=None, quantity=None, dryrun=False):
         """
         Creates a Plot object of the specified type and quantity at the
         specified location on the GUI.
@@ -4284,19 +4296,31 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.clearPlotContainer(container)
 
         # Get shot data
+        successful_crawl = True
         data = self.getShotData(quantity)
-        logger.info(data)
         if not data:
             logger.error("Cannot create {} {} plot. ".format(_type, quantity) +
                          "Invalid data.")
             return
         self.getProbePositions(data)
         self.getCalibrations()
-        self.getShotData('elms')
-        self.getShotData('strikeline')
+        elmdata = self.getShotData('elms')
+        if not elmdata:
+            logger.error("Cannot create {} {} plot. ".format(_type, quantity) +
+                         "Invalid elm data.")
+            # If this is a crawling run, try to get strikeline data
+            if not dryrun:
+                return
+            else:
+                successful_crawl = False
+        sldata = self.getShotData('strikeline')
+        if not sldata:
+            logger.error("Cannot create {} {} plot. ".format(_type, quantity) +
+                         "Invalid strikeline data.")
+            return
 
-        if dry_run:
-            return True
+        if dryrun:
+            return successful_crawl
 
         # Plotting
         if quantity == 'wmhd':
@@ -4597,7 +4621,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
     def showShotWarning(self, title, msg, text, details=''):
         logger.critical(msg)
         self.statusbar.showMessage(msg)
-        msgBox = QMessageBox()
+        msgBox = QMessageBox(self)
         msgBox.setIcon(QMessageBox.Warning)
         msgBox.setText(msg +'\n\n' + text)
         msgBox.setDetailedText(details)

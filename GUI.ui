@@ -1577,7 +1577,7 @@
                   <item row="3" column="0">
                    <widget class="QLabel" name="label_32">
                     <property name="text">
-                     <string>Ne impurities [10^21/m^3]</string>
+                     <string>Ne impurities [10^21/s]</string>
                     </property>
                    </widget>
                   </item>
@@ -1619,7 +1619,7 @@
                   <item row="4" column="0">
                    <widget class="QLabel" name="label_34">
                     <property name="text">
-                     <string>N impurities [10^21/m^3]</string>
+                     <string>N impurities [10^21/s]</string>
                     </property>
                    </widget>
                   </item>
@@ -1640,7 +1640,7 @@
                   <item row="5" column="0">
                    <widget class="QLabel" name="label_27">
                     <property name="text">
-                     <string>D Fuelling  [10^19/m^3]</string>
+                     <string>D Fuelling  [10^21/s]</string>
                     </property>
                    </widget>
                   </item>
