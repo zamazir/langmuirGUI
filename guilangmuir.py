@@ -1703,56 +1703,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     self.createSpatialCELMA()
 
 
-    def getTimeArray(self):
-        if self.timeArray is not None:
-            return
-
-        # Try to get from cache
-        if self.use_cache:
-            try:
-                self.timeArray = copy.deepcopy(self.cache[self.shotnr]["timeArray"])
-            except KeyError:
-                pass
-            else:
-                logger.debug("Retrieved timeArray from cache")
-                return
-
-        # Get from shotfile
-        shot = self.getShotfile("LSD")
-        timeArrays = []
-        for obj in shot.getSignalNames():
-            isRightQuantity = obj.startswith(('te','ne'))
-            isRightRegion = obj.split('-')[1][:2]==\
-                    str(self.comboRegion.currentText())
-
-            if isRightQuantity and isRightRegion:
-                try:
-                    timeArrays.append(shot.getTimeBase(obj))
-                except:
-                    logger.error("Failed to retrieve time base for signal {}"\
-                                    .format(obj))
-        if len(timeArrays) == 0:
-            logger.error( "Failed to find time array")
-            return
-
-        equal = (np.diff(
-                    np.vstack(timeArrays).reshape(len(timeArrays), -1),
-                    axis=0) == 0).all()
-
-        if not equal:
-            logger.error("Time base arrays fetched from shotfile are not"+\
-            " equal! Proceed with caution.")
-
-        timeArray = timeArrays[0]
-        self.timeArray = timeArray
-
-        # Save to cache
-        if self.use_cache:
-            self.cache[self.shotnr]["timeArray"] = timeArray
-            self.saveCache()
-        return timeArray
-
-
     def moveToNextPOI(self, ):
         """
         Moves xTimeSlider to the next POI of the current ELM. If the last POI
@@ -2207,7 +2157,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.cache = {}
         self.map = {}
         self.calib = {}
-        self.timeArray = None
 
         self.segment = str(self.comboSegment.currentText())
         self.region = str(self.comboRegion.currentText())
@@ -4346,7 +4295,6 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.getCalibrations()
         self.getShotData('elms')
         self.getShotData('strikeline')
-        self.getTimeArray()
 
         if dry_run:
             return True
@@ -4412,8 +4360,13 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                                         'xlim_changed', self.showStats)
 
         # Set timeline scrollbar min and max values
-        # timeArray comes from LSD data
-        self.xTimeSlider.setRange(0, len(self.timeArray) - 1)
+        # timeArray is based on spatial plot(s) since scrollbar is only useful
+        # when there is at least one
+        timeArray = self.getLongestTimeArray()
+        if timeArray is None:
+            logger.critical("Cannot determine longest time array")
+            return
+        self.xTimeSlider.setRange(0, len(timeArray) - 1)
 
         plot.canvas.collectiveSaveClicked.connect(self.collectiveSave)
         plot.canvas.popupRequested.connect(
@@ -4447,6 +4400,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             self.activateZoom()
         return True
 
+
+    def getLongestTimeArray(self):
+        timeArrays = [p.timeArray for p in self.getSpatialPlots()]
+        try:
+            timeArray = max(timeArrays, key=len) 
+        except ValueError:
+            # If there are no timeArrays
+            timeArray = None
+        return timeArray
 
     def createPopup(self, plot=None):
         popup = FigureWindow(self, plot)
@@ -6171,6 +6133,7 @@ class SpatialPlot(Plot):
         self.detachedFit = config['detachedFit']
         self.rawdata = data
         self.getProbes(data)
+        self.timeArray = self.getTimeArray(self.rawdata)
 
         self.axes.autoscale(self.fixlims)
 
@@ -6198,7 +6161,6 @@ class SpatialPlot(Plot):
                             0,0,1,ls='--',lw='4',color='grey', alpha=.7,
                             label = 'Strikeline')
         
-        self.timeArray = self.gui.timeArray
         quantName = self.quantities[quantity]
 
         try:
@@ -6243,6 +6205,23 @@ class SpatialPlot(Plot):
 
         if self.fitting:
             self.plotFit()
+
+
+    def getTimeArray(self, data):
+        timeArrays = []
+        for probe, probeData in self.rawdata.items():
+            timeArrays.append(probeData['time'])
+        if len(timeArrays) == 0:
+            logger.error( "Failed to find time array")
+            return
+
+        equal = (np.diff(np.vstack(timeArrays).reshape(len(timeArrays), -1),
+                         axis=0) == 0).all()
+        if not equal:
+            logger.error("Time base arrays for the different probes are not " +
+                         "equal! Proceed with caution.")
+
+        return timeArrays[0]
 
 
     def createCompareAxes(self):
