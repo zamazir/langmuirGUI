@@ -3348,15 +3348,14 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
 
 
     def toggleLiveIndicators(self):
+        try:
+            self.xTimeSlider.valueChanged.disconnect(self.updateIndicators)
+        except Exception, e:
+            logger.error("Could not disable live indicator updates:")
+            logger.error(str(e))
         enableLive = self.menuLiveIndicators.isChecked()
         if enableLive:
             self.xTimeSlider.valueChanged.connect(self.updateIndicators)
-        else:
-            try:
-                self.xTimeSlider.valueChanged.disconnect(self.updateIndicators)
-            except Exception, e:
-                logger.error("Could not disable live indicator updates:")
-                logger.error(str(e))
 
     def getShotData(self, quantity):
         diags = {'te': 'LSD',
