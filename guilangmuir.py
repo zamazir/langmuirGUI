@@ -206,7 +206,7 @@ class AFSutils(QtCore.QObject):
         return res
         
     @staticmethod
-    def checkAFSToken(silent=False, console=True):
+    def checkAFSToken(parent=None, silent=False, console=True):
         user = AFSutils.getUser()
         res, err = Tools.shellExecute('tokens')
         token = False
@@ -220,7 +220,7 @@ class AFSutils(QtCore.QObject):
             logger.debug('AFS token exists')
             token = True
         elif not silent:
-            Warnings.noShotfileAccess(self, prompt=console)
+            Warnings.noShotfileAccess(parent, prompt=console)
             if console and user:
                 AFSutils.getToken()
                 token = AFSutils.checkAFSToken(console=False)
@@ -708,7 +708,8 @@ class AFSchecker(threading.Thread, QtCore.QObject):
         while self.parent.isVisible() and main_exists and not self._stop_event.is_set():
             time.sleep(1)
             logger.debug("Thread checking for token")
-            token = AFSutils.checkAFSToken(silent=self._warning_active,
+            token = AFSutils.checkAFSToken(parent=self.parent,
+                                           silent=self._warning_active,
                                            console=False)
             if not token:
                 self.losttoken.emit()
@@ -846,6 +847,18 @@ class CrawlerDialog(QtGui.QDialog):
         result = dialog.exec_()
         shotnumbers = dialog.shotnumbers
         return shotnumbers, result == QtGui.QDialog.Accepted
+
+
+class timeit():
+    @staticmethod
+    def get_duration(duration):
+        """
+        Convert amount of seconds to an equivalent amount of hours, minutes,
+        and seconds.
+        """
+        m, s = divmod(duration, 60)
+        h, m = divmod(m, 60)
+        return int(h), int(m), s
 
 
 class ApplicationWindow(QMainWindow, Ui_MainWindow):
@@ -993,7 +1006,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         self.insertLinks()
         self.journalLink = None
         self.setWindowTitle('Langmuir Inter-ELM Signal Analysis ~LISA~')
-        token = AFSutils.checkAFSToken(silent=True)
+        token = AFSutils.checkAFSToken(parent=self, silent=True)
         self.saved = True
         self.refreshWindowTitle(token=token)
         self.menuFillTable.triggered.connect(self.fillData)
@@ -1199,11 +1212,32 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         shotnumbers, ok = CrawlerDialog.getShotNumbers(self)
         result = {}
         if ok and shotnumbers:
+            lbl = QtGui.QLabel()
+            lbl.setFixedWidth(200)
+            self.statusbar.addPermanentWidget(lbl)
             self.crawling = True
             size = len(shotnumbers)
+            min_crawls = min(5, max(1, size / 10))
+            durations = []
             for i, shotnr in enumerate(shotnumbers):
-                logger.info("Crawling shot {} ({} out of {})"
-                            .format(shotnr, i + 1, size))
+                start_time = time.time()
+                if len(durations) >= min_crawls:
+                    seconds_left = (size - i) * np.mean(durations)
+                    h, m, s = timeit.get_duration(seconds_left)
+                    h_m, m_m, s_m = timeit.get_duration(np.mean(durations))
+                    time_left = "{:02}:{:02}:{:02.0f}".format(h, m, s)
+                    duration = "{:02}:{:02}:{:02.0f}".format(h_m, m_m, s_m)
+                    durations = durations[:min_crawls]
+                else:
+                    time_left = '??:??:??'
+                    duration = '??:??:??'
+                progress = float(i + 1) / size * 100
+                status = ("\n\nCrawling shot {} ({:.1f}%: {} out of {}) - "
+                          .format(shotnr, progress, i + 1, size) +
+                          "Time left: {} @ {} per crawl".format(time_left,
+                                                                duration))
+                logger.info(status)
+                lbl.setText(status)
                 self.shotNumberEdit.setText(str(shotnr))
                 ok = self.load(dryrun=True)
                 if ok:
@@ -1211,13 +1245,15 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                 else:
                     logger.info("Error while crawling shot {}".format(shotnr))
                 result[shotnr] = ok
+                durations.append(time.time() - start_time)
             self.crawling = False
-        success_rate = len([ok for ok in result.values() if ok]) / float(len(result))
-        logger.info("Crawling result: {:.1f}% successful"
-                    .format(success_rate * 100))
-        logger.info("{:>7}{:>7}".format("Shot", "ok"))
-        for shotnr, ok in result.items():
-            logger.info("{:>7}{:>7}".format(shotnr, ok == True))
+            success_rate = len([ok for ok in result.values() if ok]) / float(len(result))
+            logger.info("Crawling result: {:.1f}% successful"
+                        .format(success_rate * 100))
+            logger.info("{:>7}{:>7}".format("Shot", "ok"))
+            for shotnr, ok in result.items():
+                logger.info("{:>7}{:>7}".format(shotnr, ok == True))
+            self.statusbar.removeWidget(lbl)
         return result
 
     def loadCache(self, shotnr):
@@ -2148,7 +2184,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
             dryrun: Data is loaded but plots are not created. For testing
                     and crawling.
         """
-        token = AFSutils.checkAFSToken(silent=self.use_cache)
+        token = AFSutils.checkAFSToken(parent=self, silent=self.use_cache)
         if not token:
             self.refreshWindowTitle(token=token)
             if not self.use_cache:
@@ -2469,7 +2505,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         return success
 
     def immediateAFScheck(self):
-        token = AFSutils.checkAFSToken()
+        token = AFSutils.checkAFSToken(parent=self)
         self.refreshWindowTitle(token=token)
 
     def refreshWindowTitle(self, token=True):
@@ -4709,7 +4745,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
         logger.debug("shot cached: {}".format(self.shotnr in self.cache))
         logger.debug("cached shots: {}".format(self.cache.keys()))
         if self.use_cache and not self.shotnr in self.cache:
-            token = AFSutils.checkAFSToken()
+            token = AFSutils.checkAFSToken(parent=self)
             if not token:
                 return
         

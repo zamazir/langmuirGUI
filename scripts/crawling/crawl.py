@@ -8,7 +8,7 @@ import time
 import numpy as np
 
 tdiv_range = [-10, 15]
-shotnumber_range = [28000, None]
+shotnumber_range = [33895, None]
 
 def check_shotfile_availability(shotnr):
     diags = ['LSF', 'LSD', 'FPG', 'TOT', 'DCN']
@@ -25,9 +25,9 @@ if shotnumber_range[1] is None:
 
 size = len(range(*shotnumber_range))
 matches = {}
+duration = 0
 for i, shotnr in enumerate(range(*shotnumber_range)):
     start_time = time.time()
-    duration = time.time() - start_time
     time_left = duration * (size - (i + 1))
     minutes_left, seconds_left = divmod(time_left, 60)
     hours_left, minutes_left = divmod(minutes_left, 60)
@@ -41,18 +41,19 @@ for i, shotnr in enumerate(range(*shotnumber_range)):
         Tdiv = shotfile('Tdiv').data
         shotfile.close()
     except:
-        print("{} No TOT shotfile".format(status))
+        print("{} No DDS shotfile".format(status))
+        duration = time.time() - start_time
         continue
 
     if not check_shotfile_availability(shotnr):
         print("{} Missing vital shotfile(s)".format(status))
+        duration = time.time() - start_time
         continue
 
     mean = np.nanmedian(Tdiv)
     if tdiv_range[0] < mean < tdiv_range[1]:
         matches[shotnr] = mean
         print("{} MATCH {:>7}{:>7.1f}".format(status, shotnr, mean))
-
-with open('tdiv_results.txt', 'w') as f:
-    for shotnr, mean in matches.items():
-        f.write("{:<7}{:<.1f}".format(shotnr, mean))
+    with open('tdiv_results.txt', 'a') as f:
+        f.write("{:<7}{:<.1f}\n".format(shotnr, mean))
+    duration = time.time() - start_time
