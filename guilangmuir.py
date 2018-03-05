@@ -1227,7 +1227,7 @@ class ApplicationWindow(QMainWindow, Ui_MainWindow):
                     h_m, m_m, s_m = timeit.get_duration(np.mean(durations))
                     time_left = "{:02}:{:02}:{:02.0f}".format(h, m, s)
                     duration = "{:02}:{:02}:{:02.0f}".format(h_m, m_m, s_m)
-                    durations = durations[:min_crawls]
+                    durations = durations[-min_crawls:]
                 else:
                     time_left = '??:??:??'
                     duration = '??:??:??'
